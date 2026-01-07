@@ -5,6 +5,10 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\MenuController;
+use App\Http\Controllers\Api\SamityProfileController;
+use App\Http\Controllers\Api\MemberInfoController;
+use App\Http\Controllers\Api\SavingsProductController;
+use App\Http\Controllers\Api\SavingsAccountController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login']);
@@ -35,9 +39,36 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/permissions/{permission}', [PermissionController::class, 'destroy'])->middleware('permission:permission.delete');
 
     // Menu Management
-    Route::get('/menus', [MenuController::class, 'index'])->middleware('permission:menu-management.view');
-    Route::post('/menus', [MenuController::class, 'store'])->middleware('permission:menu-management.create');
-    Route::get('/menus/{menu}', [MenuController::class, 'show'])->middleware('permission:menu-management.view');
-    Route::put('/menus/{menu}', [MenuController::class, 'update'])->middleware('permission:menu-management.edit');
-    Route::delete('/menus/{menu}', [MenuController::class, 'destroy'])->middleware('permission:menu-management.delete');
+    Route::get('/menus', [MenuController::class, 'index'])->middleware('permission:menu.management.view');
+    Route::post('/menus', [MenuController::class, 'store'])->middleware('permission:menu.management.create');
+    Route::get('/menus/{menu}', [MenuController::class, 'show'])->middleware('permission:menu.management.view');
+    Route::put('/menus/{menu}', [MenuController::class, 'update'])->middleware('permission:menu.management.edit');
+    Route::delete('/menus/{menu}', [MenuController::class, 'destroy'])->middleware('permission:menu.management.delete');
+
+    // Samity Profile
+    Route::get('/samity-profiles', [SamityProfileController::class, 'index'])->middleware('permission:samity-profile.view');
+    Route::post('/samity-profiles', [SamityProfileController::class, 'store'])->middleware('permission:samity.profile.add');
+    Route::get('/samity-profiles/{id}', [SamityProfileController::class, 'show'])->middleware('permission:samity-profile.view');
+    Route::put('/samity-profiles/{id}', [SamityProfileController::class, 'update'])->middleware('permission:samity.profile.add');
+
+    // Member Info
+    Route::get('/members', [MemberInfoController::class, 'index'])->middleware('permission:member.view');
+    Route::post('/members', [MemberInfoController::class, 'store'])->middleware('permission:member.create');
+    Route::get('/members/{id}', [MemberInfoController::class, 'show'])->middleware('permission:member.view');
+    Route::put('/members/{id}', [MemberInfoController::class, 'update'])->middleware('permission:member.edit');
+    Route::delete('/members/{id}', [MemberInfoController::class, 'destroy'])->middleware('permission:member.delete');
+
+    // Savings Product Management
+    Route::get('/savings-products', [SavingsProductController::class, 'index']);
+    Route::post('/savings-products', [SavingsProductController::class, 'store']);
+    Route::get('/savings-products/{id}', [SavingsProductController::class, 'show']);
+    Route::put('/savings-products/{id}', [SavingsProductController::class, 'update']);
+    Route::delete('/savings-products/{id}', [SavingsProductController::class, 'destroy']);
+
+    // Savings Account Management
+    Route::get('/savings-accounts', [SavingsAccountController::class, 'index']);
+    Route::post('/savings-accounts', [SavingsAccountController::class, 'store']);
+    Route::get('/savings-accounts/{id}', [SavingsAccountController::class, 'show']);
+    Route::put('/savings-accounts/{id}', [SavingsAccountController::class, 'update']);
+    Route::delete('/savings-accounts/{id}', [SavingsAccountController::class, 'destroy']);
 });

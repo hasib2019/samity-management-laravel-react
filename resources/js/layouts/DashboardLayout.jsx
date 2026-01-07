@@ -9,7 +9,8 @@ import {
     LogOut, 
     ChevronDown, 
     ChevronRight,
-    UserCircle
+    UserCircle,
+    Building
 } from 'lucide-react';
 
 const Sidebar = ({ menus }) => {
@@ -76,7 +77,8 @@ const Sidebar = ({ menus }) => {
                             {menu.slug === 'roles' && <ShieldCheck size={20} />}
                             {menu.slug === 'permissions' && <ShieldCheck size={20} />}
                             {menu.slug === 'menu-management' && <MenuIcon size={20} />}
-                            {!['dashboard', 'user-management-system', 'users', 'roles', 'permissions', 'menu-management'].includes(menu.slug) && <ShieldCheck size={20} />}
+                            {menu.slug === 'samity-profile' && <Building size={20} />}
+                            {!['dashboard', 'user-management-system', 'users', 'roles', 'permissions', 'menu-management', 'samity-profile'].includes(menu.slug) && <ShieldCheck size={20} />}
                         </span>
                         <span className="flex-1">{menu.name}</span>
                     </Link>

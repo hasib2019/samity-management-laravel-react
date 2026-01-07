@@ -18,20 +18,27 @@ class MenuSeeder extends Seeder
             ],
             [
                 'name' => 'User Management System',
-                'slug' => 'user-management-system',
+                'slug' => 'user.management.system',
                 'icon' => 'users',
                 'order' => 1,
                 'children' => [
                     ['name' => 'Users', 'slug' => 'users', 'icon' => 'user', 'order' => 1],
                     ['name' => 'Roles', 'slug' => 'roles', 'icon' => 'shield', 'order' => 2],
                     ['name' => 'Permissions', 'slug' => 'permissions', 'icon' => 'key', 'order' => 3],
+                    ['name' => 'Menu Management', 'slug' => 'menu.management', 'icon' => 'layout', 'order' => 4],
                 ]
             ],
             [
-                'name' => 'Menu Management',
-                'slug' => 'menu-management',
-                'icon' => 'layout',
-                'order' => 2,
+                'name' => 'Samity Profile',
+                'slug' => 'samity-profile',
+                'icon' => 'building',
+                'order' => 3,
+            ],
+            [
+                'name' => 'Member Profile',
+                'slug' => 'member-profile',
+                'icon' => 'user-check',
+                'order' => 4,
             ]
         ];
 

@@ -13,6 +13,10 @@ import UserList from './pages/Users/UserList';
 import RoleList from './pages/Roles/RoleList';
 import PermissionList from './pages/Permissions/PermissionList';
 import MenuList from './pages/Menus/MenuList';
+import SamityProfile from './pages/Samity/SamityProfile';
+import MemberProfile from './pages/Member/MemberProfile';
+import SavingsProduct from './pages/SavingsProduct/SavingsProduct';
+import SavingsAccountList from './pages/Accounts/SavingsAccountList';
 
 // Layouts
 import DashboardLayout from './layouts/DashboardLayout';
@@ -20,7 +24,7 @@ import DashboardLayout from './layouts/DashboardLayout';
 const ProtectedRoute = ({ children }) => {
     const { user, loading } = useAuth();
 
-    if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    if (loading) return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
     
     if (!user) {
         return <Navigate to="/login" />;
@@ -80,6 +84,38 @@ const App = () => {
                         element={
                             <ProtectedRoute>
                                 <MenuList />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/samity-profile" 
+                        element={
+                            <ProtectedRoute>
+                                <SamityProfile />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/member-profile" 
+                        element={
+                            <ProtectedRoute>
+                                <MemberProfile />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/accounts-types" 
+                        element={
+                            <ProtectedRoute>
+                                <SavingsProduct />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/all-accounts" 
+                        element={
+                            <ProtectedRoute>
+                                <SavingsAccountList />
                             </ProtectedRoute>
                         } 
                     />

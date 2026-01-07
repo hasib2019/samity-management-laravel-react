@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Role;
+use App\Models\Permission;
 use Illuminate\Database\Seeder;
 
 class RoleSeeder extends Seeder
@@ -16,8 +17,14 @@ class RoleSeeder extends Seeder
             ['name' => 'User', 'slug' => 'user'],
         ];
 
-        foreach ($roles as $role) {
-            Role::updateOrCreate(['slug' => $role['slug']], $role);
+        foreach ($roles as $roleData) {
+            $role = Role::updateOrCreate(['slug' => $roleData['slug']], $roleData);
+            
+            // Assign all permissions to Super Admin
+            if ($role->slug === 'super-admin') {
+                $permissions = Permission::all();
+                $role->permissions()->sync($permissions->pluck('id'));
+            }
         }
     }
 }

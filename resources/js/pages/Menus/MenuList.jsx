@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import { Plus, Edit, Trash2, Eye, EyeOff, Info } from 'lucide-react';
+import { showSuccessToast, showErrorToast, confirmDelete } from '../../utils/sweetAlert';
 
 const MenuList = () => {
     const [menus, setMenus] = useState([]);
@@ -78,25 +79,30 @@ const MenuList = () => {
         try {
             if (editingMenu) {
                 await api.put(`/menus/${editingMenu.id}`, formData);
+                showSuccessToast('Menu updated successfully');
             } else {
                 await api.post('/menus', formData);
+                showSuccessToast('Menu created successfully');
             }
             setIsModalOpen(false);
             fetchMenus();
         } catch (error) {
-            alert(error.response?.data?.message || 'Something went wrong');
+            showErrorToast(error.response?.data?.message || 'Something went wrong');
         }
     };
 
     const handleDelete = async (id) => {
-        if (window.confirm('Are you sure you want to delete this menu? Children will also be affected if any.')) {
-            try {
-                await api.delete(`/menus/${id}`);
-                fetchMenus();
-            } catch (error) {
-                alert(error.response?.data?.message || 'Failed to delete');
+        confirmDelete('Are you sure you want to delete this menu? Children will also be affected if any.').then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    await api.delete(`/menus/${id}`);
+                    fetchMenus();
+                    showSuccessToast('Menu deleted successfully');
+                } catch (error) {
+                    showErrorToast(error.response?.data?.message || 'Failed to delete');
+                }
             }
-        }
+        });
     };
 
     const renderMenuRows = (items, depth = 0) => {

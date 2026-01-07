@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import { Plus, Edit, Trash2 } from 'lucide-react';
+import { showSuccessToast, showErrorToast, confirmDelete } from '../../utils/sweetAlert';
 
 const RoleList = () => {
     const [roles, setRoles] = useState([]);
@@ -63,25 +64,30 @@ const RoleList = () => {
         try {
             if (editingRole) {
                 await api.put(`/roles/${editingRole.id}`, formData);
+                showSuccessToast('Role updated successfully');
             } else {
                 await api.post('/roles', formData);
+                showSuccessToast('Role created successfully');
             }
             setIsModalOpen(false);
             fetchRoles();
         } catch (error) {
-            alert(error.response?.data?.message || 'Something went wrong');
+            showErrorToast(error.response?.data?.message || 'Something went wrong');
         }
     };
 
     const handleDelete = async (id) => {
-        if (window.confirm('Are you sure you want to delete this role?')) {
-            try {
-                await api.delete(`/roles/${id}`);
-                fetchRoles();
-            } catch (error) {
-                alert(error.response?.data?.message || 'Failed to delete');
+        confirmDelete().then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    await api.delete(`/roles/${id}`);
+                    fetchRoles();
+                    showSuccessToast('Role deleted successfully');
+                } catch (error) {
+                    showErrorToast(error.response?.data?.message || 'Failed to delete');
+                }
             }
-        }
+        });
     };
 
     const togglePermission = (id) => {

@@ -43,5 +43,39 @@ class PermissionSeeder extends Seeder
                 ]
             );
         }
+
+        // Samity Profile Permissions
+        $samityMenu = Menu::where('slug', 'samity-profile')->first();
+        if ($samityMenu) {
+            Permission::updateOrCreate(
+                ['slug' => 'samity-profile.view'],
+                [
+                    'name' => 'Samity Profile View',
+                    'menu_id' => $samityMenu->id,
+                ]
+            );
+            Permission::updateOrCreate(
+                ['slug' => 'samity.profile.add'],
+                [
+                    'name' => 'Samity Profile Add',
+                    'menu_id' => $samityMenu->id,
+                ]
+            );
+        }
+
+        // Member Profile Permissions
+        $memberMenu = Menu::where('slug', 'member-profile')->first();
+        if ($memberMenu) {
+            $actions = ['view', 'create', 'edit', 'delete'];
+            foreach ($actions as $action) {
+                Permission::updateOrCreate(
+                    ['slug' => 'member.' . $action],
+                    [
+                        'name' => 'Member Profile ' . ucfirst($action),
+                        'menu_id' => $memberMenu->id,
+                    ]
+                );
+            }
+        }
     }
 }
