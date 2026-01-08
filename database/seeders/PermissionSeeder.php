@@ -48,7 +48,7 @@ class PermissionSeeder extends Seeder
         $samityMenu = Menu::where('slug', 'samity-profile')->first();
         if ($samityMenu) {
             Permission::updateOrCreate(
-                ['slug' => 'samity-profile.view'],
+                ['slug' => 'samity.profile.view'],
                 [
                     'name' => 'Samity Profile View',
                     'menu_id' => $samityMenu->id,
@@ -73,6 +73,36 @@ class PermissionSeeder extends Seeder
                     [
                         'name' => 'Member Profile ' . ucfirst($action),
                         'menu_id' => $memberMenu->id,
+                    ]
+                );
+            }
+        }
+
+        // Product Setup Permissions
+        $productSetupMenu = Menu::where('slug', 'product-setup')->first();
+        if ($productSetupMenu) {
+            $actions = ['view', 'create', 'edit', 'delete'];
+            foreach ($actions as $action) {
+                Permission::updateOrCreate(
+                    ['slug' => 'product-setup.' . $action],
+                    [
+                        'name' => 'Product Setup ' . ucfirst($action),
+                        'menu_id' => $productSetupMenu->id,
+                    ]
+                );
+            }
+        }
+
+        // GL Setup Permissions
+        $glSetupMenu = Menu::where('slug', 'gl-setup')->first();
+        if ($glSetupMenu) {
+            $actions = ['view', 'create', 'edit', 'delete'];
+            foreach ($actions as $action) {
+                Permission::updateOrCreate(
+                    ['slug' => 'gl-setup.' . $action],
+                    [
+                        'name' => 'GL Setup ' . ucfirst($action),
+                        'menu_id' => $glSetupMenu->id,
                     ]
                 );
             }

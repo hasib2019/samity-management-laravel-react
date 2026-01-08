@@ -15,6 +15,7 @@ return new class extends Migration
             $table->string('icon')->nullable();
             $table->foreignId('parent_id')->nullable()->constrained('menus')->onDelete('cascade');
             $table->integer('order')->default(0);
+             $table->boolean('is_hidden')->default(true);
             $table->timestamps();
         });
     }

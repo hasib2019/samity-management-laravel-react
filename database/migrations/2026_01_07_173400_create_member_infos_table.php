@@ -44,7 +44,9 @@ return new class extends Migration
             $table->integer('share_amount')->nullable();
             $table->integer('savings_amount')->nullable();
             $table->integer('loan_outstanding')->nullable();
-            
+            $table->string('nid_photo')->nullable();
+            $table->string('others')->nullable();
+            $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('set null');
             $table->foreignId('created_by')->constrained('users');
             $table->foreignId('updated_by')->nullable()->constrained('users');
             $table->timestamps();

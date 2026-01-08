@@ -15,11 +15,8 @@ import PermissionList from './pages/Permissions/PermissionList';
 import MenuList from './pages/Menus/MenuList';
 import SamityProfile from './pages/Samity/SamityProfile';
 import MemberProfile from './pages/Member/MemberProfile';
-import SavingsProduct from './pages/SavingsProduct/SavingsProduct';
-import SavingsAccountList from './pages/Accounts/SavingsAccountList';
-import MonthlyFeeCollection from './pages/Accounts/MonthlyFeeCollection';
-import FinancialReports from './pages/Accounts/FinancialReports';
-import CollectionScheduleList from './pages/Accounts/CollectionScheduleList';
+import GlAccountSetup from './pages/Setup/GlAccountSetup';
+// Removed Accounts & SavingsProduct pages per request
 
 // Layouts
 import DashboardLayout from './layouts/DashboardLayout';
@@ -107,45 +104,14 @@ const App = () => {
                         } 
                     />
                     <Route 
-                        path="/accounts-types" 
+                        path="/gl-setup" 
                         element={
                             <ProtectedRoute>
-                                <SavingsProduct />
+                                <GlAccountSetup />
                             </ProtectedRoute>
                         } 
                     />
-                    <Route 
-                        path="/all-accounts" 
-                        element={
-                            <ProtectedRoute>
-                                <SavingsAccountList />
-                            </ProtectedRoute>
-                        } 
-                    />
-                    <Route 
-                        path="/monthly-collections" 
-                        element={
-                            <ProtectedRoute>
-                                <MonthlyFeeCollection />
-                            </ProtectedRoute>
-                        } 
-                    />
-                    <Route 
-                        path="/financial-reports" 
-                        element={
-                            <ProtectedRoute>
-                                <FinancialReports />
-                            </ProtectedRoute>
-                        } 
-                    />
-                    <Route 
-                        path="/collection-schedules" 
-                        element={
-                            <ProtectedRoute>
-                                <CollectionScheduleList />
-                            </ProtectedRoute>
-                        } 
-                    />
+                    {/* Removed routes for Accounts & SavingsProduct */}
                     <Route path="/" element={<Navigate to="/dashboard" />} />
                 </Routes>
             </BrowserRouter>

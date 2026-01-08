@@ -17,6 +17,9 @@ return new class extends Migration
             $table->string('samity_code')->unique();
             $table->text('samity_address');
             $table->string('samity_type')->default('P');
+            $table->decimal('monthly_subscription_fee', 10, 2)->default(1000);
+            $table->decimal('penalty_amount', 10, 2)->default(100);
+            $table->integer('penalty_late_date')->default(15);
             $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('set null');
             $table->foreignId('updated_by')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();

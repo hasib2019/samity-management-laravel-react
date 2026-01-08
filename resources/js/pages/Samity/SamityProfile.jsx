@@ -28,7 +28,11 @@ const SamityProfile = () => {
         try {
             const response = await api.get('/samity-profiles');
             // Backend now returns a single object or empty/null
-            setProfile(response.data);
+            if (response.data && response.data.id) {
+                setProfile(response.data);
+            } else {
+                setProfile(null);
+            }
         } catch (error) {
             console.error('Failed to fetch samity profile', error);
         } finally {
@@ -66,7 +70,7 @@ const SamityProfile = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            if (profile) {
+            if (profile && profile.id) {
                 // Update existing profile
                 await api.put(`/samity-profiles/${profile.id}`, formData);
                 showSuccessToast('Samity Profile updated successfully');
