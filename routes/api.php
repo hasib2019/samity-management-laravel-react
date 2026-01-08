@@ -9,6 +9,9 @@ use App\Http\Controllers\Api\SamityProfileController;
 use App\Http\Controllers\Api\MemberInfoController;
 use App\Http\Controllers\Api\SavingsProductController;
 use App\Http\Controllers\Api\SavingsAccountController;
+use App\Http\Controllers\Api\MonthlyCollectionController;
+use App\Http\Controllers\Api\FinancialReportController;
+use App\Http\Controllers\Api\CollectionScheduleController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login']);
@@ -71,4 +74,22 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/savings-accounts/{id}', [SavingsAccountController::class, 'show']);
     Route::put('/savings-accounts/{id}', [SavingsAccountController::class, 'update']);
     Route::delete('/savings-accounts/{id}', [SavingsAccountController::class, 'destroy']);
+
+    // Monthly Fee Collection
+    Route::get('/monthly-fees/dues/{memberId}', [MonthlyCollectionController::class, 'getDues']);
+    Route::post('/monthly-fees/collect', [MonthlyCollectionController::class, 'store']);
+    Route::get('/monthly-fees/history/{memberId}', [MonthlyCollectionController::class, 'history']);
+    
+    // Member Self Service
+    Route::get('/my/dues', [MonthlyCollectionController::class, 'myDues']);
+    Route::get('/my/payment-history', [MonthlyCollectionController::class, 'myHistory']);
+
+    // Financial Reports
+    Route::get('/financial-reports/dues', [FinancialReportController::class, 'dueReport']);
+    Route::get('/financial-reports/collections', [FinancialReportController::class, 'collectionReport']);
+
+    // Collection Schedule Management
+    Route::get('/collection-schedules', [CollectionScheduleController::class, 'index']);
+    Route::post('/collection-schedules', [CollectionScheduleController::class, 'store']);
+    Route::get('/collection-schedules/review', [CollectionScheduleController::class, 'reviewData']);
 });

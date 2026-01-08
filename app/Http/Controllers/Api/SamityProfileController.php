@@ -41,6 +41,9 @@ class SamityProfileController extends Controller
             'samity_code' => 'required|string|max:50|unique:samity_profiles',
             'samity_address' => 'required|string',
             'samity_type' => 'nullable|string|max:10',
+            'monthly_subscription_fee' => 'nullable|numeric',
+            'penalty_amount' => 'nullable|numeric',
+            'penalty_late_date' => 'nullable|integer|between:1,31',
         ]);
 
         if ($validator->fails()) {
@@ -52,6 +55,9 @@ class SamityProfileController extends Controller
             'samity_code' => $request->samity_code,
             'samity_address' => $request->samity_address,
             'samity_type' => $request->samity_type ?? 'P',
+            'monthly_subscription_fee' => $request->monthly_subscription_fee ?? 1000,
+            'penalty_amount' => $request->penalty_amount ?? 200,
+            'penalty_late_date' => $request->penalty_late_date ?? 15,
             'created_by' => Auth::id(),
             'updated_by' => Auth::id(),
         ]);
@@ -97,6 +103,9 @@ class SamityProfileController extends Controller
             'samity_code' => 'required|string|max:50|unique:samity_profiles,samity_code,' . $id,
             'samity_address' => 'required|string',
             'samity_type' => 'nullable|string|max:10',
+            'monthly_subscription_fee' => 'nullable|numeric',
+            'penalty_amount' => 'nullable|numeric',
+            'penalty_late_date' => 'nullable|integer|between:1,31',
         ]);
 
         if ($validator->fails()) {
@@ -108,6 +117,9 @@ class SamityProfileController extends Controller
             'samity_code' => $request->samity_code,
             'samity_address' => $request->samity_address,
             'samity_type' => $request->samity_type ?? 'P',
+            'monthly_subscription_fee' => $request->monthly_subscription_fee,
+            'penalty_amount' => $request->penalty_amount,
+            'penalty_late_date' => $request->penalty_late_date,
             'updated_by' => Auth::id(),
         ]);
 

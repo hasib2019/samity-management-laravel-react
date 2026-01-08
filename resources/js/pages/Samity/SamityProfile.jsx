@@ -12,7 +12,10 @@ const SamityProfile = () => {
         samity_name: '',
         samity_code: '',
         samity_address: '',
-        samity_type: 'P'
+        samity_type: 'P',
+        monthly_subscription_fee: 1000,
+        penalty_amount: 200,
+        penalty_late_date: 15
     });
 
     const { hasPermission } = useAuth();
@@ -38,7 +41,10 @@ const SamityProfile = () => {
             samity_name: '',
             samity_code: '',
             samity_address: '',
-            samity_type: 'P'
+            samity_type: 'P',
+            monthly_subscription_fee: 1000,
+            penalty_amount: 200,
+            penalty_late_date: 15
         });
         setIsModalOpen(true);
     };
@@ -49,7 +55,10 @@ const SamityProfile = () => {
             samity_name: profile.samity_name,
             samity_code: profile.samity_code,
             samity_address: profile.samity_address,
-            samity_type: profile.samity_type
+            samity_type: profile.samity_type,
+            monthly_subscription_fee: profile.monthly_subscription_fee || 1000,
+            penalty_amount: profile.penalty_amount || 200,
+            penalty_late_date: profile.penalty_late_date || 15
         });
         setIsModalOpen(true);
     };
@@ -147,6 +156,27 @@ const SamityProfile = () => {
                                     <span className="text-base text-gray-900">
                                         {profile.samity_type === 'P' ? 'Primary (P)' : profile.samity_type}
                                     </span>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-4">
+                                <div>
+                                    <label className="block mb-1 text-xs font-medium tracking-wider text-gray-500 uppercase">Monthly Fee</label>
+                                    <div className="flex items-center">
+                                        <span className="text-base text-gray-900">{profile.monthly_subscription_fee} BDT</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block mb-1 text-xs font-medium tracking-wider text-gray-500 uppercase">Penalty Amt</label>
+                                    <div className="flex items-center">
+                                        <span className="text-base text-gray-900">{profile.penalty_amount} BDT</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block mb-1 text-xs font-medium tracking-wider text-gray-500 uppercase">Late Date</label>
+                                    <div className="flex items-center">
+                                        <span className="text-base text-gray-900">Day {profile.penalty_late_date}</span>
+                                    </div>
                                 </div>
                             </div>
 
@@ -249,6 +279,38 @@ const SamityProfile = () => {
                                                     value={formData.samity_type}
                                                     onChange={(e) => setFormData({...formData, samity_type: e.target.value})}
                                                     placeholder="Default: P"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-3 gap-4">
+                                            <div>
+                                                <label className="block mb-1 text-sm font-medium text-gray-700">Monthly Fee</label>
+                                                <input
+                                                    type="number"
+                                                    className="block p-2 w-full rounded-md border border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                    value={formData.monthly_subscription_fee}
+                                                    onChange={(e) => setFormData({...formData, monthly_subscription_fee: e.target.value})}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block mb-1 text-sm font-medium text-gray-700">Penalty Amt</label>
+                                                <input
+                                                    type="number"
+                                                    className="block p-2 w-full rounded-md border border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                    value={formData.penalty_amount}
+                                                    onChange={(e) => setFormData({...formData, penalty_amount: e.target.value})}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block mb-1 text-sm font-medium text-gray-700">Cutoff Day</label>
+                                                <input
+                                                    type="number"
+                                                    max="31"
+                                                    min="1"
+                                                    className="block p-2 w-full rounded-md border border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                    value={formData.penalty_late_date}
+                                                    onChange={(e) => setFormData({...formData, penalty_late_date: e.target.value})}
                                                 />
                                             </div>
                                         </div>
