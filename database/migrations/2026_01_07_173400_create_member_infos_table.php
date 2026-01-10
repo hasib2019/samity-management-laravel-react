@@ -14,8 +14,10 @@ return new class extends Migration
         Schema::create('member_infos', function (Blueprint $table) {
             $table->id();
             $table->text('member_code')->nullable();
-            $table->integer('occupation_id')->nullable();
             $table->integer('samity_id'); // Not null
+            $table->boolean('is_samity_member')->default(true);
+            $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('set null');
+            $table->integer('occupation_id')->nullable();
             $table->integer('education_level_id')->nullable();
             $table->integer('marital_status_id')->nullable();
             $table->integer('gender_id')->nullable();
@@ -41,12 +43,10 @@ return new class extends Migration
             $table->text('member_photo')->nullable();
             $table->text('member_sign')->nullable();
             $table->integer('religion_id')->nullable();
-            $table->integer('share_amount')->nullable();
-            $table->integer('savings_amount')->nullable();
-            $table->integer('loan_outstanding')->nullable();
+            $table->integer('share_price')->nullable();
+            $table->integer('no_of_share')->nullable();
             $table->string('nid_photo')->nullable();
             $table->string('others')->nullable();
-            $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('set null');
             $table->foreignId('created_by')->constrained('users');
             $table->foreignId('updated_by')->nullable()->constrained('users');
             $table->timestamps();

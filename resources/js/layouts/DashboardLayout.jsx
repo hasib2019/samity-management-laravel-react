@@ -62,10 +62,11 @@ const Sidebar = ({ menus }) => {
             <div key={menu.id}>
                 <div className="flex items-center">
                     <Link
-                        to={menu.slug === 'dashboard' ? '/dashboard' : `/${menu.slug}`}
+                        to={hasChildren ? '#' : (menu.slug === 'dashboard' ? '/dashboard' : `/${menu.slug}`)}
+                        onClick={(e) => hasChildren && toggleMenu(e, menu.slug)}
                         className={`flex-1 flex items-center px-4 py-2 text-sm font-medium rounded-md mb-1 transition-colors ${
                             isActive
-                            ? 'bg-blue-800 text-white'
+                            ? 'text-white bg-blue-800'
                             : 'text-blue-100 hover:bg-blue-700'
                         }`}
                         style={{ marginLeft: `${level * 12}px` }}
@@ -80,7 +81,7 @@ const Sidebar = ({ menus }) => {
                             {menu.slug === 'samity-profile' && <Building size={20} />}
                             {!['dashboard', 'user-management-system', 'users', 'roles', 'permissions', 'menu-management', 'samity-profile'].includes(menu.slug) && <ShieldCheck size={20} />}
                         </span>
-                        <span className="flex-1">{menu.name}</span>
+                        <span className="flex-1">{menu.name} </span>
                     </Link>
                     
                     {hasChildren && (
@@ -103,11 +104,11 @@ const Sidebar = ({ menus }) => {
     };
 
     return (
-        <div className="flex flex-col w-64 bg-blue-900 min-h-screen text-white">
-            <div className="flex items-center justify-center h-16 bg-blue-950 font-bold text-xl">
+        <div className="flex flex-col w-64 min-h-screen text-white bg-blue-900">
+            <div className="flex justify-center items-center h-16 text-xl font-bold bg-blue-950">
                 RBAC Admin
             </div>
-            <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
+            <nav className="overflow-y-auto flex-1 px-2 py-4 space-y-1">
                 {menus.map(menu => renderMenuItem(menu))}
             </nav>
         </div>
@@ -124,18 +125,18 @@ const TopNavbar = () => {
     };
 
     return (
-        <header className="bg-white shadow-sm h-16 flex items-center justify-between px-6">
+        <header className="flex justify-between items-center px-6 h-16 bg-white shadow-sm">
             <h1 className="text-xl font-semibold text-gray-800">Dashboard</h1>
             <div className="flex items-center space-x-4">
                 <div className="flex items-center text-sm font-medium text-gray-700">
-                    <UserCircle className="mr-2 h-6 w-6 text-gray-400" />
+                    <UserCircle className="mr-2 w-6 h-6 text-gray-400" />
                     {user?.name}
                 </div>
                 <button
                     onClick={handleLogout}
                     className="flex items-center text-sm font-medium text-red-600 hover:text-red-800"
                 >
-                    <LogOut className="mr-1 h-5 w-5" />
+                    <LogOut className="mr-1 w-5 h-5" />
                     Logout
                 </button>
             </div>
@@ -149,9 +150,9 @@ const DashboardLayout = ({ children }) => {
     return (
         <div className="flex h-screen bg-gray-100">
             <Sidebar menus={menus || []} />
-            <div className="flex-1 flex flex-col overflow-hidden">
+            <div className="flex overflow-hidden flex-col flex-1">
                 <TopNavbar />
-                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6">
+                <main className="overflow-y-auto overflow-x-hidden flex-1 p-6 bg-gray-100">
                     {children}
                 </main>
             </div>

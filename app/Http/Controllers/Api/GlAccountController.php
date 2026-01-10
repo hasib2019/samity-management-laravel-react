@@ -7,6 +7,8 @@ use App\Repositories\Contracts\GlAccountRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Http;
+use App\Models\GlAccount;
 
 class GlAccountController extends Controller
 {
@@ -17,18 +19,18 @@ class GlAccountController extends Controller
         $this->repository = $repository;
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        if (!Auth::user()->can('gl-setup.view')) {
+        if (!Auth::user()->can('gl.setup.view')) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        return response()->json($this->repository->all());
+        return response()->json($this->repository->get($request->all()));
     }
 
     public function store(Request $request)
     {
-        if (!Auth::user()->can('gl-setup.create')) {
+        if (!Auth::user()->can('gl.setup.create')) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -60,7 +62,7 @@ class GlAccountController extends Controller
 
     public function show($id)
     {
-        if (!Auth::user()->can('gl-setup.view')) {
+        if (!Auth::user()->can('gl.setup.view')) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -74,7 +76,7 @@ class GlAccountController extends Controller
 
     public function update(Request $request, $id)
     {
-        if (!Auth::user()->can('gl-setup.edit')) {
+        if (!Auth::user()->can('gl.setup.edit')) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -100,9 +102,84 @@ class GlAccountController extends Controller
         return response()->json(['message' => 'GL Account updated successfully', 'data' => $account]);
     }
 
+    public function sync(Request $request)
+    {
+        if (!Auth::user()->can('gl.setup.sync')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'tableName' => 'required|string',
+            'key' => 'required|array',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        try {
+            // The user provided URL in the prompt
+            $url = env('EXTERNAL_API_URL');
+            $apiKey = env('EXTERNAL_API_KEY');
+            // dd($url, $apiKey);
+            $response = Http::withHeaders([
+                'api-key' => $apiKey
+            ])->withBody(json_encode($request->all()), 'application/json')->get($url);
+            
+            if ($response->status() == 200) {
+                $responseData = $response->json();
+                
+                if (isset($responseData['data']) && is_array($responseData['data'])) {
+                    $count = 0;
+                    foreach ($responseData['data'] as $item) {
+                        $data = [
+                            'id' => $item['id'],
+                            'glac_code' => $item['glac_code'],
+                            'glac_name' => $item['glac_name'],
+                            'parent_child' => $item['parent_child'],
+                            'parent_id' => $item['parent_id'] ??null,
+                            'glac_type' =>  $item['glac_type'],
+                            'level_code' => $item['level_code'] ?? null,
+                            'gl_nature' => $item['gl_nature'],
+                            'allow_manual_dr' => $item['allow_manual_dr'],
+                            'allow_manual_cr' => $item['allow_manual_cr'],
+                            'status' => 'A',
+                            'is_default' => $item['is_default'] ?? false,
+                            'doptor_id' => $item['doptor_id'] ?? 0,
+                            'is_abonton' => $item['is_abonton'] ?? false,
+                            'is_percentage' => $item['is_percentage'] ?? 0,
+                            'is_carry_forward' => $item['is_carry_forward'] ?? false,
+                            'is_income_expense' => $item['is_income_expense'] ?? false,
+                            'created_by' => 1,
+                            'updated_by' => 1,
+                        ];
+
+                        // Remove duplicates with same code but different ID
+                        GlAccount::where('glac_code', $item['glac_code'])
+                            ->where('id', '!=', $item['id'])
+                            ->delete();
+
+                        GlAccount::updateOrCreate(
+                            ['id' => $item['id']],
+                            $data
+                        );
+                        $count++;
+                    }
+                    return response()->json(['message' => 'সফলভাবে ডাটা প্রদান করা হয়েছে!', 'count' => $count]);
+                } else {
+                    return response()->json(['message' => 'No data found in response'], 404);
+                }
+            } else {
+                return response()->json(['message' => 'External API failed', 'details' => $response->body()], $response->status());
+            }
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Sync failed: ' . $e->getMessage()], 500);
+        }
+    }
+
     public function destroy($id)
     {
-        if (!Auth::user()->can('gl-setup.delete')) {
+        if (!Auth::user()->can('gl.setup.delete')) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -113,7 +190,7 @@ class GlAccountController extends Controller
 
     public function getTree()
     {
-        if (!Auth::user()->can('gl-setup.view')) {
+        if (!Auth::user()->can('gl.setup.view')) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
         return response()->json($this->repository->getTree());

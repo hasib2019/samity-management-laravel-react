@@ -11,6 +11,7 @@ class GlAccount extends Model
     protected $table = 'glac_mst';
 
     protected $fillable = [
+        'id',
         'glac_code',
         'glac_name',
         'parent_child',

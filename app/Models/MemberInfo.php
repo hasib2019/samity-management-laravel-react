@@ -31,6 +31,7 @@ class MemberInfo extends Model
         'brn',
         'doptor_id',
         'is_active',
+        'is_samity_member',
         'documents',
         'member_photo',
         'member_sign',
@@ -38,9 +39,8 @@ class MemberInfo extends Model
         'others',
         'user_id',
         'religion_id',
-        'share_amount',
-        'savings_amount',
-        'loan_outstanding',
+        'share_price',
+        'no_of_share',
         'created_by',
         'updated_by'
     ];
@@ -51,6 +51,7 @@ class MemberInfo extends Model
         'others_docs' => 'array',
         'documents' => 'array',
         'is_active' => 'boolean',
+        'is_samity_member' => 'boolean',
     ];
 
     public function creator()
@@ -71,5 +72,10 @@ class MemberInfo extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function savingsAccounts()
+    {
+        return $this->hasMany(SavingsAccount::class, 'member_id');
     }
 }

@@ -16,7 +16,7 @@ import MenuList from './pages/Menus/MenuList';
 import SamityProfile from './pages/Samity/SamityProfile';
 import MemberProfile from './pages/Member/MemberProfile';
 import GlAccountSetup from './pages/Setup/GlAccountSetup';
-// Removed Accounts & SavingsProduct pages per request
+import ProductSetup from './pages/Setup/ProductSetup';
 
 // Layouts
 import DashboardLayout from './layouts/DashboardLayout';
@@ -108,6 +108,14 @@ const App = () => {
                         element={
                             <ProtectedRoute>
                                 <GlAccountSetup />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/product-setup" 
+                        element={
+                            <ProtectedRoute>
+                                <ProductSetup />
                             </ProtectedRoute>
                         } 
                     />

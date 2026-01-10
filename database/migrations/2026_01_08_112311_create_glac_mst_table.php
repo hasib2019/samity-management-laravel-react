@@ -27,12 +27,6 @@ return new class extends Migration
             // Audit fields
             $table->string('auth_by', 50)->nullable();
             $table->date('auth_date')->nullable();
-            
-            // Standard Laravel Audit fields (mapping created_by/updated_by to users table)
-            $table->foreignId('created_by')->constrained('users');
-            $table->foreignId('updated_by')->nullable()->constrained('users');
-            $table->timestamps();
-
             // Additional fields
             $table->boolean('is_default')->default(false);
             $table->integer('doptor_id')->default(0); // Kept as requested, default 0
@@ -40,6 +34,10 @@ return new class extends Migration
             $table->integer('is_percentage')->default(0);
             $table->boolean('is_carry_forward')->default(false);
             $table->boolean('is_income_expense')->default(false);
+             // Standard Laravel Audit fields (mapping created_by/updated_by to users table)
+            $table->foreignId('created_by')->constrained('users');
+            $table->foreignId('updated_by')->nullable()->constrained('users');
+            $table->timestamps();
         });
     }
 

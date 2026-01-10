@@ -84,7 +84,7 @@ class PermissionSeeder extends Seeder
             $actions = ['view', 'create', 'edit', 'delete'];
             foreach ($actions as $action) {
                 Permission::updateOrCreate(
-                    ['slug' => 'product-setup.' . $action],
+                    ['slug' => 'product.setup.' . $action],
                     [
                         'name' => 'Product Setup ' . ucfirst($action),
                         'menu_id' => $productSetupMenu->id,
@@ -96,10 +96,10 @@ class PermissionSeeder extends Seeder
         // GL Setup Permissions
         $glSetupMenu = Menu::where('slug', 'gl-setup')->first();
         if ($glSetupMenu) {
-            $actions = ['view', 'create', 'edit', 'delete'];
+            $actions = ['view', 'create', 'edit', 'delete', 'sync'];
             foreach ($actions as $action) {
                 Permission::updateOrCreate(
-                    ['slug' => 'gl-setup.' . $action],
+                    ['slug' => 'gl.setup.' . $action],
                     [
                         'name' => 'GL Setup ' . ucfirst($action),
                         'menu_id' => $glSetupMenu->id,

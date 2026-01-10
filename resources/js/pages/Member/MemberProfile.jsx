@@ -1,15 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
-import { Plus, Edit, Trash2, User, Phone, Mail, MapPin, Calendar, CreditCard, Save, X, Search } from 'lucide-react';
+import { Plus, Edit, Trash2, User, Phone, Mail, MapPin, Calendar, CreditCard, Save, X, Search, Eye, Loader2 } from 'lucide-react';
+import MemberViewModal from './MemberViewModal';
 import { showSuccessToast, showErrorToast, confirmDelete } from '../../utils/sweetAlert';
 
 const MemberProfile = () => {
     const [members, setMembers] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+    const [viewMember, setViewMember] = useState(null);
     const [editingId, setEditingId] = useState(null);
     const [samityList, setSamityList] = useState([]);
+    const [savingProducts, setSavingProducts] = useState([]);
     const [imagePreviews, setImagePreviews] = useState({
         member_photo: null,
         member_sign: null,
@@ -41,10 +46,14 @@ const MemberProfile = () => {
         brn: '',
         doptor_id: '',
         is_active: true,
+        is_samity_member: true,
+        account_details: false,
+        product_id: '',
+        principal_amount: '',
+        tenure_month: '',
         religion_id: '',
-        share_amount: '',
-        savings_amount: '',
-        loan_outstanding: '',
+        share_price: '',
+        no_of_share: '',
         member_photo: null,
         member_sign: null,
         nid_photo: null,
@@ -57,6 +66,7 @@ const MemberProfile = () => {
     useEffect(() => {
         fetchMembers();
         fetchSamityList();
+        fetchSavingProducts();
     }, []);
 
     const fetchMembers = async () => {
@@ -86,7 +96,16 @@ const MemberProfile = () => {
         }
     };
 
-    const STORAGE_URL = 'http://127.0.0.1:8000/storage/';
+    const fetchSavingProducts = async () => {
+        try {
+            const response = await api.get('/products?type=saving');
+            setSavingProducts(response.data);
+        } catch (error) {
+            console.error('Failed to fetch saving products', error);
+        }
+    };
+
+    const STORAGE_URL = '/storage/';
 
     const handleOpenModal = (member = null) => {
         if (member) {
@@ -115,10 +134,15 @@ const MemberProfile = () => {
                 brn: member.brn || '',
                 doptor_id: member.doptor_id || '',
                 is_active: member.is_active !== undefined ? member.is_active : true,
+                is_samity_member: member.is_samity_member !== undefined ? member.is_samity_member : true,
+                account_details: false, 
+                product_id: '',
+                principal_amount: '',
+                tenure_month: '',
+                description: '',
                 religion_id: member.religion_id || '',
-                share_amount: member.share_amount || '',
-                savings_amount: member.savings_amount || '',
-                loan_outstanding: member.loan_outstanding || '',
+                share_price: member.share_price || '',
+                no_of_share: member.no_of_share || '',
                 member_photo: null, // Don't pre-fill file inputs
                 member_sign: null,
                 nid_photo: null,
@@ -142,6 +166,11 @@ const MemberProfile = () => {
             }
         }
         setIsModalOpen(true);
+    };
+
+    const handleViewMember = (member) => {
+        setViewMember(member);
+        setIsViewModalOpen(true);
     };
 
     const handleInputChange = (e) => {
@@ -171,11 +200,12 @@ const MemberProfile = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setSubmitting(true);
         
         const data = new FormData();
         Object.keys(formData).forEach(key => {
             if (formData[key] !== null && formData[key] !== undefined) {
-                 if (key === 'is_active') {
+                 if (key === 'is_active' || key === 'is_samity_member') {
                      data.append(key, formData[key] ? '1' : '0');
                  } else {
                      data.append(key, formData[key]);
@@ -208,6 +238,8 @@ const MemberProfile = () => {
             } else {
                 showErrorToast(error.response?.data?.message || 'Something went wrong');
             }
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -294,6 +326,11 @@ const MemberProfile = () => {
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-sm font-medium text-right whitespace-nowrap">
+                                        {hasPermission('member.view') && (
+                                            <button onClick={() => handleViewMember(member)} className="mr-3 text-purple-600 hover:text-purple-900" title="View Details">
+                                                <Eye className="w-4 h-4" />
+                                            </button>
+                                        )}
                                         {hasPermission('member.edit') && (
                                             <button onClick={() => handleOpenModal(member)} className="mr-3 text-blue-600 hover:text-blue-900">
                                                 <Edit className="w-4 h-4" />
@@ -311,6 +348,14 @@ const MemberProfile = () => {
                     </tbody>
                 </table>
             </div>
+
+            {/* View Modal */}
+            <MemberViewModal 
+                isOpen={isViewModalOpen}
+                onClose={() => setIsViewModalOpen(false)}
+                member={viewMember}
+                STORAGE_URL={STORAGE_URL}
+            />
 
             {/* Modal */}
             {isModalOpen && (
@@ -420,27 +465,121 @@ const MemberProfile = () => {
 
                                         <div className="col-span-1">
                                             <label className="block text-sm font-medium text-gray-700">Share Amount</label>
-                                            <input type="number" name="share_amount" value={formData.share_amount} onChange={handleInputChange} className="block px-3 py-2 mt-1 w-full rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                                            <input type="number" name="share_price" value={formData.share_price} onChange={handleInputChange} className="block px-3 py-2 mt-1 w-full rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
                                         </div>
 
                                         <div className="col-span-1">
-                                            <label className="block text-sm font-medium text-gray-700">Savings Amount</label>
-                                            <input type="number" name="savings_amount" value={formData.savings_amount} onChange={handleInputChange} className="block px-3 py-2 mt-1 w-full rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                                            <label className="block text-sm font-medium text-gray-700">No of Share</label>
+                                            <input type="number" name="no_of_share" value={formData.no_of_share} onChange={handleInputChange} className="block px-3 py-2 mt-1 w-full rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
                                         </div>
 
-                                        <div className="flex col-span-1 items-center pt-6">
-                                            <input
-                                                id="is_active"
-                                                name="is_active"
-                                                type="checkbox"
-                                                checked={formData.is_active}
-                                                onChange={handleInputChange}
-                                                className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                                            />
-                                            <label htmlFor="is_active" className="block ml-2 text-sm text-gray-900">
-                                                Active Member
+                                        <div className="col-span-1">
+                                            <label className="flex items-center mt-6 space-x-2 text-sm font-medium text-gray-700 cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    name="is_samity_member"
+                                                    checked={formData.is_samity_member}
+                                                    onChange={handleInputChange}
+                                                    className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                                                />
+                                                <span>Is Samity Member?</span>
                                             </label>
                                         </div>
+
+                                        <div className="col-span-1">
+                                            <label className="flex items-center mt-6 space-x-2 text-sm font-medium text-gray-700 cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    name="is_active"
+                                                    checked={formData.is_active}
+                                                    onChange={handleInputChange}
+                                                    className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                                                />
+                                                <span>Is Active?</span>
+                                            </label>
+                                        </div>
+
+                                        {/* Account Details Toggle - Only show when creating new member */}
+                                        {!editingId && (
+                                            <div className="col-span-1">
+                                                <label className="flex items-center mt-6 space-x-2 text-sm font-medium text-gray-700 cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        name="account_details"
+                                                        checked={formData.account_details}
+                                                        onChange={handleInputChange}
+                                                        className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                                                    />
+                                                    <span>Add Account Details</span>
+                                                </label>
+                                            </div>
+                                        )}
+
+                                        {/* Savings Account Section */}
+                                        {formData.account_details && !editingId && (
+                                            <div className="pb-2 mt-4 mb-2 border-b md:col-span-3">
+                                                <h4 className="text-sm font-semibold text-gray-500 uppercase">Savings Account Information</h4>
+                                            </div>
+                                        )}
+
+                                        {formData.account_details && !editingId && (
+                                            <>
+                                                <div className="col-span-1">
+                                                    <label className="block text-sm font-medium text-gray-700">Product <span className="text-red-500">*</span></label>
+                                                    <select
+                                                        name="product_id"
+                                                        required={formData.account_details}
+                                                        value={formData.product_id}
+                                                        onChange={handleInputChange}
+                                                        className="block px-3 py-2 mt-1 w-full bg-white rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                    >
+                                                        <option value="">Select Product</option>
+                                                        {savingProducts.map(product => (
+                                                            <option key={product.id} value={product.id}>{product.product_name}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+
+                                                <div className="col-span-1">
+                                                    <label className="block text-sm font-medium text-gray-700">Principal Amount</label>
+                                                    <input
+                                                        type="number"
+                                                        name="principal_amount"
+                                                        value={formData.principal_amount}
+                                                        onChange={handleInputChange}
+                                                        className="block px-3 py-2 mt-1 w-full rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                    />
+                                                </div>
+
+                                                <div className="col-span-1">
+                                                    <label className="block text-sm font-medium text-gray-700">Tenure (Month)</label>
+                                                    <input
+                                                        type="number"
+                                                        name="tenure_month"
+                                                        value={formData.tenure_month}
+                                                        onChange={handleInputChange}
+                                                        className="block px-3 py-2 mt-1 w-full rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                    />
+                                                </div>
+
+                                                <div className="col-span-1">
+                                                    <label className="block text-sm font-medium text-gray-700">Description</label>
+                                                    <input
+                                                        type="text"
+                                                        name="description"
+                                                        value={formData.description}
+                                                        onChange={handleInputChange}
+                                                        className="block px-3 py-2 mt-1 w-full rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                    />
+                                                </div>
+                                                
+                                                <div className="col-span-1 md:col-span-3">
+                                                    <p className="text-sm italic text-gray-500">
+                                                        * Account Number will be auto-generated upon creation.
+                                                    </p>
+                                                </div>
+                                            </>
+                                        )}
 
                                         {/* Documents & Images */}
                                                                                {/* Documents & Images */}
@@ -483,6 +622,8 @@ const MemberProfile = () => {
                                             <textarea name="others" value={formData.others} onChange={handleInputChange} rows="2" className="block px-3 py-2 mt-1 w-full rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></textarea>
                                         </div>
 
+
+
                                         
 
                                     </div>
@@ -490,10 +631,20 @@ const MemberProfile = () => {
                                 <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 sm:px-6 sm:flex sm:flex-row-reverse">
                                     <button
                                         type="submit"
-                                        className="inline-flex justify-center items-center px-4 py-2 w-full text-base font-medium text-white bg-blue-600 rounded-md border border-transparent shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
+                                        disabled={submitting}
+                                        className="inline-flex justify-center items-center px-4 py-2 w-full text-base font-medium text-white bg-blue-600 rounded-md border border-transparent shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
-                                        <Save className="mr-2 w-4 h-4" />
-                                        {editingId ? 'Update Member' : 'Create Member'}
+                                        {submitting ? (
+                                            <>
+                                                <Loader2 className="mr-2 w-4 h-4 animate-spin" />
+                                                Processing...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Save className="mr-2 w-4 h-4" />
+                                                {editingId ? 'Update Member' : 'Create Member'}
+                                            </>
+                                        )}
                                     </button>
                                     <button
                                         type="button"

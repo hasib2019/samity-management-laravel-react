@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\MemberInfo;
+use App\Models\SavingsAccount;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -23,7 +24,7 @@ class MemberInfoController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $members = MemberInfo::with(['creator', 'updator', 'samity', 'user'])->latest()->get();
+        $members = MemberInfo::with(['creator', 'updator', 'samity', 'user', 'savingsAccounts.product'])->latest()->get();
         return response()->json($members);
     }
 
@@ -101,8 +102,54 @@ class MemberInfoController extends Controller
             $data['created_by'] = Auth::id();
             $data['updated_by'] = Auth::id();
             $data['user_id'] = $user->id;
+            // Set default is_samity_member if not present (though validation handles boolean casting, explicit default is safe)
+            if (!isset($data['is_samity_member'])) {
+                $data['is_samity_member'] = true;
+            }
 
             $member = MemberInfo::create($data);
+
+            // 3. Handle Savings Account Creation
+            if ($request->boolean('account_details')) {
+                // Validate account specific fields
+                $accountValidator = Validator::make($request->all(), [
+                    'product_id' => 'required|exists:product_mst,id',
+                    'principal_amount' => 'required|numeric|min:0',
+                    'tenure_month' => 'nullable|integer|min:1',
+                ]);
+
+                if ($accountValidator->fails()) {
+                    throw new \Exception(implode(', ', $accountValidator->errors()->all()));
+                }
+
+                // Generate Account Number: YYYYMMDD + 4 digit serial
+                $prefix = date('Ymd');
+                $lastAccount = SavingsAccount::where('account_number', 'like', $prefix . '%')
+                    ->orderBy('account_number', 'desc')
+                    ->first();
+                
+                $nextSerial = 1;
+                if ($lastAccount) {
+                    $lastSerial = (int)substr($lastAccount->account_number, -4);
+                    $nextSerial = $lastSerial + 1;
+                }
+                
+                $accountNumber = $prefix . str_pad($nextSerial, 4, '0', STR_PAD_LEFT);
+
+                SavingsAccount::create([
+                    'account_number' => $accountNumber,
+                    'member_id' => $member->id,
+                    'product_id' => $request->product_id,
+                    'status' => 'active',
+                    'principal_amount' => $request->principal_amount,
+                    'current_balance' => $request->principal_amount,
+                    'profit_balance' => 0,
+                    'tenure_month' => $request->tenure_month,
+                    'description' => $request->description ?? 'Opening Balance',
+                    'created_by' => Auth::id(),
+                    'updated_by' => Auth::id(),
+                ]);
+            }
 
             DB::commit();
 

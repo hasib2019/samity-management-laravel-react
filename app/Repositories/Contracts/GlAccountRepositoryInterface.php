@@ -5,6 +5,7 @@ namespace App\Repositories\Contracts;
 interface GlAccountRepositoryInterface
 {
     public function all();
+    public function get(array $filters = []);
     public function find($id);
     public function create(array $data);
     public function update($id, array $data);
