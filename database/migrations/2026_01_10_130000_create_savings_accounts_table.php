@@ -16,12 +16,12 @@ return new class extends Migration
             $table->string('account_number')->unique();
             $table->foreignId('member_id')->constrained('member_infos')->onDelete('cascade');
             $table->foreignId('product_id')->constrained('product_mst');
-            $table->decimal('principal_amount', 15, 2)->default(0)->after('product_id');
+            $table->decimal('principal_amount', 15, 2)->default(0);
             $table->decimal('current_balance', 15, 2)->default(0);
-            $table->decimal('profit_balance', 15, 2)->default(0)->after('current_balance');
-            $table->integer('tenure_month')->nullable()->after('status');
-            $table->text('description')->nullable();
+            $table->decimal('profit_balance', 15, 2)->default(0);
             $table->boolean('status')->default(true);
+            $table->integer('tenure_month')->nullable();
+            $table->text('description')->nullable();
             $table->unsignedBigInteger('created_user_id')->nullable();
             $table->unsignedBigInteger('updated_user_id')->nullable();
             $table->timestamps();

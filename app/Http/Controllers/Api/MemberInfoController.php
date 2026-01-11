@@ -122,6 +122,12 @@ class MemberInfoController extends Controller
                     throw new \Exception(implode(', ', $accountValidator->errors()->all()));
                 }
 
+                // Retrieve Product and GL Info
+                $product = \App\Models\Product::find($request->product_id);
+                if (!$product->gl_income_id || !$product->gl_expense_id) {
+                    throw new \Exception('Product GL Mapping (Income/Expense) is missing. Cannot create account.');
+                }
+
                 // Generate Account Number: YYYYMMDD + 4 digit serial
                 $prefix = date('Ymd');
                 $lastAccount = SavingsAccount::where('account_number', 'like', $prefix . '%')
@@ -136,19 +142,60 @@ class MemberInfoController extends Controller
                 
                 $accountNumber = $prefix . str_pad($nextSerial, 4, '0', STR_PAD_LEFT);
 
-                SavingsAccount::create([
+                $savingsAccount = SavingsAccount::create([
                     'account_number' => $accountNumber,
                     'member_id' => $member->id,
                     'product_id' => $request->product_id,
-                    'status' => 'active',
+                    'status' => true,
                     'principal_amount' => $request->principal_amount,
                     'current_balance' => $request->principal_amount,
                     'profit_balance' => 0,
                     'tenure_month' => $request->tenure_month,
                     'description' => $request->description ?? 'Opening Balance',
-                    'created_by' => Auth::id(),
-                    'updated_by' => Auth::id(),
+                    'created_user_id' => Auth::id(),
+                    'updated_user_id' => Auth::id(),
                 ]);
+
+                // Transaction Creation
+                // Unique batch_num: sav+5digit (Same for both transactions)
+                do {
+                    $batchNum = 'sav' . str_pad(mt_rand(1, 99999), 5, '0', STR_PAD_LEFT);
+                } while (\App\Models\Transaction::where('batch_num', $batchNum)->exists());
+
+                $commonData = [
+                    'customer_id' => $savingsAccount->id,
+                    'product_id' => $product->id,
+                    'payment_mode' => 'cash',
+                    'batch_num' => $batchNum,
+                    'tran_code' => 'DEP',
+                    'tran_type' => 'saving_deposit',
+                    'tran_date' => date('Y-m-d'),
+                    'naration' => 'Account opening',
+                    'created_by' => Auth::id(),
+                    'status' => 'posted',
+                ];
+
+                // Debit Transaction (Using gl_expense_id)
+                // Generate Unique tran_num for Debit (Time based)
+                $tranNumDr = date('YmdHis') . rand(10, 99);
+
+                \App\Models\Transaction::create(array_merge($commonData, [
+                    'tran_num' => $tranNumDr,
+                    'glac_id' => $product->gl_expense_id,
+                    'dr_amt' => $request->principal_amount,
+                    'cr_amt' => 0,
+                ]));
+
+                // Credit Transaction (Using gl_income_id)
+                // Generate Unique tran_num for Credit (Time based)
+                $tranNumCr = date('YmdHis') . rand(10, 99);
+
+                \App\Models\Transaction::create(array_merge($commonData, [
+                    'tran_num' => $tranNumCr,
+                    'glac_id' => $product->gl_income_id,
+                    'dr_amt' => 0,
+                    'cr_amt' => $request->principal_amount,
+                ]));
             }
 
             DB::commit();
