@@ -107,5 +107,35 @@ class PermissionSeeder extends Seeder
                 );
             }
         }
+
+        // Deposit Money Permissions
+        $depositMoneyMenu = Menu::where('slug', 'deposit-money')->first();
+        if ($depositMoneyMenu) {
+            $actions = ['view', 'create', 'edit', 'delete'];
+            foreach ($actions as $action) {
+                Permission::updateOrCreate(
+                    ['slug' => 'deposit.money.' . $action],
+                    [
+                        'name' => 'Deposit Money ' . ucfirst($action),
+                        'menu_id' => $depositMoneyMenu->id,
+                    ]
+                );
+            }
+        }
+
+        // Deposit Request Permissions
+        $depositRequestMenu = Menu::where('slug', 'deposit-request')->first();
+        if ($depositRequestMenu) {
+            $actions = ['view', 'create', 'edit', 'delete', 'approve', 'reject'];
+            foreach ($actions as $action) {
+                Permission::updateOrCreate(
+                    ['slug' => 'deposit.request.' . $action],
+                    [
+                        'name' => 'Deposit Request ' . ucfirst($action),
+                        'menu_id' => $depositRequestMenu->id,
+                    ]
+                );
+            }
+        }
     }
 }

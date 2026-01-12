@@ -18,15 +18,28 @@ class MemberInfoController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         if (!Auth::user()->can('member.view')) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $members = MemberInfo::with(['creator', 'updator', 'samity', 'user', 'savingsAccounts.product'])->latest()->get();
+        $query = MemberInfo::with(['creator', 'updator', 'samity', 'user', 'savingsAccounts.product'])->latest();
+
+        if ($request->has('samity_id')) {
+            $query->where('samity_id', $request->samity_id);
+        }
+
+        $members = $query->get();
         return response()->json($members);
     }
+
+    public function getAccounts($memberId)
+    {
+        $accounts = SavingsAccount::where('member_id', $memberId)->with('product')->get();
+        return response()->json($accounts);
+    }
+
 
     /**
      * Store a newly created resource in storage.
@@ -190,12 +203,25 @@ class MemberInfoController extends Controller
                 // Generate Unique tran_num for Credit (Time based)
                 $tranNumCr = date('YmdHis') . rand(10, 99);
 
-                \App\Models\Transaction::create(array_merge($commonData, [
+                $creditTransaction = \App\Models\Transaction::create(array_merge($commonData, [
                     'tran_num' => $tranNumCr,
                     'glac_id' => $product->gl_income_id,
                     'dr_amt' => 0,
                     'cr_amt' => $request->principal_amount,
                 ]));
+
+                // Create Deposit Request Entry (Linked to Credit Transaction)
+                \App\Models\DepositRequest::create([
+                    'member_id' => $member->id,
+                    'savings_account_id' => $savingsAccount->id,
+                    'amount' => $request->principal_amount,
+                    'total_amount' => $request->principal_amount,
+                    'charge' => 0,
+                    'description' => 'Account opening initial deposit',
+                    'status' => 'approved',
+                    'transaction_id' => $creditTransaction->id,
+                ]);
+                
             }
 
             DB::commit();

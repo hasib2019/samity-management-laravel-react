@@ -7,6 +7,8 @@ use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\MenuController;
 use App\Http\Controllers\Api\SamityProfileController;
 use App\Http\Controllers\Api\MemberInfoController;
+use App\Http\Controllers\Api\DepositRequestController;
+use App\Http\Controllers\Api\GlobalController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login']);
@@ -14,6 +16,11 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    // Global Data Access (No specific permission required, just auth)
+    Route::get('/global/samities', [GlobalController::class, 'getSamityList']);
+    Route::get('/global/members', [GlobalController::class, 'getMemberList']);
+    Route::get('/global/members/{id}/accounts', [GlobalController::class, 'getMemberAccounts']);
 
     // User Management
     Route::get('/users', [UserController::class, 'index'])->middleware('permission:user.view');
@@ -48,13 +55,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/samity-profiles', [SamityProfileController::class, 'store'])->middleware('permission:samity.profile.add');
     Route::get('/samity-profiles/{id}', [SamityProfileController::class, 'show'])->middleware('permission:samity-profile.view');
     Route::put('/samity-profiles/{id}', [SamityProfileController::class, 'update'])->middleware('permission:samity.profile.add');
-
+    
     // Member Info
     Route::get('/members', [MemberInfoController::class, 'index'])->middleware('permission:member.view');
     Route::post('/members', [MemberInfoController::class, 'store'])->middleware('permission:member.create');
     Route::get('/members/{id}', [MemberInfoController::class, 'show'])->middleware('permission:member.view');
     Route::put('/members/{id}', [MemberInfoController::class, 'update'])->middleware('permission:member.edit');
     Route::delete('/members/{id}', [MemberInfoController::class, 'destroy'])->middleware('permission:member.delete');
+    
+    // Deposit Requests
+    Route::apiResource('deposit-requests', DepositRequestController::class);
 
     // GL Account Management
     Route::post('/gl-accounts/sync', [App\Http\Controllers\Api\GlAccountController::class, 'sync'])->middleware('permission:gl.setup.sync');

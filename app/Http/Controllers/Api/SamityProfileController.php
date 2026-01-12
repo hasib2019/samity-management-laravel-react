@@ -15,12 +15,12 @@ class SamityProfileController extends Controller
      */
     public function index()
     {
-        if (!Auth::user()->can('samity-profile.view')) {
+        if (!Auth::user()->can('samity.profile.view')) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $samityProfile = SamityProfile::with(['creator', 'updator'])->first();
-        return response()->json($samityProfile);
+        $samityProfiles = SamityProfile::with(['creator', 'updator'])->get();
+        return response()->json($samityProfiles);
     }
 
     /**

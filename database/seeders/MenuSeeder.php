@@ -48,6 +48,16 @@ class MenuSeeder extends Seeder
                     ['name' => 'GL Setup', 'slug' => 'gl-setup', 'icon' => 'book-open', 'order' => 2],
                 ]
             ],
+            [
+                'name' => 'Deposit',
+                'slug' => 'deposit',
+                'icon' => 'wallet', // Assuming 'wallet' icon is available
+                'order' => 3,
+                'children' => [
+                    ['name' => 'Deposit Money', 'slug' => 'deposit-money', 'icon' => 'banknote', 'order' => 1],
+                    ['name' => 'Deposit Request', 'slug' => 'deposit-request', 'icon' => 'file-text', 'order' => 2],
+                ]
+            ],
         ];
 
         foreach ($menus as $menuData) {

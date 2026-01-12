@@ -15,6 +15,8 @@ import PermissionList from './pages/Permissions/PermissionList';
 import MenuList from './pages/Menus/MenuList';
 import SamityProfile from './pages/Samity/SamityProfile';
 import MemberProfile from './pages/Member/MemberProfile';
+import DepositMoney from './pages/Accounts/DepositMoney';
+import DepositRequestList from './pages/Accounts/DepositRequestList';
 import GlAccountSetup from './pages/Setup/GlAccountSetup';
 import ProductSetup from './pages/Setup/ProductSetup';
 
@@ -104,7 +106,23 @@ const App = () => {
                         } 
                     />
                     <Route 
-                        path="/gl-setup" 
+                        path="/deposit-money" 
+                        element={
+                            <ProtectedRoute>
+                                <DepositMoney />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/deposit-request" 
+                        element={
+                            <ProtectedRoute>
+                                <DepositRequestList />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/gl-setup"  
                         element={
                             <ProtectedRoute>
                                 <GlAccountSetup />

@@ -17,7 +17,7 @@ const SamityProfile = () => {
         penalty_amount: 200,
         penalty_late_date: 15
     });
-
+console.log({profile})
     const { hasPermission } = useAuth();
 
     useEffect(() => {
@@ -28,8 +28,8 @@ const SamityProfile = () => {
         try {
             const response = await api.get('/samity-profiles');
             // Backend now returns a single object or empty/null
-            if (response.data && response.data.id) {
-                setProfile(response.data);
+            if (response.data && response.data[0].id) {
+                setProfile(response.data[0]);
             } else {
                 setProfile(null);
             }
