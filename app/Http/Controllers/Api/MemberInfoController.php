@@ -181,9 +181,12 @@ class MemberInfoController extends Controller
                     'payment_mode' => 'cash',
                     'batch_num' => $batchNum,
                     'tran_code' => 'DEP',
-                    'tran_type' => 'saving_deposit',
+                    'tran_type' => 'Deposit',
                     'tran_date' => date('Y-m-d'),
                     'naration' => 'Account opening',
+                    'authorize_status' => 'approved',
+                    'authorized_by' => Auth::id(),
+                    'authorized_at' => date('Y-m-d'),
                     'created_by' => Auth::id(),
                     'status' => 'posted',
                 ];

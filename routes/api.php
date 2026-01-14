@@ -8,7 +8,12 @@ use App\Http\Controllers\Api\MenuController;
 use App\Http\Controllers\Api\SamityProfileController;
 use App\Http\Controllers\Api\MemberInfoController;
 use App\Http\Controllers\Api\DepositRequestController;
+use App\Http\Controllers\Api\WithdrawRequestController;
 use App\Http\Controllers\Api\GlobalController;
+use App\Http\Controllers\Api\VoucherRequestController;
+use App\Http\Controllers\Api\TypeController;
+use App\Http\Controllers\Api\CashBankMappingController;
+use App\Http\Controllers\Api\VoucherGlMappingController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login']);
@@ -63,8 +68,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/members/{id}', [MemberInfoController::class, 'update'])->middleware('permission:member.edit');
     Route::delete('/members/{id}', [MemberInfoController::class, 'destroy'])->middleware('permission:member.delete');
     
-    // Deposit Requests
+    // Deposit & Withdraw Requests
     Route::apiResource('deposit-requests', DepositRequestController::class);
+    Route::apiResource('withdraw-requests', WithdrawRequestController::class);
+    Route::apiResource('voucher-requests', VoucherRequestController::class);
 
     // GL Account Management
     Route::post('/gl-accounts/sync', [App\Http\Controllers\Api\GlAccountController::class, 'sync'])->middleware('permission:gl.setup.sync');
@@ -81,4 +88,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/products/{id}', [App\Http\Controllers\Api\ProductController::class, 'show'])->middleware('permission:product.setup.view');
     Route::put('/products/{id}', [App\Http\Controllers\Api\ProductController::class, 'update'])->middleware('permission:product.setup.edit');
     Route::delete('/products/{id}', [App\Http\Controllers\Api\ProductController::class, 'destroy'])->middleware('permission:product.setup.delete');
+    
+    // Generic Types
+    Route::apiResource('types', TypeController::class);
+
+    // Cash/Bank GL Mapping
+    Route::apiResource('cash-bank-mappings', CashBankMappingController::class);
+
+    // Voucher GL Mapping
+    Route::apiResource('voucher-gl-mappings', VoucherGlMappingController::class);
 });

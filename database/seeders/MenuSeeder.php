@@ -46,16 +46,30 @@ class MenuSeeder extends Seeder
                 'children' => [
                     ['name' => 'Product Setup', 'slug' => 'product-setup', 'icon' => 'package', 'order' => 1],
                     ['name' => 'GL Setup', 'slug' => 'gl-setup', 'icon' => 'book-open', 'order' => 2],
+                    ['name' => 'Type Setup', 'slug' => 'type-setup', 'icon' => 'list', 'order' => 3],
+                    ['name' => 'Cash/Bank Mapping', 'slug' => 'cash-bank-mapping', 'icon' => 'credit-card', 'order' => 4],
+                    ['name' => 'Voucher GL Mapping', 'slug' => 'voucher-gl-mapping', 'icon' => 'file-spreadsheet', 'order' => 5],
                 ]
             ],
             [
-                'name' => 'Deposit',
-                'slug' => 'deposit',
-                'icon' => 'wallet', // Assuming 'wallet' icon is available
+                'name' => 'Deposit/Withdraw',
+                'slug' => 'deposit-withdraw',
+                'icon' => 'wallet',
                 'order' => 3,
                 'children' => [
                     ['name' => 'Deposit Money', 'slug' => 'deposit-money', 'icon' => 'banknote', 'order' => 1],
                     ['name' => 'Deposit Request', 'slug' => 'deposit-request', 'icon' => 'file-text', 'order' => 2],
+                    ['name' => 'Withdraw Money', 'slug' => 'withdraw-money', 'icon' => 'banknote', 'order' => 3],
+                    ['name' => 'Withdraw Request', 'slug' => 'withdraw-request', 'icon' => 'file-text', 'order' => 4],
+                ]
+            ],
+            [
+                'name' => 'Voucher',
+                'slug' => 'voucher',
+                'icon' => 'file-text',
+                'order' => 4,
+                'children' => [
+                    ['name' => 'Voucher Request', 'slug' => 'voucher-request', 'icon' => 'file-plus', 'order' => 1],
                 ]
             ],
         ];

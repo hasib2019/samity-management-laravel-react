@@ -124,10 +124,16 @@ const TopNavbar = () => {
         if (pathname === '/dashboard') return 'Dashboard';
         if (pathname === '/deposit-request') return 'Pending Deposit Requests';
         if (pathname === '/deposit-money') return 'Deposit Money';
+        if (pathname === '/withdraw-money') return 'Withdraw Money';
+        if (pathname === '/withdraw-request') return 'Pending Withdraw Requests';
         if (pathname === '/samity-profile') return 'Samity Profile';
         if (pathname === '/member-profile') return 'Member Profile';
         if (pathname === '/gl-setup') return 'GL Account Setup';
         if (pathname === '/product-setup') return 'Product Setup';
+        if (pathname === '/type-setup') return 'Type Setup';
+        if (pathname === '/cash-bank-mapping') return 'Cash/Bank Mapping';
+        if (pathname === '/voucher-gl-mapping') return 'Voucher GL Mapping';
+        if (pathname === '/voucher-request') return 'Pending Voucher Requests';
         
         if (pathname.startsWith('/users') || pathname === '/user-management-system') return 'User Management';
         if (pathname.startsWith('/roles')) return 'Role Management';

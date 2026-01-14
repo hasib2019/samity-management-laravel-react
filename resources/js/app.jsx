@@ -17,8 +17,14 @@ import SamityProfile from './pages/Samity/SamityProfile';
 import MemberProfile from './pages/Member/MemberProfile';
 import DepositMoney from './pages/Accounts/DepositMoney';
 import DepositRequestList from './pages/Accounts/DepositRequestList';
+import WithdrawMoney from './pages/Accounts/WithdrawMoney';
+import WithdrawRequestList from './pages/Accounts/WithdrawRequestList';
 import GlAccountSetup from './pages/Setup/GlAccountSetup';
 import ProductSetup from './pages/Setup/ProductSetup';
+import TypeSetup from './pages/Setup/TypeSetup';
+import CashBankMapping from './pages/Setup/CashBankMapping';
+import VoucherGlMapping from './pages/Setup/VoucherGlMapping';
+import VoucherRequestList from './pages/Voucher/VoucherRequestList';
 
 // Layouts
 import DashboardLayout from './layouts/DashboardLayout';
@@ -122,6 +128,22 @@ const App = () => {
                         } 
                     />
                     <Route 
+                        path="/withdraw-money" 
+                        element={
+                            <ProtectedRoute>
+                                <WithdrawMoney />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/withdraw-request" 
+                        element={
+                            <ProtectedRoute>
+                                <WithdrawRequestList />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
                         path="/gl-setup"  
                         element={
                             <ProtectedRoute>
@@ -134,6 +156,38 @@ const App = () => {
                         element={
                             <ProtectedRoute>
                                 <ProductSetup />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/type-setup" 
+                        element={
+                            <ProtectedRoute>
+                                <TypeSetup />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/cash-bank-mapping" 
+                        element={
+                            <ProtectedRoute>
+                                <CashBankMapping />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/voucher-gl-mapping" 
+                        element={
+                            <ProtectedRoute>
+                                <VoucherGlMapping />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/voucher-request" 
+                        element={
+                            <ProtectedRoute>
+                                <VoucherRequestList />
                             </ProtectedRoute>
                         } 
                     />

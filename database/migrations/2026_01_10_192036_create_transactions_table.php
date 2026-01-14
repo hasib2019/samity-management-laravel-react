@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('tran_code')->nullable();
             $table->string('batch_num')->nullable();
             
-            $table->string('tran_type'); // saving_deposit, saving_withdraw, loan_disbursement, etc.
+            $table->string('tran_type'); // Deposit, Withdraw, Loan Disbursement, Loan Repayment, etc.
             $table->date('tran_date');
             
             $table->unsignedBigInteger('glac_id')->nullable();
