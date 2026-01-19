@@ -118,30 +118,6 @@ const Sidebar = ({ menus }) => {
 const TopNavbar = () => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
-    const location = useLocation();
-
-    const getPageTitle = (pathname) => {
-        if (pathname === '/dashboard') return 'Dashboard';
-        if (pathname === '/deposit-request') return 'Pending Deposit Requests';
-        if (pathname === '/deposit-money') return 'Deposit Money';
-        if (pathname === '/withdraw-money') return 'Withdraw Money';
-        if (pathname === '/withdraw-request') return 'Pending Withdraw Requests';
-        if (pathname === '/samity-profile') return 'Samity Profile';
-        if (pathname === '/member-profile') return 'Member Profile';
-        if (pathname === '/gl-setup') return 'GL Account Setup';
-        if (pathname === '/product-setup') return 'Product Setup';
-        if (pathname === '/type-setup') return 'Type Setup';
-        if (pathname === '/cash-bank-mapping') return 'Cash/Bank Mapping';
-        if (pathname === '/voucher-gl-mapping') return 'Voucher GL Mapping';
-        if (pathname === '/voucher-request') return 'Pending Voucher Requests';
-        
-        if (pathname.startsWith('/users') || pathname === '/user-management-system') return 'User Management';
-        if (pathname.startsWith('/roles')) return 'Role Management';
-        if (pathname.startsWith('/permissions')) return 'Permission Management';
-        if (pathname.startsWith('/menu-management')) return 'Menu Management';
-        
-        return 'Dashboard';
-    };
 
     const handleLogout = async () => {
         await logout();
@@ -150,7 +126,7 @@ const TopNavbar = () => {
 
     return (
         <header className="flex justify-between items-center px-6 h-16 bg-white shadow-sm">
-            <h1 className="text-xl font-semibold text-gray-800">{getPageTitle(location.pathname)}</h1>
+            <h1 className="text-xl font-semibold text-gray-800">Dashboard</h1>
             <div className="flex items-center space-x-4">
                 <div className="flex items-center text-sm font-medium text-gray-700">
                     <UserCircle className="mr-2 w-6 h-6 text-gray-400" />

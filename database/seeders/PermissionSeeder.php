@@ -108,51 +108,6 @@ class PermissionSeeder extends Seeder
             }
         }
 
-        // Type Setup Permissions
-        $typeSetupMenu = Menu::where('slug', 'type-setup')->first();
-        if ($typeSetupMenu) {
-            $actions = ['view', 'create', 'edit', 'delete'];
-            foreach ($actions as $action) {
-                Permission::updateOrCreate(
-                    ['slug' => 'type.setup.' . $action],
-                    [
-                        'name' => 'Type Setup ' . ucfirst($action),
-                        'menu_id' => $typeSetupMenu->id,
-                    ]
-                );
-            }
-        }
-
-        // Cash/Bank Mapping Permissions
-        $cashBankMappingMenu = Menu::where('slug', 'cash-bank-mapping')->first();
-        if ($cashBankMappingMenu) {
-            $actions = ['view', 'create', 'edit', 'delete'];
-            foreach ($actions as $action) {
-                Permission::updateOrCreate(
-                    ['slug' => 'cash.bank.mapping.' . $action],
-                    [
-                        'name' => 'Cash/Bank Mapping ' . ucfirst($action),
-                        'menu_id' => $cashBankMappingMenu->id,
-                    ]
-                );
-            }
-        }
-
-        // Voucher GL Mapping Permissions
-        $voucherGlMappingMenu = Menu::where('slug', 'voucher-gl-mapping')->first();
-        if ($voucherGlMappingMenu) {
-            $actions = ['view', 'create', 'edit', 'delete'];
-            foreach ($actions as $action) {
-                Permission::updateOrCreate(
-                    ['slug' => 'voucher.gl.mapping.' . $action],
-                    [
-                        'name' => 'Voucher GL Mapping ' . ucfirst($action),
-                        'menu_id' => $voucherGlMappingMenu->id,
-                    ]
-                );
-            }
-        }
-
         // Deposit Money Permissions
         $depositMoneyMenu = Menu::where('slug', 'deposit-money')->first();
         if ($depositMoneyMenu) {
@@ -178,51 +133,6 @@ class PermissionSeeder extends Seeder
                     [
                         'name' => 'Deposit Request ' . ucfirst($action),
                         'menu_id' => $depositRequestMenu->id,
-                    ]
-                );
-            }
-        }
-
-        // Withdraw Money Permissions
-        $withdrawMoneyMenu = Menu::where('slug', 'withdraw-money')->first();
-        if ($withdrawMoneyMenu) {
-            $actions = ['view', 'create', 'edit', 'delete'];
-            foreach ($actions as $action) {
-                Permission::updateOrCreate(
-                    ['slug' => 'withdraw.money.' . $action],
-                    [
-                        'name' => 'Withdraw Money ' . ucfirst($action),
-                        'menu_id' => $withdrawMoneyMenu->id,
-                    ]
-                );
-            }
-        }
-
-        // Withdraw Request Permissions
-        $withdrawRequestMenu = Menu::where('slug', 'withdraw-request')->first();
-        if ($withdrawRequestMenu) {
-            $actions = ['view', 'create', 'edit', 'delete', 'approve', 'reject'];
-            foreach ($actions as $action) {
-                Permission::updateOrCreate(
-                    ['slug' => 'withdraw.request.' . $action],
-                    [
-                        'name' => 'Withdraw Request ' . ucfirst($action),
-                        'menu_id' => $withdrawRequestMenu->id,
-                    ]
-                );
-            }
-        }
-
-        // Voucher Request Permissions
-        $voucherRequestMenu = Menu::where('slug', 'voucher-request')->first();
-        if ($voucherRequestMenu) {
-            $actions = ['view', 'create', 'edit', 'delete', 'approve', 'reject'];
-            foreach ($actions as $action) {
-                Permission::updateOrCreate(
-                    ['slug' => 'voucher.request.' . $action],
-                    [
-                        'name' => 'Voucher Request ' . ucfirst($action),
-                        'menu_id' => $voucherRequestMenu->id,
                     ]
                 );
             }
