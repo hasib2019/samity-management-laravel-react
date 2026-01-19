@@ -137,5 +137,89 @@ class PermissionSeeder extends Seeder
                 );
             }
         }
+
+        $withdrawMoneyMenu = Menu::where('slug', 'withdraw-money')->first();
+        if ($withdrawMoneyMenu) {
+            $actions = ['view', 'create', 'edit', 'delete'];
+            foreach ($actions as $action) {
+                Permission::updateOrCreate(
+                    ['slug' => 'withdraw.money.' . $action],
+                    [
+                        'name' => 'Withdraw Money ' . ucfirst($action),
+                        'menu_id' => $withdrawMoneyMenu->id,
+                    ]
+                );
+            }
+        }
+
+        $withdrawRequestMenu = Menu::where('slug', 'withdraw-request')->first();
+        if ($withdrawRequestMenu) {
+            $actions = ['view', 'create', 'edit', 'delete', 'approve', 'reject'];
+            foreach ($actions as $action) {
+                Permission::updateOrCreate(
+                    ['slug' => 'withdraw.request.' . $action],
+                    [
+                        'name' => 'Withdraw Request ' . ucfirst($action),
+                        'menu_id' => $withdrawRequestMenu->id,
+                    ]
+                );
+            }
+        }
+
+        $paymentVoucherMenu = Menu::where('slug', 'payment-voucher')->first();
+        if ($paymentVoucherMenu) {
+            $actions = ['view', 'create', 'edit', 'delete'];
+            foreach ($actions as $action) {
+                Permission::updateOrCreate(
+                    ['slug' => 'voucher.payment.' . $action],
+                    [
+                        'name' => 'Payment Voucher ' . ucfirst($action),
+                        'menu_id' => $paymentVoucherMenu->id,
+                    ]
+                );
+            }
+        }
+
+        $receivedVoucherMenu = Menu::where('slug', 'received-voucher')->first();
+        if ($receivedVoucherMenu) {
+            $actions = ['view', 'create', 'edit', 'delete'];
+            foreach ($actions as $action) {
+                Permission::updateOrCreate(
+                    ['slug' => 'voucher.received.' . $action],
+                    [
+                        'name' => 'Receved Voucher ' . ucfirst($action),
+                        'menu_id' => $receivedVoucherMenu->id,
+                    ]
+                );
+            }
+        }
+
+        $contraVoucherMenu = Menu::where('slug', 'contra-voucher')->first();
+        if ($contraVoucherMenu) {
+            $actions = ['view', 'create', 'edit', 'delete'];
+            foreach ($actions as $action) {
+                Permission::updateOrCreate(
+                    ['slug' => 'voucher.contra.' . $action],
+                    [
+                        'name' => 'Contra Voucher ' . ucfirst($action),
+                        'menu_id' => $contraVoucherMenu->id,
+                    ]
+                );
+            }
+        }
+
+        $journalVoucherMenu = Menu::where('slug', 'journal-voucher')->first();
+        if ($journalVoucherMenu) {
+            $actions = ['view', 'create', 'edit', 'delete'];
+            foreach ($actions as $action) {
+                Permission::updateOrCreate(
+                    ['slug' => 'voucher.journal.' . $action],
+                    [
+                        'name' => 'Journal Voucher ' . ucfirst($action),
+                        'menu_id' => $journalVoucherMenu->id,
+                    ]
+                );
+            }
+        }
     }
 }

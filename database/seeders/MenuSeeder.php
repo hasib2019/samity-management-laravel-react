@@ -49,13 +49,27 @@ class MenuSeeder extends Seeder
                 ]
             ],
             [
-                'name' => 'Deposit',
-                'slug' => 'deposit',
-                'icon' => 'wallet', // Assuming 'wallet' icon is available
+                'name' => 'Deposit/Withdraw',
+                'slug' => 'deposit-withdraw',
+                'icon' => 'wallet',
                 'order' => 3,
                 'children' => [
                     ['name' => 'Deposit Money', 'slug' => 'deposit-money', 'icon' => 'banknote', 'order' => 1],
                     ['name' => 'Deposit Request', 'slug' => 'deposit-request', 'icon' => 'file-text', 'order' => 2],
+                    ['name' => 'Withdraw Money', 'slug' => 'withdraw-money', 'icon' => 'banknote', 'order' => 3],
+                    ['name' => 'Withdraw Request', 'slug' => 'withdraw-request', 'icon' => 'file-text', 'order' => 4],
+                ]
+            ],
+            [
+                'name' => 'Voucher Posting',
+                'slug' => 'voucher-posting',
+                'icon' => 'file-text',
+                'order' => 4,
+                'children' => [
+                    ['name' => 'Payment Voucher', 'slug' => 'payment-voucher', 'icon' => 'file-text', 'order' => 1],
+                    ['name' => 'Receved Voucher', 'slug' => 'received-voucher', 'icon' => 'file-text', 'order' => 2],
+                    ['name' => 'Contra Voucher', 'slug' => 'contra-voucher', 'icon' => 'file-text', 'order' => 3],
+                    ['name' => 'Journal Voucher', 'slug' => 'journal-voucher', 'icon' => 'file-text', 'order' => 4],
                 ]
             ],
         ];

@@ -7,7 +7,6 @@ const DepositMoney = () => {
     const [samities, setSamities] = useState([]);
     const [members, setMembers] = useState([]);
     const [accounts, setAccounts] = useState([]);
-    
     const [formData, setFormData] = useState({
         samity_id: '',
         date: new Date().toISOString().split('T')[0],
@@ -46,7 +45,16 @@ const DepositMoney = () => {
     const fetchSamities = async () => {
         try {
             const response = await api.get('/global/samities');
-            setSamities(response.data);
+            console.log('Samities API Response:', response);
+            if (response.data && Array.isArray(response.data)) {
+                setSamities(response.data);
+            } else {
+                console.error('Unexpected samities data format:', response.data);
+                // Fallback if wrapped in data.data
+                if (response.data?.data && Array.isArray(response.data.data)) {
+                     setSamities(response.data.data);
+                }
+            }
         } catch (err) {
             console.error('Error fetching samities', err);
         }

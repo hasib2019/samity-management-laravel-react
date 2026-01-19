@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\MenuController;
 use App\Http\Controllers\Api\SamityProfileController;
 use App\Http\Controllers\Api\MemberInfoController;
+use App\Http\Controllers\Api\GlobalController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login']);
@@ -14,6 +15,9 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    // Global Routes (No specific permission required, just valid token)
+    Route::get('/global/samities', [GlobalController::class, 'samities']);
 
     // User Management
     Route::get('/users', [UserController::class, 'index'])->middleware('permission:user.view');
