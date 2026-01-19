@@ -16,6 +16,9 @@ import MenuList from './pages/Menus/MenuList';
 import SamityProfile from './pages/Samity/SamityProfile';
 import MemberProfile from './pages/Member/MemberProfile';
 import DepositMoney from './pages/Accounts/DepositMoney';
+import WithdrawMoney from './pages/Accounts/WithdrawMoney';
+import DepositRequest from './pages/Accounts/DepositRequest';
+import WithdrawRequest from './pages/Accounts/WithdrawRequest';
 import GlAccountSetup from './pages/Setup/GlAccountSetup';
 import ProductSetup from './pages/Setup/ProductSetup';
 
@@ -109,6 +112,30 @@ const App = () => {
                         element={
                             <ProtectedRoute>
                                 <DepositMoney />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/withdraw-money" 
+                        element={
+                            <ProtectedRoute>
+                                <WithdrawMoney />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/deposit-request" 
+                        element={
+                            <ProtectedRoute>
+                                <DepositRequest />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/withdraw-request" 
+                        element={
+                            <ProtectedRoute>
+                                <WithdrawRequest />
                             </ProtectedRoute>
                         } 
                     />

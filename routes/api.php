@@ -8,6 +8,8 @@ use App\Http\Controllers\Api\MenuController;
 use App\Http\Controllers\Api\SamityProfileController;
 use App\Http\Controllers\Api\MemberInfoController;
 use App\Http\Controllers\Api\GlobalController;
+use App\Http\Controllers\Api\DepositRequestController;
+use App\Http\Controllers\Api\WithdrawRequestController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login']);
@@ -18,6 +20,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Global Routes (No specific permission required, just valid token)
     Route::get('/global/samities', [GlobalController::class, 'samities']);
+    Route::get('/global/members', [GlobalController::class, 'members']);
+    Route::get('/global/members/{id}/accounts', [GlobalController::class, 'accounts']);
 
     // User Management
     Route::get('/users', [UserController::class, 'index'])->middleware('permission:user.view');
@@ -75,4 +79,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/products/{id}', [App\Http\Controllers\Api\ProductController::class, 'show'])->middleware('permission:product.setup.view');
     Route::put('/products/{id}', [App\Http\Controllers\Api\ProductController::class, 'update'])->middleware('permission:product.setup.edit');
     Route::delete('/products/{id}', [App\Http\Controllers\Api\ProductController::class, 'destroy'])->middleware('permission:product.setup.delete');
+
+    // Deposit Requests
+    Route::get('/deposit-requests', [DepositRequestController::class, 'index']);
+    Route::post('/deposit-requests', [DepositRequestController::class, 'store']);
+    Route::get('/deposit-requests/{id}', [DepositRequestController::class, 'show']);
+    Route::put('/deposit-requests/{id}', [DepositRequestController::class, 'update']);
+    Route::delete('/deposit-requests/{id}', [DepositRequestController::class, 'destroy']);
+    // Withdraw Requests
+    Route::get('/withdraw-requests', [WithdrawRequestController::class, 'index']);
+    Route::post('/withdraw-requests', [WithdrawRequestController::class, 'store']);
+    Route::get('/withdraw-requests/{id}', [WithdrawRequestController::class, 'show']);
+    Route::put('/withdraw-requests/{id}', [WithdrawRequestController::class, 'update']);
+    Route::delete('/withdraw-requests/{id}', [WithdrawRequestController::class, 'destroy']);
 });
