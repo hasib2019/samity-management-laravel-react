@@ -107,6 +107,36 @@ class PermissionSeeder extends Seeder
                 );
             }
         }
+        
+        // GL Mapping Permissions
+        $glMappingMenu = Menu::where('slug', 'gl-mapping')->first();
+        if ($glMappingMenu) {
+            $actions = ['view', 'create', 'edit', 'delete'];
+            foreach ($actions as $action) {
+                Permission::updateOrCreate(
+                    ['slug' => 'gl.mapping.' . $action],
+                    [
+                        'name' => 'GL Mapping ' . ucfirst($action),
+                        'menu_id' => $glMappingMenu->id,
+                    ]
+                );
+            }
+        }
+
+        // GL Mapping Type Permissions
+        $glMappingTypeMenu = Menu::where('slug', 'gl-mapping-type')->first();
+        if ($glMappingTypeMenu) {
+            $actions = ['view', 'create', 'edit', 'delete'];
+            foreach ($actions as $action) {
+                Permission::updateOrCreate(
+                    ['slug' => 'gl.mapping.type.' . $action],
+                    [
+                        'name' => 'GL Mapping Type ' . ucfirst($action),
+                        'menu_id' => $glMappingTypeMenu->id,
+                    ]
+                );
+            }
+        }
 
         // Deposit Money Permissions
         $depositMoneyMenu = Menu::where('slug', 'deposit-money')->first();

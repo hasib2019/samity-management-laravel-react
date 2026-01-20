@@ -21,6 +21,12 @@ import DepositRequest from './pages/Accounts/DepositRequest';
 import WithdrawRequest from './pages/Accounts/WithdrawRequest';
 import GlAccountSetup from './pages/Setup/GlAccountSetup';
 import ProductSetup from './pages/Setup/ProductSetup';
+import GlMappingType from './pages/Setup/GlMappingType';
+import GlMapping from './pages/Setup/GlMapping';
+import PaymentVoucher from './pages/Vouchers/PaymentVoucher';
+import ReceivedVoucher from './pages/Vouchers/ReceivedVoucher';
+import ContraVoucher from './pages/Vouchers/ContraVoucher';
+import JournalVoucher from './pages/Vouchers/JournalVoucher';
 
 // Layouts
 import DashboardLayout from './layouts/DashboardLayout';
@@ -152,6 +158,54 @@ const App = () => {
                         element={
                             <ProtectedRoute>
                                 <ProductSetup />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/gl-mapping-type" 
+                        element={
+                            <ProtectedRoute>
+                                <GlMappingType />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/gl-mapping" 
+                        element={
+                            <ProtectedRoute>
+                                <GlMapping />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/payment-voucher" 
+                        element={
+                            <ProtectedRoute>
+                                <PaymentVoucher />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/received-voucher" 
+                        element={
+                            <ProtectedRoute>
+                                <ReceivedVoucher />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/contra-voucher" 
+                        element={
+                            <ProtectedRoute>
+                                <ContraVoucher />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/journal-voucher" 
+                        element={
+                            <ProtectedRoute>
+                                <JournalVoucher />
                             </ProtectedRoute>
                         } 
                     />

@@ -46,6 +46,9 @@ class MenuSeeder extends Seeder
                 'children' => [
                     ['name' => 'Product Setup', 'slug' => 'product-setup', 'icon' => 'package', 'order' => 1],
                     ['name' => 'GL Setup', 'slug' => 'gl-setup', 'icon' => 'book-open', 'order' => 2],
+                    ['name' => 'GL Mapping Type', 'slug' => 'gl-mapping-type', 'icon' => 'git-commit', 'order' => 3],
+                    ['name' => 'GL Mapping', 'slug' => 'gl-mapping', 'icon' => 'git-branch', 'order' => 4],
+                    
                 ]
             ],
             [

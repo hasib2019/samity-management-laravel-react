@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\MemberInfoController;
 use App\Http\Controllers\Api\GlobalController;
 use App\Http\Controllers\Api\DepositRequestController;
 use App\Http\Controllers\Api\WithdrawRequestController;
+use App\Http\Controllers\Api\GlMappingTypeController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login']);
@@ -92,4 +93,25 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/withdraw-requests/{id}', [WithdrawRequestController::class, 'show']);
     Route::put('/withdraw-requests/{id}', [WithdrawRequestController::class, 'update']);
     Route::delete('/withdraw-requests/{id}', [WithdrawRequestController::class, 'destroy']);
+    
+    Route::get('/gl-mapping-types', [GlMappingTypeController::class, 'index']);
+    Route::post('/gl-mapping-types', [GlMappingTypeController::class, 'store']);
+    Route::get('/gl-mapping-types/{id}', [GlMappingTypeController::class, 'show']);
+    Route::put('/gl-mapping-types/{id}', [GlMappingTypeController::class, 'update']);
+    Route::delete('/gl-mapping-types/{id}', [GlMappingTypeController::class, 'destroy']);
+
+    Route::get('/gl-mappings', [App\Http\Controllers\Api\GlMappingController::class, 'index']);
+    Route::post('/gl-mappings', [App\Http\Controllers\Api\GlMappingController::class, 'store']);
+    Route::get('/gl-mappings/{id}', [App\Http\Controllers\Api\GlMappingController::class, 'show']);
+    Route::put('/gl-mappings/{id}', [App\Http\Controllers\Api\GlMappingController::class, 'update']);
+    Route::delete('/gl-mappings/{id}', [App\Http\Controllers\Api\GlMappingController::class, 'destroy']);
+
+    Route::get('/payment-voucher', [App\Http\Controllers\Api\PaymentVoucherController::class, 'index']);
+    Route::post('/payment-voucher', [App\Http\Controllers\Api\PaymentVoucherController::class, 'store']);
+    Route::get('/received-voucher', [App\Http\Controllers\Api\ReceivedVoucherController::class, 'index']);
+    Route::post('/received-voucher', [App\Http\Controllers\Api\ReceivedVoucherController::class, 'store']);
+    Route::get('/contra-voucher', [App\Http\Controllers\Api\ContraVoucherController::class, 'index']);
+    Route::post('/contra-voucher', [App\Http\Controllers\Api\ContraVoucherController::class, 'store']);
+    Route::get('/journal-voucher', [App\Http\Controllers\Api\JournalVoucherController::class, 'index']);
+    Route::post('/journal-voucher', [App\Http\Controllers\Api\JournalVoucherController::class, 'store']);
 });

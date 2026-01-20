@@ -10,6 +10,7 @@ class Transaction extends Model
     protected $fillable = [
         'customer_id',
         'product_id',
+        'samity_id',
         'payment_mode',
         'tran_num',
         'tran_code',
@@ -51,6 +52,11 @@ class Transaction extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class, 'product_id');
+    }
+    
+    public function samity(): BelongsTo
+    {
+        return $this->belongsTo(SamityProfile::class, 'samity_id');
     }
 
     public function creator(): BelongsTo

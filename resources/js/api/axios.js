@@ -1,7 +1,8 @@
 import axios from 'axios';
 
+const base = document.querySelector('meta[name="app-base-url"]')?.content || window.location.origin;
 const api = axios.create({
-    baseURL: '/api',
+    baseURL: new URL('/api', base).toString(),
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
