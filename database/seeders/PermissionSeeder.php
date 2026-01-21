@@ -251,5 +251,19 @@ class PermissionSeeder extends Seeder
                 );
             }
         }
+
+        $loanApplicationMenu = Menu::where('slug', 'loan-application')->first();
+        if ($loanApplicationMenu) {
+            $actions = ['view', 'create', 'edit', 'delete', 'approve', 'reject'];
+            foreach ($actions as $action) {
+                Permission::updateOrCreate(
+                    ['slug' => 'loan.application.' . $action],
+                    [
+                        'name' => 'Loan Application ' . ucfirst($action),
+                        'menu_id' => $loanApplicationMenu->id,
+                    ]
+                );
+            }
+        }
     }
 }

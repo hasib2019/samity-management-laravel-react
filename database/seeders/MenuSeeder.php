@@ -75,6 +75,15 @@ class MenuSeeder extends Seeder
                     ['name' => 'Journal Voucher', 'slug' => 'journal-voucher', 'icon' => 'file-text', 'order' => 4],
                 ]
             ],
+            [
+                'name' => 'Loan Management',
+                'slug' => 'loan-management',
+                'icon' => 'briefcase',
+                'order' => 5,
+                'children' => [
+                    ['name' => 'Loan Application', 'slug' => 'loan-application', 'icon' => 'file-plus', 'order' => 1],
+                ]
+            ],
         ];
 
         foreach ($menus as $menuData) {

@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\GlobalController;
 use App\Http\Controllers\Api\DepositRequestController;
 use App\Http\Controllers\Api\WithdrawRequestController;
 use App\Http\Controllers\Api\GlMappingTypeController;
+use App\Http\Controllers\Api\LoanApplicationController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login']);
@@ -18,6 +19,10 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    // Loan Application
+    Route::apiResource('loan-applications', LoanApplicationController::class);
+    Route::post('loan-applications/{id}/approve', [LoanApplicationController::class, 'approve']);
 
     // Global Routes (No specific permission required, just valid token)
     Route::get('/global/samities', [GlobalController::class, 'samities']);

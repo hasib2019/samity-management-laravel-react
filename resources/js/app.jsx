@@ -27,6 +27,7 @@ import PaymentVoucher from './pages/Vouchers/PaymentVoucher';
 import ReceivedVoucher from './pages/Vouchers/ReceivedVoucher';
 import ContraVoucher from './pages/Vouchers/ContraVoucher';
 import JournalVoucher from './pages/Vouchers/JournalVoucher';
+import LoanApplication from './pages/Loans/LoanApplication';
 
 // Layouts
 import DashboardLayout from './layouts/DashboardLayout';
@@ -174,6 +175,14 @@ const App = () => {
                         element={
                             <ProtectedRoute>
                                 <GlMapping />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/loan-application" 
+                        element={
+                            <ProtectedRoute>
+                                <LoanApplication />
                             </ProtectedRoute>
                         } 
                     />
