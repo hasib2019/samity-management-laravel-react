@@ -1,11 +1,90 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
+import { Combobox } from '@headlessui/react';
 import { 
-    Plus, Edit, Trash2, Search, Save, X
+    Plus, Edit, Trash2, Search, Save, X, Check, ChevronsUpDown
 } from 'lucide-react';
 import { showSuccessToast, showErrorToast } from '../../utils/sweetAlert';
 import Swal from 'sweetalert2';
+
+// Helper component for GL selection
+const GlCombobox = ({ value, onChange, options, label }) => {
+    const [query, setQuery] = useState('');
+    
+    const filteredOptions =
+        query === ''
+            ? options
+            : options.filter((option) =>
+                (option.glac_name.toLowerCase() + option.glac_code.toLowerCase())
+                    .replace(/\s+/g, '')
+                    .includes(query.toLowerCase().replace(/\s+/g, ''))
+            );
+
+    const selectedOption = options.find(o => o.id === value) || null;
+
+    return (
+        <Combobox value={selectedOption} onChange={(val) => onChange(val ? val.id : '')} nullable>
+            <div className="relative mt-1">
+                <label className="block mb-1 text-sm font-medium text-gray-700">{label}</label>
+                <div className="overflow-hidden relative w-full text-left bg-white rounded-lg border border-gray-300 cursor-default focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-teal-300 sm:text-sm">
+                    <Combobox.Input
+                        className="py-2 pr-10 pl-3 w-full text-sm leading-5 text-gray-900 border-none focus:ring-0"
+                        displayValue={(option) => option ? `${option.glac_code} - ${option.glac_name}` : ''}
+                        onChange={(event) => setQuery(event.target.value)}
+                        placeholder="Search GL Account..."
+                    />
+                    <Combobox.Button className="flex absolute inset-y-0 right-0 items-center pr-2">
+                        <ChevronsUpDown
+                            className="w-5 h-5 text-gray-400"
+                            aria-hidden="true"
+                        />
+                    </Combobox.Button>
+                </div>
+                <Combobox.Options className="overflow-auto absolute z-50 py-1 mt-1 w-full max-h-60 text-base bg-white rounded-md ring-1 ring-black ring-opacity-5 shadow-lg focus:outline-none sm:text-sm">
+                    {filteredOptions.length === 0 && query !== '' ? (
+                        <div className="relative px-4 py-2 text-gray-700 cursor-default select-none">
+                            Nothing found.
+                        </div>
+                    ) : (
+                        filteredOptions.map((option) => (
+                            <Combobox.Option
+                                key={option.id}
+                                className={({ active }) =>
+                                    `relative cursor-default select-none py-2 pl-10 pr-4 ${
+                                        active ? 'bg-blue-600 text-white' : 'text-gray-900'
+                                    }`
+                                }
+                                value={option}
+                            >
+                                {({ selected, active }) => (
+                                    <>
+                                        <span
+                                            className={`block truncate ${
+                                                selected ? 'font-medium' : 'font-normal'
+                                            }`}
+                                        >
+                                            {option.glac_code} - {option.glac_name}
+                                        </span>
+                                        {selected ? (
+                                            <span
+                                                className={`absolute inset-y-0 left-0 flex items-center pl-3 ${
+                                                    active ? 'text-white' : 'text-blue-600'
+                                                }`}
+                                            >
+                                                <Check className="w-5 h-5" aria-hidden="true" />
+                                            </span>
+                                        ) : null}
+                                    </>
+                                )}
+                            </Combobox.Option>
+                        ))
+                    )}
+                </Combobox.Options>
+            </div>
+        </Combobox>
+    );
+};
 
 const ProductSetup = () => {
     const { hasPermission } = useAuth();
@@ -22,6 +101,7 @@ const ProductSetup = () => {
         product_name: '',
         product_type: 'saving',
         product_category: 'deposit',
+        rate_type: '',
         min_amount: 0,
         max_amount: 0,
         tenure_required: false,
@@ -87,6 +167,7 @@ const ProductSetup = () => {
             product_name: '',
             product_type: 'saving',
             product_category: 'deposit',
+            rate_type: '',
             min_amount: 0,
             max_amount: 0,
             tenure_required: false,
@@ -337,6 +418,24 @@ const ProductSetup = () => {
                                         <option value="credit">Credit</option>
                                     </select>
                                 </div>
+                                {formData.product_type === 'loan' && (
+                                    <div>
+                                        <label className="block mb-1 text-sm font-medium text-gray-700">Rate Type</label>
+                                        <select
+                                            name="rate_type"
+                                            value={formData.rate_type || ''}
+                                            onChange={handleInputChange}
+                                            className="px-3 py-2 w-full rounded-md border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        >
+                                            <option value="">Select Rate Type</option>
+                                            <option value="fixed">Fixed Rate</option>
+                                            <option value="floating">Floating / Variable Rate</option>
+                                            <option value="flat">Flat Rate</option>
+                                            <option value="reducing">Reducing Balance Rate (Reducing / Declining)</option>
+                                            <option value="interest_free">Interest-Free / Service Charge Rate</option>
+                                        </select>
+                                    </div>
+                                )}
                                 <div>
                                     <label className="block mb-1 text-sm font-medium text-gray-700">Status</label>
                                     <select
@@ -546,84 +645,44 @@ const ProductSetup = () => {
                                 <h3 className="mb-4 text-lg font-medium text-gray-900">GL Account Mapping</h3>
                                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                                     <div>
-                                        <label className="block mb-1 text-sm font-medium text-gray-700">Principal GL</label>
-                                        <select
-                                            name="gl_principal_id"
+                                        <GlCombobox
+                                            label="Principal GL"
                                             value={formData.gl_principal_id}
-                                            onChange={handleInputChange}
-                                            className="px-3 py-2 w-full rounded-md border border-gray-300"
-                                        >
-                                            <option value="">Select GL Account</option>
-                                            {glAccounts.map(gl => (
-                                                <option key={gl.id} value={gl.id}>
-                                                    {gl.glac_code} - {gl.glac_name}
-                                                </option>
-                                            ))}
-                                        </select>
+                                            onChange={(val) => setFormData(prev => ({ ...prev, gl_principal_id: val }))}
+                                            options={glAccounts}
+                                        />
                                     </div>
                                     <div>
-                                        <label className="block mb-1 text-sm font-medium text-gray-700">Profit/Interest GL</label>
-                                        <select
-                                            name="gl_profit_id"
+                                        <GlCombobox
+                                            label="Profit/Interest GL"
                                             value={formData.gl_profit_id}
-                                            onChange={handleInputChange}
-                                            className="px-3 py-2 w-full rounded-md border border-gray-300"
-                                        >
-                                            <option value="">Select GL Account</option>
-                                            {glAccounts.map(gl => (
-                                                <option key={gl.id} value={gl.id}>
-                                                    {gl.glac_code} - {gl.glac_name}
-                                                </option>
-                                            ))}
-                                        </select>
+                                            onChange={(val) => setFormData(prev => ({ ...prev, gl_profit_id: val }))}
+                                            options={glAccounts}
+                                        />
                                     </div>
                                     <div>
-                                        <label className="block mb-1 text-sm font-medium text-gray-700">Penalty GL</label>
-                                        <select
-                                            name="gl_penalty_id"
+                                        <GlCombobox
+                                            label="Penalty GL"
                                             value={formData.gl_penalty_id}
-                                            onChange={handleInputChange}
-                                            className="px-3 py-2 w-full rounded-md border border-gray-300"
-                                        >
-                                            <option value="">Select GL Account</option>
-                                            {glAccounts.map(gl => (
-                                                <option key={gl.id} value={gl.id}>
-                                                    {gl.glac_code} - {gl.glac_name}
-                                                </option>
-                                            ))}
-                                        </select>
+                                            onChange={(val) => setFormData(prev => ({ ...prev, gl_penalty_id: val }))}
+                                            options={glAccounts}
+                                        />
                                     </div>
                                     <div>
-                                        <label className="block mb-1 text-sm font-medium text-gray-700">Income/Liability Cr-GL</label>
-                                        <select
-                                            name="gl_income_id"
+                                        <GlCombobox
+                                            label="Income/Liability Cr-GL"
                                             value={formData.gl_income_id}
-                                            onChange={handleInputChange}
-                                            className="px-3 py-2 w-full rounded-md border border-gray-300"
-                                        >
-                                            <option value="">Select GL Account</option>
-                                            {glAccounts.map(gl => (
-                                                <option key={gl.id} value={gl.id}>
-                                                    {gl.glac_code} - {gl.glac_name}
-                                                </option>
-                                            ))}
-                                        </select>
+                                            onChange={(val) => setFormData(prev => ({ ...prev, gl_income_id: val }))}
+                                            options={glAccounts}
+                                        />
                                     </div>
                                     <div>
-                                        <label className="block mb-1 text-sm font-medium text-gray-700">Asset/Expense Dr-GL</label>
-                                        <select
-                                            name="gl_expense_id"
+                                        <GlCombobox
+                                            label="Asset/Expense Dr-GL"
                                             value={formData.gl_expense_id}
-                                            onChange={handleInputChange}
-                                            className="px-3 py-2 w-full rounded-md border border-gray-300"
-                                        >
-                                            <option value="">Select GL Account</option>
-                                            {glAccounts.map(gl => (
-                                                <option key={gl.id} value={gl.id}>
-                                                    {gl.glac_code} - {gl.glac_name}
-                                                </option>
-                                            ))}
-                                        </select>
+                                            onChange={(val) => setFormData(prev => ({ ...prev, gl_expense_id: val }))}
+                                            options={glAccounts}
+                                        />
                                     </div>
                                 </div>
                             </div>

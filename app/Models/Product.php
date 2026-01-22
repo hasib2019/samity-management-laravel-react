@@ -16,6 +16,7 @@ class Product extends Model
         'product_name',
         'product_type',
         'product_category',
+        'rate_type',
         'min_amount',
         'max_amount',
         'tenure_required',

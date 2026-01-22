@@ -23,6 +23,16 @@ Route::middleware('auth:sanctum')->group(function () {
     // Loan Application
     Route::apiResource('loan-applications', LoanApplicationController::class);
     Route::post('loan-applications/{id}/approve', [LoanApplicationController::class, 'approve']);
+    Route::get('loan-applications/{id}/preview-schedule', [LoanApplicationController::class, 'previewSchedule']);
+
+    // Loan Disbursement
+    Route::get('loan-disbursements', [App\Http\Controllers\Api\LoanDisbursementController::class, 'index'])->middleware('permission:loan.disbursement.view');
+    Route::post('loan-disbursements', [App\Http\Controllers\Api\LoanDisbursementController::class, 'store'])->middleware('permission:loan.disbursement.create');
+
+    // Loan Repayment
+    Route::get('loan-repayments', [App\Http\Controllers\Api\LoanRepaymentController::class, 'index'])->middleware('permission:loan.repayment.view');
+    Route::post('loan-repayments', [App\Http\Controllers\Api\LoanRepaymentController::class, 'store'])->middleware('permission:loan.repayment.create');
+    Route::get('loan-repayments/search', [App\Http\Controllers\Api\LoanRepaymentController::class, 'search'])->middleware('permission:loan.repayment.create');
 
     // Global Routes (No specific permission required, just valid token)
     Route::get('/global/samities', [GlobalController::class, 'samities']);

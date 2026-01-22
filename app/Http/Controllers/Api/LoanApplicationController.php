@@ -35,7 +35,7 @@ class LoanApplicationController extends Controller
 
     public function approve($id)
     {
-        $application = LoanApplication::find($id);
+        $application = LoanApplication::with('product')->find($id);
 
         if (!$application) {
             return response()->json(['message' => 'Application not found'], 404);
@@ -67,26 +67,127 @@ class LoanApplicationController extends Controller
         }
     }
 
+    public function previewSchedule($id)
+    {
+        $application = LoanApplication::with('product')->find($id);
+
+        if (!$application) {
+            return response()->json(['message' => 'Application not found'], 404);
+        }
+
+        $schedule = $this->calculateScheduleData($application);
+
+        return response()->json($schedule);
+    }
+
     private function generateSchedule(LoanApplication $application)
+    {
+        $scheduleData = $this->calculateScheduleData($application);
+
+        foreach ($scheduleData as $item) {
+            LoanRepaymentSchedule::create([
+                'loan_application_id' => $application->id,
+                'installment_no' => $item['installment_no'],
+                'due_date' => $item['due_date'],
+                'principal_amount' => $item['principal_amount'],
+                'interest_amount' => $item['interest_amount'],
+                'total_amount' => $item['total_amount'],
+                'status' => 'pending'
+            ]);
+        }
+    }
+
+    private function calculateScheduleData(LoanApplication $application)
     {
         $principal = $application->amount;
         $rate = $application->interest_rate; // Annual interest rate
         $durationMonths = $application->duration_months;
         $type = $application->installment_type;
+        $rateType = $application->product?->rate_type ?? 'flat'; // Default to flat if not set
 
         // Determine number of installments and frequency
         $numInstallments = 0;
         $frequencyDays = 0;
+        $frequencyPerYear = 0;
 
         if ($type === 'weekly') {
             $numInstallments = $durationMonths * 4; // Approx 4 weeks per month
             $frequencyDays = 7;
+            $frequencyPerYear = 52;
         } else {
             $numInstallments = $durationMonths;
             $frequencyDays = 30; // Approx
+            $frequencyPerYear = 12;
         }
 
-        // Calculate Interest (Flat Rate Method)
+        $startDate = Carbon::parse($application->apply_date)->addDays($frequencyDays);
+        $schedule = [];
+
+        if ($rateType === 'interest_free') {
+            $schedule = $this->calculateInterestFreeSchedule($numInstallments, $principal, $startDate, $frequencyDays);
+        } elseif ($rateType === 'reducing' || $rateType === 'floating') {
+            $schedule = $this->calculateReducingBalanceSchedule($numInstallments, $principal, $rate, $frequencyPerYear, $startDate, $frequencyDays);
+        } else {
+            // Default to Flat Rate (includes 'fixed' and 'flat')
+            $schedule = $this->calculateFlatRateSchedule($numInstallments, $principal, $rate, $durationMonths, $startDate, $frequencyDays);
+        }
+
+        return $schedule;
+    }
+
+    private function calculateInterestFreeSchedule($numInstallments, $principal, $startDate, $frequencyDays)
+    {
+        $installmentPrincipal = $principal / $numInstallments;
+        $schedule = [];
+        
+        for ($i = 1; $i <= $numInstallments; $i++) {
+            $schedule[] = [
+                'installment_no' => $i,
+                'due_date' => $startDate->copy()->addDays(($i - 1) * $frequencyDays),
+                'principal_amount' => round($installmentPrincipal, 2),
+                'interest_amount' => 0,
+                'total_amount' => round($installmentPrincipal, 2),
+            ];
+        }
+        return $schedule;
+    }
+
+    private function calculateReducingBalanceSchedule($numInstallments, $principal, $rate, $frequencyPerYear, $startDate, $frequencyDays)
+    {
+        // Standard EMI Calculation: E = P * r * (1+r)^n / ((1+r)^n - 1)
+        // r = annual rate / frequency per year / 100
+        
+        $r = ($rate / $frequencyPerYear) / 100;
+        $n = $numInstallments;
+        $schedule = [];
+        
+        if ($r == 0) {
+             return $this->calculateInterestFreeSchedule($numInstallments, $principal, $startDate, $frequencyDays);
+        }
+
+        $emi = $principal * $r * pow(1 + $r, $n) / (pow(1 + $r, $n) - 1);
+        
+        $balance = $principal;
+        
+        for ($i = 1; $i <= $numInstallments; $i++) {
+            $interest = $balance * $r;
+            $principalComponent = $emi - $interest;
+            
+            $balance -= $principalComponent;
+            
+            $schedule[] = [
+                'installment_no' => $i,
+                'due_date' => $startDate->copy()->addDays(($i - 1) * $frequencyDays),
+                'principal_amount' => round($principalComponent, 2),
+                'interest_amount' => round($interest, 2),
+                'total_amount' => round($emi, 2),
+            ];
+        }
+        return $schedule;
+    }
+
+    private function calculateFlatRateSchedule($numInstallments, $principal, $rate, $durationMonths, $startDate, $frequencyDays)
+    {
         // Total Interest = Principal * (Rate/100) * (Duration/12)
         $totalInterest = $principal * ($rate / 100) * ($durationMonths / 12);
         $totalAmount = $principal + $totalInterest;
@@ -94,22 +195,19 @@ class LoanApplicationController extends Controller
         $installmentPrincipal = $principal / $numInstallments;
         $installmentInterest = $totalInterest / $numInstallments;
         $installmentTotal = $totalAmount / $numInstallments;
-
-        $startDate = Carbon::parse($application->apply_date)->addDays($frequencyDays); // First installment after one period
+        
+        $schedule = [];
 
         for ($i = 1; $i <= $numInstallments; $i++) {
-            LoanRepaymentSchedule::create([
-                'loan_application_id' => $application->id,
+            $schedule[] = [
                 'installment_no' => $i,
-                'due_date' => $startDate->copy()->addDays(($i - 1) * $frequencyDays), // Use copy to avoid modifying base date incorrectly
+                'due_date' => $startDate->copy()->addDays(($i - 1) * $frequencyDays),
                 'principal_amount' => round($installmentPrincipal, 2),
                 'interest_amount' => round($installmentInterest, 2),
                 'total_amount' => round($installmentTotal, 2),
-                'status' => 'pending'
-            ]);
+            ];
         }
-
-
+        return $schedule;
     }
 
     public function store(Request $request)

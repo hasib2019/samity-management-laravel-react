@@ -32,10 +32,22 @@ const LoanApplication = () => {
     const [filterStatus, setFilterStatus] = useState('pending');
     const [selectedSamity, setSelectedSamity] = useState(null);
 
+    const selectedProduct = products.find(p => p.id == formData.product_id);
+
     useEffect(() => {
         fetchSamities();
         fetchProducts();
     }, []);
+
+    useEffect(() => {
+        if (selectedProduct) {
+            setFormData(prev => ({
+                ...prev,
+                interest_rate: selectedProduct.profit_rate || '',
+                installment_type: selectedProduct.installment_type || 'weekly'
+            }));
+        }
+    }, [formData.product_id, products]);
 
     useEffect(() => {
         if (view === 'list') {
@@ -62,12 +74,10 @@ const LoanApplication = () => {
 
     const fetchProducts = async () => {
         try {
-            // Assuming we can filter products or just get all and filter in frontend
-            // For now fetching all active products
-            const response = await api.get('/products'); // We might need a specific endpoint
-            // Filter only loan products if possible, or just all
-            // Assuming response.data contains list of products
-             if (response.data && Array.isArray(response.data)) {
+            // Fetch only loan products
+            const response = await api.get('/products?type=loan');
+            
+            if (response.data && Array.isArray(response.data)) {
                 setProducts(response.data);
             } else if (response.data?.data) {
                 setProducts(response.data.data);
@@ -165,6 +175,11 @@ const LoanApplication = () => {
 
     // Combobox helper for Member selection
     const [query, setQuery] = useState('');
+    const [previewSchedule, setPreviewSchedule] = useState([]);
+    const [selectedApplicationId, setSelectedApplicationId] = useState(null);
+    const [approving, setApproving] = useState(false);
+    const [previewLoading, setPreviewLoading] = useState(false);
+
     const filteredMembers =
         query === ''
             ? members
@@ -175,26 +190,138 @@ const LoanApplication = () => {
                     .includes(query.toLowerCase().replace(/\s+/g, ''))
             );
 
-    const handleApprove = async (id) => {
-        if (!confirm('Are you sure you want to approve this loan? This will generate the repayment schedule.')) return;
+    const handleApproveClick = async (id) => {
         try {
-            await api.post(`/loan-applications/${id}/approve`);
+            setSelectedApplicationId(id);
+            setPreviewLoading(true);
+            const response = await api.get(`/loan-applications/${id}/preview-schedule`);
+            setPreviewSchedule(response.data);
+            setView('preview');
+        } catch (err) {
+            console.error('Error fetching schedule preview', err);
+            Swal.fire('Error', 'Failed to fetch schedule preview', 'error');
+            setSelectedApplicationId(null);
+        } finally {
+            setPreviewLoading(false);
+        }
+    };
+
+    const confirmApprove = async () => {
+        if (!selectedApplicationId) return;
+        
+        setApproving(true);
+        try {
+            await api.post(`/loan-applications/${selectedApplicationId}/approve`);
             Swal.fire('Success', 'Loan approved and schedule generated', 'success');
+            setView('list');
+            setPreviewSchedule([]);
+            setSelectedApplicationId(null);
             fetchApplications();
         } catch (err) {
             console.error('Error approving loan', err);
             Swal.fire('Error', 'Failed to approve loan', 'error');
+        } finally {
+            setApproving(false);
         }
     };
 
     return (
         <div className="p-6">
-            <div className="flex justify-between items-center mb-6">
+            {view === 'preview' ? (
+                <div className="overflow-hidden p-6 mx-auto max-w-4xl bg-white rounded-lg shadow">
+                    <div className="flex justify-between items-center pb-4 mb-6 border-b">
+                        <h2 className="text-xl font-bold text-gray-800">Repayment Schedule Preview</h2>
+                        <button
+                            onClick={() => { setView('list'); setPreviewSchedule([]); setSelectedApplicationId(null); }}
+                            className="text-gray-500 hover:text-gray-700"
+                        >
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div className="mb-6">
+                        <div className="overflow-x-auto rounded-lg border">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">No</th>
+                                        <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Due Date</th>
+                                        <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Principal</th>
+                                        <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Interest</th>
+                                        <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {previewSchedule.length === 0 ? (
+                                        <tr>
+                                            <td colSpan="5" className="px-6 py-4 text-sm text-center text-gray-500">
+                                                No schedule generated. Please check loan settings.
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        previewSchedule.map((item, index) => (
+                                            <tr key={index}>
+                                                <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">{item.installment_no}</td>
+                                                <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">{new Date(item.due_date).toLocaleDateString()}</td>
+                                                <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">{item.principal_amount}</td>
+                                                <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">{item.interest_amount}</td>
+                                                <td className="px-6 py-4 text-sm font-bold text-gray-900 whitespace-nowrap">{item.total_amount}</td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                                {previewSchedule.length > 0 && (
+                                    <tfoot className="font-bold bg-gray-50">
+                                        <tr>
+                                            <td colSpan="2" className="px-6 py-3 text-xs tracking-wider text-right uppercase">Total</td>
+                                            <td className="px-6 py-3 text-sm text-gray-900">
+                                                {previewSchedule.reduce((sum, item) => sum + Number(item.principal_amount), 0).toFixed(2)}
+                                            </td>
+                                            <td className="px-6 py-3 text-sm text-gray-900">
+                                                {previewSchedule.reduce((sum, item) => sum + Number(item.interest_amount), 0).toFixed(2)}
+                                            </td>
+                                            <td className="px-6 py-3 text-sm text-gray-900">
+                                                {previewSchedule.reduce((sum, item) => sum + Number(item.total_amount), 0).toFixed(2)}
+                                            </td>
+                                        </tr>
+                                    </tfoot>
+                                )}
+                            </table>
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end space-x-4">
+                        <button
+                            type="button"
+                            onClick={() => { setView('list'); setPreviewSchedule([]); setSelectedApplicationId(null); }}
+                            className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            onClick={confirmApprove}
+                            disabled={approving || previewSchedule.length === 0}
+                            className={`px-6 py-2 rounded-md text-white font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                                previewSchedule.length === 0 
+                                    ? 'bg-gray-400 cursor-not-allowed' 
+                                    : 'bg-green-600 hover:bg-green-700 focus:ring-green-500'
+                            }`}
+                        >
+                            {approving ? 'Processing...' : 'Confirm Approval'}
+                        </button>
+                    </div>
+                </div>
+            ) : (
+                <>
+                    <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold text-gray-800">Loan Applications</h1>
                 {view === 'list' && (
                     <button
                         onClick={() => { resetForm(); setView('create'); }}
-                        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                        className="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700"
                     >
                         New Application
                     </button>
@@ -202,7 +329,7 @@ const LoanApplication = () => {
                 {view !== 'list' && (
                     <button
                         onClick={() => setView('list')}
-                        className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                        className="px-4 py-2 text-white bg-gray-500 rounded hover:bg-gray-600"
                     >
                         Back to List
                     </button>
@@ -210,12 +337,12 @@ const LoanApplication = () => {
             </div>
 
             {view === 'list' ? (
-                <div className="bg-white rounded-lg shadow overflow-hidden">
-                    <div className="p-4 border-b border-gray-200 flex gap-4">
+                <div className="overflow-hidden bg-white rounded-lg shadow">
+                    <div className="flex gap-4 p-4 border-b border-gray-200">
                         <select
                             value={filterStatus}
                             onChange={(e) => setFilterStatus(e.target.value)}
-                            className="px-3 py-2 border rounded"
+                            className="px-3 py-2 rounded border"
                         >
                             <option value="">All Status</option>
                             <option value="pending">Pending</option>
@@ -226,7 +353,7 @@ const LoanApplication = () => {
                         <select
                             value={selectedSamity || ''}
                             onChange={(e) => setSelectedSamity(e.target.value)}
-                            className="px-3 py-2 border rounded"
+                            className="px-3 py-2 rounded border"
                         >
                             <option value="">All Samities</option>
                             {samities.map(s => (
@@ -239,13 +366,13 @@ const LoanApplication = () => {
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Member</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Samity</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Duration</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                    <th className="px-6 py-3 text-xs font-medium text-left text-gray-500 uppercase">Date</th>
+                                    <th className="px-6 py-3 text-xs font-medium text-left text-gray-500 uppercase">Member</th>
+                                    <th className="px-6 py-3 text-xs font-medium text-left text-gray-500 uppercase">Samity</th>
+                                    <th className="px-6 py-3 text-xs font-medium text-left text-gray-500 uppercase">Amount</th>
+                                    <th className="px-6 py-3 text-xs font-medium text-left text-gray-500 uppercase">Duration</th>
+                                    <th className="px-6 py-3 text-xs font-medium text-left text-gray-500 uppercase">Status</th>
+                                    <th className="px-6 py-3 text-xs font-medium text-left text-gray-500 uppercase">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
@@ -256,14 +383,14 @@ const LoanApplication = () => {
                                 ) : (
                                     applications.map(app => (
                                         <tr key={app.id}>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{app.apply_date}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">{app.apply_date}</td>
+                                            <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
                                                 {app.member?.member_name} <br/>
-                                                <span className="text-gray-500 text-xs">{app.member?.member_code}</span>
+                                                <span className="text-xs text-gray-500">{app.member?.member_code}</span>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{app.samity?.samity_name}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{app.amount}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{app.duration_months} M</td>
+                                            <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">{app.samity?.samity_name}</td>
+                                            <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">{app.amount}</td>
+                                            <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{app.duration_months} M</td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
                                                     ${app.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
@@ -272,11 +399,17 @@ const LoanApplication = () => {
                                                     {app.status}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                            <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
                                                 {app.status === 'pending' && (
                                                     <>
-                                                        <button onClick={() => handleApprove(app.id)} className="text-green-600 hover:text-green-900 mr-3">Approve</button>
-                                                        <button onClick={() => handleEdit(app)} className="text-indigo-600 hover:text-indigo-900 mr-3">Edit</button>
+                                                        <button 
+                                                            onClick={() => handleApproveClick(app.id)} 
+                                                            disabled={previewLoading}
+                                                            className={`text-green-600 hover:text-green-900 mr-3 ${previewLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                        >
+                                                            {previewLoading && selectedApplicationId === app.id ? 'Loading...' : 'Approve'}
+                                                        </button>
+                                                        <button onClick={() => handleEdit(app)} className="mr-3 text-indigo-600 hover:text-indigo-900">Edit</button>
                                                         <button onClick={() => handleDelete(app.id)} className="text-red-600 hover:text-red-900">Delete</button>
                                                     </>
                                                 )}
@@ -289,16 +422,16 @@ const LoanApplication = () => {
                     </div>
                 </div>
             ) : (
-                <div className="bg-white rounded-lg shadow p-6 max-w-4xl mx-auto">
+                <div className="p-6 mx-auto max-w-4xl bg-white rounded-lg shadow">
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                             {/* Samity Selection */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Samity</label>
+                                <label className="block mb-1 text-sm font-medium text-gray-700">Samity</label>
                                 <select
                                     value={formData.samity_id}
                                     onChange={(e) => setFormData({ ...formData, samity_id: e.target.value })}
-                                    className="w-full px-3 py-2 border rounded focus:ring-blue-500 focus:border-blue-500"
+                                    className="px-3 py-2 w-full rounded border focus:ring-blue-500 focus:border-blue-500"
                                     required
                                 >
                                     <option value="">Select Samity</option>
@@ -310,24 +443,24 @@ const LoanApplication = () => {
 
                             {/* Apply Date */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Apply Date</label>
+                                <label className="block mb-1 text-sm font-medium text-gray-700">Apply Date</label>
                                 <input
                                     type="date"
                                     value={formData.apply_date}
                                     onChange={(e) => setFormData({ ...formData, apply_date: e.target.value })}
-                                    className="w-full px-3 py-2 border rounded focus:ring-blue-500 focus:border-blue-500"
+                                    className="px-3 py-2 w-full rounded border focus:ring-blue-500 focus:border-blue-500"
                                     required
                                 />
                             </div>
 
                             {/* Member Selection (Combobox) */}
                             <div className="col-span-2">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Member</label>
+                                <label className="block mb-1 text-sm font-medium text-gray-700">Member</label>
                                 <Combobox value={formData.member_id} onChange={(value) => setFormData({ ...formData, member_id: value })}>
                                     <div className="relative mt-1">
-                                        <div className="relative w-full cursor-default overflow-hidden rounded-lg bg-white text-left border focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-teal-300 sm:text-sm">
+                                        <div className="overflow-hidden relative w-full text-left bg-white rounded-lg border cursor-default focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-teal-300 sm:text-sm">
                                             <Combobox.Input
-                                                className="w-full border-none py-2 pl-3 pr-10 text-sm leading-5 text-gray-900 focus:ring-0"
+                                                className="py-2 pr-10 pl-3 w-full text-sm leading-5 text-gray-900 border-none focus:ring-0"
                                                 displayValue={(id) => {
                                                     const m = members.find(m => m.id === id);
                                                     return m ? `${m.member_name} - ${m.member_code}` : '';
@@ -335,13 +468,13 @@ const LoanApplication = () => {
                                                 onChange={(event) => setQuery(event.target.value)}
                                                 placeholder="Search Member..."
                                             />
-                                            <Combobox.Button className="absolute inset-y-0 right-0 flex items-center pr-2">
-                                                <ChevronsUpDown className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                                            <Combobox.Button className="flex absolute inset-y-0 right-0 items-center pr-2">
+                                                <ChevronsUpDown className="w-5 h-5 text-gray-400" aria-hidden="true" />
                                             </Combobox.Button>
                                         </div>
-                                        <Combobox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm z-10">
+                                        <Combobox.Options className="overflow-auto absolute z-10 py-1 mt-1 w-full max-h-60 text-base bg-white rounded-md ring-1 ring-black ring-opacity-5 shadow-lg focus:outline-none sm:text-sm">
                                             {filteredMembers.length === 0 && query !== '' ? (
-                                                <div className="relative cursor-default select-none py-2 px-4 text-gray-700">
+                                                <div className="relative px-4 py-2 text-gray-700 cursor-default select-none">
                                                     Nothing found.
                                                 </div>
                                             ) : (
@@ -362,7 +495,7 @@ const LoanApplication = () => {
                                                                 </span>
                                                                 {selected ? (
                                                                     <span className={`absolute inset-y-0 left-0 flex items-center pl-3 ${active ? 'text-white' : 'text-blue-600'}`}>
-                                                                        <Check className="h-5 w-5" aria-hidden="true" />
+                                                                        <Check className="w-5 h-5" aria-hidden="true" />
                                                                     </span>
                                                                 ) : null}
                                                             </>
@@ -377,11 +510,11 @@ const LoanApplication = () => {
 
                             {/* Product Selection */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Product</label>
+                                <label className="block mb-1 text-sm font-medium text-gray-700">Product</label>
                                 <select
                                     value={formData.product_id}
                                     onChange={(e) => setFormData({ ...formData, product_id: e.target.value })}
-                                    className="w-full px-3 py-2 border rounded focus:ring-blue-500 focus:border-blue-500"
+                                    className="px-3 py-2 w-full rounded border focus:ring-blue-500 focus:border-blue-500"
                                     required
                                 >
                                     <option value="">Select Product</option>
@@ -393,52 +526,71 @@ const LoanApplication = () => {
 
                             {/* Amount */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+                                <label className="block mb-1 text-sm font-medium text-gray-700">Amount</label>
                                 <input
                                     type="number"
                                     value={formData.amount}
-                                    onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                                    className="w-full px-3 py-2 border rounded focus:ring-blue-500 focus:border-blue-500"
+                                    onChange={(e) => {
+                                        const val = parseFloat(e.target.value);
+                                        const max = selectedProduct?.max_amount;
+                                        if (max && val > max) return; // Prevent typing more than max
+                                        setFormData({ ...formData, amount: e.target.value });
+                                    }}
+                                    className="px-3 py-2 w-full rounded border focus:ring-blue-500 focus:border-blue-500"
                                     required
-                                    min="1"
+                                    min={selectedProduct?.min_amount || "1"}
+                                    max={selectedProduct?.max_amount}
                                 />
+                                {selectedProduct && (
+                                    <p className="mt-1 text-xs text-gray-500">
+                                        Min: {selectedProduct.min_amount} - Max: {selectedProduct.max_amount}
+                                    </p>
+                                )}
                             </div>
 
                             {/* Duration */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Duration (Months)</label>
+                                <label className="block mb-1 text-sm font-medium text-gray-700">Duration (Months)</label>
                                 <input
                                     type="number"
                                     value={formData.duration_months}
                                     onChange={(e) => setFormData({ ...formData, duration_months: e.target.value })}
-                                    className="w-full px-3 py-2 border rounded focus:ring-blue-500 focus:border-blue-500"
+                                    className="px-3 py-2 w-full rounded border focus:ring-blue-500 focus:border-blue-500"
                                     required
-                                    min="1"
+                                    min={selectedProduct?.min_tenure_month || "1"}
+                                    max={selectedProduct?.max_tenure_month}
                                 />
+                                {selectedProduct && (
+                                    <p className="mt-1 text-xs text-gray-500">
+                                        Min: {selectedProduct.min_tenure_month} - Max: {selectedProduct.max_tenure_month} Months
+                                    </p>
+                                )}
                             </div>
 
                             {/* Interest Rate */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Interest Rate (%)</label>
+                                <label className="block mb-1 text-sm font-medium text-gray-700">Interest Rate (%)</label>
                                 <input
                                     type="number"
                                     value={formData.interest_rate}
                                     onChange={(e) => setFormData({ ...formData, interest_rate: e.target.value })}
-                                    className="w-full px-3 py-2 border rounded focus:ring-blue-500 focus:border-blue-500"
+                                    className={`w-full px-3 py-2 border rounded focus:ring-blue-500 focus:border-blue-500 ${selectedProduct ? 'bg-gray-100' : ''}`}
                                     required
                                     min="0"
                                     step="0.01"
+                                    readOnly={!!selectedProduct}
                                 />
                             </div>
 
                             {/* Installment Type */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Installment Type</label>
+                                <label className="block mb-1 text-sm font-medium text-gray-700">Installment Type</label>
                                 <select
                                     value={formData.installment_type}
                                     onChange={(e) => setFormData({ ...formData, installment_type: e.target.value })}
-                                    className="w-full px-3 py-2 border rounded focus:ring-blue-500 focus:border-blue-500"
+                                    className={`w-full px-3 py-2 border rounded focus:ring-blue-500 focus:border-blue-500 ${selectedProduct ? 'bg-gray-100' : ''}`}
                                     required
+                                    disabled={!!selectedProduct}
                                 >
                                     <option value="weekly">Weekly</option>
                                     <option value="monthly">Monthly</option>
@@ -447,27 +599,27 @@ const LoanApplication = () => {
 
                             {/* Purpose */}
                             <div className="col-span-2">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Purpose</label>
+                                <label className="block mb-1 text-sm font-medium text-gray-700">Purpose</label>
                                 <textarea
                                     value={formData.purpose}
                                     onChange={(e) => setFormData({ ...formData, purpose: e.target.value })}
-                                    className="w-full px-3 py-2 border rounded focus:ring-blue-500 focus:border-blue-500"
+                                    className="px-3 py-2 w-full rounded border focus:ring-blue-500 focus:border-blue-500"
                                     rows="3"
                                 ></textarea>
                             </div>
                         </div>
 
-                        <div className="flex justify-end gap-4 mt-6">
+                        <div className="flex gap-4 justify-end mt-6">
                             <button
                                 type="button"
                                 onClick={() => setView('list')}
-                                className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50"
+                                className="px-4 py-2 text-gray-700 rounded border border-gray-300 hover:bg-gray-50"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="submit"
-                                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                                className="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700"
                             >
                                 Submit Application
                             </button>
@@ -475,6 +627,8 @@ const LoanApplication = () => {
                     </form>
                 </div>
             )}
+            </>
+        )}
         </div>
     );
 };

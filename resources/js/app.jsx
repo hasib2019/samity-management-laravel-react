@@ -28,6 +28,8 @@ import ReceivedVoucher from './pages/Vouchers/ReceivedVoucher';
 import ContraVoucher from './pages/Vouchers/ContraVoucher';
 import JournalVoucher from './pages/Vouchers/JournalVoucher';
 import LoanApplication from './pages/Loans/LoanApplication';
+import LoanRepayment from './pages/Loans/LoanRepayment';
+import LoanDisbursement from './pages/Loans/LoanDisbursement';
 
 // Layouts
 import DashboardLayout from './layouts/DashboardLayout';
@@ -183,6 +185,22 @@ const App = () => {
                         element={
                             <ProtectedRoute>
                                 <LoanApplication />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/loan-disbursement" 
+                        element={
+                            <ProtectedRoute>
+                                <LoanDisbursement />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/loan-repayment" 
+                        element={
+                            <ProtectedRoute>
+                                <LoanRepayment />
                             </ProtectedRoute>
                         } 
                     />

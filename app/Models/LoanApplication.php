@@ -21,6 +21,7 @@ class LoanApplication extends Model
         'apply_date',
         'purpose',
         'status',
+        'disbursed_date',
         'remarks',
         'created_by',
         'updated_by'
@@ -28,6 +29,7 @@ class LoanApplication extends Model
 
     protected $casts = [
         'apply_date' => 'date',
+        'disbursed_date' => 'date',
         'amount' => 'decimal:2',
         'interest_rate' => 'decimal:2',
     ];

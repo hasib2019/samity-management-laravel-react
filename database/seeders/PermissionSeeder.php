@@ -265,5 +265,33 @@ class PermissionSeeder extends Seeder
                 );
             }
         }
+
+        $loanRepaymentMenu = Menu::where('slug', 'loan-repayment')->first();
+        if ($loanRepaymentMenu) {
+            $actions = ['view', 'create', 'edit', 'delete'];
+            foreach ($actions as $action) {
+                Permission::updateOrCreate(
+                    ['slug' => 'loan.repayment.' . $action],
+                    [
+                        'name' => 'Loan Repayment ' . ucfirst($action),
+                        'menu_id' => $loanRepaymentMenu->id,
+                    ]
+                );
+            }
+        }
+
+        $loanDisbursementMenu = Menu::where('slug', 'loan-disbursement')->first();
+        if ($loanDisbursementMenu) {
+            $actions = ['view', 'create', 'edit', 'delete'];
+            foreach ($actions as $action) {
+                Permission::updateOrCreate(
+                    ['slug' => 'loan.disbursement.' . $action],
+                    [
+                        'name' => 'Loan Disbursement ' . ucfirst($action),
+                        'menu_id' => $loanDisbursementMenu->id,
+                    ]
+                );
+            }
+        }
     }
 }
