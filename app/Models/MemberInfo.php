@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\Auditable;
 
 class MemberInfo extends Model
 {
+    use Auditable;
     protected $fillable = [
         'member_code',
         'occupation_id',

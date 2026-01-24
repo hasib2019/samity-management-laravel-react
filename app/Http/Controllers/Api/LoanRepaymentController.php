@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\LoanApplication;
 use App\Models\LoanRepaymentSchedule;
+use App\Models\LoanAccount;
 use App\Models\Transaction;
 use App\Models\GlMstMapping;
 use App\Models\MemberInfo;
@@ -47,33 +48,51 @@ class LoanRepaymentController extends Controller
 
         $term = $request->search_term;
 
-        // Find member first
-        $member = MemberInfo::where('member_code', $term)->first();
-        
-        $query = LoanApplication::with(['member', 'product', 'samity'])
-            ->where('status', 'disbursed') // Only active/disbursed loans
-            ->where(function($q) use ($term, $member) {
-                if ($member) {
-                    $q->where('member_id', $member->id);
-                } else {
-                    $q->where('id', $term); // Assume term is loan ID if not member code
-                }
-            });
+        // Try to find by Account No first (LoanAccount)
+        $account = LoanAccount::with(['loanApplication.member', 'loanApplication.product', 'loanApplication.samity'])
+            ->where('account_no', $term)
+            ->first();
 
-        $loans = $query->get();
+        if ($account) {
+            $loans = collect([$account->loanApplication]);
+        } else {
+            // Find member first
+            $member = MemberInfo::where('member_code', $term)->first();
+            
+            $query = LoanApplication::with(['member', 'product', 'samity'])
+                ->where('status', 'disbursed') // Only active/disbursed loans
+                ->where(function($q) use ($term, $member) {
+                    if ($member) {
+                        $q->where('member_id', $member->id);
+                    } else {
+                        $q->where('id', $term); // Assume term is loan ID if not member code
+                    }
+                });
 
-        // Attach unpaid schedules
+            $loans = $query->get();
+        }
+
+        // Attach unpaid schedules and Balance info
         foreach ($loans as $loan) {
             $loan->schedules = LoanRepaymentSchedule::where('loan_application_id', $loan->id)
                 ->where('status', '!=', 'paid')
                 ->orderBy('due_date', 'asc')
                 ->get();
             
-            // Calculate total due
-            $loan->total_due = $loan->schedules->sum('total_amount');
-            $loan->total_paid = LoanRepaymentSchedule::where('loan_application_id', $loan->id)
-                ->where('status', 'paid')
-                ->sum('total_amount');
+            // Check if LoanAccount exists for accurate balance
+            $loanAcc = LoanAccount::where('loan_application_id', $loan->id)->first();
+            
+            if ($loanAcc) {
+                $loan->total_due = $loanAcc->current_balance;
+                $loan->total_paid = $loanAcc->total_paid;
+                $loan->account_no = $loanAcc->account_no;
+            } else {
+                // Fallback to calculation
+                $loan->total_due = $loan->schedules->sum('total_amount');
+                $loan->total_paid = LoanRepaymentSchedule::where('loan_application_id', $loan->id)
+                    ->where('status', 'paid')
+                    ->sum('total_amount');
+            }
         }
 
         return response()->json($loans);
@@ -165,6 +184,22 @@ class LoanRepaymentController extends Controller
                 $schedule->save();
 
                 $remainingAmount -= $payForThisSchedule;
+            }
+
+            // Update LoanAccount Balance
+            $loanAccount = LoanAccount::where('loan_application_id', $loan->id)->first();
+            if ($loanAccount) {
+                $loanAccount->total_paid += ($amount - $remainingAmount); // Total actual paid in this session
+                $loanAccount->principal_paid += $principalPaid;
+                $loanAccount->interest_paid += $interestPaid;
+                $loanAccount->current_balance -= ($amount - $remainingAmount);
+                
+                if ($loanAccount->current_balance <= 0) {
+                    $loanAccount->status = 'closed';
+                    $loanAccount->closed_date = $request->tran_date;
+                }
+                
+                $loanAccount->save();
             }
 
             // If we have remaining amount, it might be advance payment or error.

@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Models\SavingsAccount;
 use App\Models\Transaction;
+use App\Models\MemberInfo;
 
 class DepositRequestController extends Controller
 {
@@ -147,6 +148,9 @@ class DepositRequestController extends Controller
     {
         $savingsAccount = SavingsAccount::with('product')->find($depositRequest->savings_account_id);
         $product = $savingsAccount->product;
+        
+        // Get Member to fetch samity_id
+        $member = MemberInfo::find($depositRequest->member_id);
 
         if (!$product || !$product->gl_income_id || !$product->gl_expense_id) {
             throw new \Exception('Product GL Mapping (Income/Expense) is missing.');
@@ -159,6 +163,7 @@ class DepositRequestController extends Controller
         } while (Transaction::where('batch_num', $batchNum)->exists());
 
         $commonData = [
+            'samity_id' => $member ? $member->samity_id : null,
             'customer_id' => $savingsAccount->id,
             'product_id' => $product->id,
             'payment_mode' => 'cash',

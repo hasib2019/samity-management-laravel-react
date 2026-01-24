@@ -7,7 +7,6 @@ use App\Models\Menu;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
-use App\Models\AuditLog;
 use App\Models\Permission;
 use Illuminate\Support\Facades\DB;
 
@@ -49,8 +48,6 @@ class MenuController extends Controller
                 'menu_id' => $menu->id,
             ]);
 
-            $this->logAudit('create', $menu, null, $menu->toArray());
-
             return response()->json($menu->load('permissions'), 201);
         });
     }
@@ -76,32 +73,13 @@ class MenuController extends Controller
             'is_hidden' => $request->is_hidden ?? $menu->is_hidden,
         ]);
 
-        $this->logAudit('update', $menu, $oldValues, $menu->toArray());
-
         return response()->json($menu);
     }
 
     public function destroy(Menu $menu)
     {
-        $oldValues = $menu->toArray();
         $menu->delete();
         
-        $this->logAudit('delete', $menu, $oldValues, null);
-        
         return response()->json(['message' => 'Menu deleted successfully']);
-    }
-
-    protected function logAudit($action, $model, $oldValues, $newValues)
-    {
-        AuditLog::create([
-            'user_id' => auth()->id(),
-            'action' => $action,
-            'auditable_type' => get_class($model),
-            'auditable_id' => $model->id,
-            'old_values' => $oldValues,
-            'new_values' => $newValues,
-            'ip_address' => request()->ip(),
-            'user_agent' => request()->userAgent(),
-        ]);
     }
 }

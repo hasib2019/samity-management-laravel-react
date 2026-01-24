@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\Auditable;
 
 class SamityProfile extends Model
 {
+    use Auditable;
     protected $fillable = [
         'samity_name',
         'samity_code',

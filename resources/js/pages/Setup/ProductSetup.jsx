@@ -119,6 +119,8 @@ const ProductSetup = () => {
         penalty_applicable: false,
         penalty_rate: '',
         gl_principal_id: '',
+        gl_loan_outstanding_id: '',
+        gl_loan_disbursement_id: '',
         gl_profit_id: '',
         gl_penalty_id: '',
         gl_income_id: '',
@@ -185,6 +187,8 @@ const ProductSetup = () => {
             penalty_applicable: false,
             penalty_rate: '',
             gl_principal_id: '',
+            gl_loan_outstanding_id: '',
+            gl_loan_disbursement_id: '',
             gl_profit_id: '',
             gl_penalty_id: '',
             gl_income_id: '',
@@ -215,6 +219,8 @@ const ProductSetup = () => {
             installment_amount: product.installment_amount || '',
             penalty_rate: product.penalty_rate || '',
             gl_principal_id: product.gl_principal_id || '',
+            gl_loan_outstanding_id: product.gl_loan_outstanding_id || '',
+            gl_loan_disbursement_id: product.gl_loan_disbursement_id || '',
             gl_profit_id: product.gl_profit_id || '',
             gl_penalty_id: product.gl_penalty_id || '',
             gl_income_id: product.gl_income_id || '',
@@ -649,6 +655,22 @@ const ProductSetup = () => {
                                             label="Principal GL"
                                             value={formData.gl_principal_id}
                                             onChange={(val) => setFormData(prev => ({ ...prev, gl_principal_id: val }))}
+                                            options={glAccounts}
+                                        />
+                                    </div>
+                                    <div>
+                                        <GlCombobox
+                                            label="Loan Outstanding GL (Dr GL)"
+                                            value={formData.gl_loan_outstanding_id}
+                                            onChange={(val) => setFormData(prev => ({ ...prev, gl_loan_outstanding_id: val }))}
+                                            options={glAccounts}
+                                        />
+                                    </div>
+                                    <div>
+                                        <GlCombobox
+                                            label="Loan Disbursement GL (Cr GL)"
+                                            value={formData.gl_loan_disbursement_id}
+                                            onChange={(val) => setFormData(prev => ({ ...prev, gl_loan_disbursement_id: val }))}
                                             options={glAccounts}
                                         />
                                     </div>

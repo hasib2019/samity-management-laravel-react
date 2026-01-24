@@ -31,6 +31,18 @@ import LoanApplication from './pages/Loans/LoanApplication';
 import LoanRepayment from './pages/Loans/LoanRepayment';
 import LoanDisbursement from './pages/Loans/LoanDisbursement';
 
+// Reports
+import AccountStatement from './pages/Reports/AccountStatement';
+import AccountBalance from './pages/Reports/AccountBalance';
+import LoanReport from './pages/Reports/LoanReport';
+import LoanDueReport from './pages/Reports/LoanDueReport';
+import TransactionReport from './pages/Reports/TransactionReport';
+import ExpenseReport from './pages/Reports/ExpenseReport';
+import RevenueReport from './pages/Reports/RevenueReport';
+import BalanceSheet from './pages/Reports/BalanceSheet';
+import CashFlow from './pages/Reports/CashFlow';
+import TrialBalance from './pages/Reports/TrialBalance';
+
 // Layouts
 import DashboardLayout from './layouts/DashboardLayout';
 
@@ -237,6 +249,18 @@ const App = () => {
                         } 
                     />
                     {/* Removed routes for Accounts & SavingsProduct */}
+                    {/* Reports Routes */}
+                    <Route path="/account-statement" element={<ProtectedRoute><AccountStatement /></ProtectedRoute>} />
+                    <Route path="/account-balance" element={<ProtectedRoute><AccountBalance /></ProtectedRoute>} />
+                    <Route path="/loan-report" element={<ProtectedRoute><LoanReport /></ProtectedRoute>} />
+                    <Route path="/loan-due-report" element={<ProtectedRoute><LoanDueReport /></ProtectedRoute>} />
+                    <Route path="/transaction-report" element={<ProtectedRoute><TransactionReport /></ProtectedRoute>} />
+                    <Route path="/expense-report" element={<ProtectedRoute><ExpenseReport /></ProtectedRoute>} />
+                    <Route path="/revenue-report" element={<ProtectedRoute><RevenueReport /></ProtectedRoute>} />
+                    <Route path="/balance-sheet" element={<ProtectedRoute><BalanceSheet /></ProtectedRoute>} />
+                    <Route path="/cash-flow" element={<ProtectedRoute><CashFlow /></ProtectedRoute>} />
+                    <Route path="/trial-balance" element={<ProtectedRoute><TrialBalance /></ProtectedRoute>} />
+
                     <Route path="/" element={<Navigate to="/dashboard" />} />
                 </Routes>
             </BrowserRouter>

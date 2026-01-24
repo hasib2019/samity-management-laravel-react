@@ -129,4 +129,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/contra-voucher', [App\Http\Controllers\Api\ContraVoucherController::class, 'store']);
     Route::get('/journal-voucher', [App\Http\Controllers\Api\JournalVoucherController::class, 'index']);
     Route::post('/journal-voucher', [App\Http\Controllers\Api\JournalVoucherController::class, 'store']);
+    
+    // Reports
+    Route::get('/reports/trial-balance', [App\Http\Controllers\Api\ReportController::class, 'trialBalance']);
+    Route::get('/reports/balance-sheet', [App\Http\Controllers\Api\ReportController::class, 'balanceSheet']);
 });

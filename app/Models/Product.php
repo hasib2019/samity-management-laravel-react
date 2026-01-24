@@ -34,6 +34,8 @@ class Product extends Model
         'penalty_applicable',
         'penalty_rate',
         'gl_principal_id',
+        'gl_loan_outstanding_id',
+        'gl_loan_disbursement_id',
         'gl_profit_id',
         'gl_penalty_id',
         'gl_income_id',
@@ -57,6 +59,8 @@ class Product extends Model
 
     // Relationships
     public function glPrincipal() { return $this->belongsTo(GlAccount::class, 'gl_principal_id'); }
+    public function glLoanOutstanding() { return $this->belongsTo(GlAccount::class, 'gl_loan_outstanding_id'); }
+    public function glLoanDisbursement() { return $this->belongsTo(GlAccount::class, 'gl_loan_disbursement_id'); }
     public function glProfit() { return $this->belongsTo(GlAccount::class, 'gl_profit_id'); }
     public function glPenalty() { return $this->belongsTo(GlAccount::class, 'gl_penalty_id'); }
     public function glIncome() { return $this->belongsTo(GlAccount::class, 'gl_income_id'); }

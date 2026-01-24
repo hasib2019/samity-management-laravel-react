@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Models\SavingsAccount;
 use App\Models\Transaction;
+use App\Models\MemberInfo;
 
 class WithdrawRequestController extends Controller
 {
@@ -151,6 +152,9 @@ class WithdrawRequestController extends Controller
         $savingsAccount = SavingsAccount::with('product')->find($withdrawRequest->savings_account_id);
         $product = $savingsAccount->product;
 
+        // Get Member to fetch samity_id
+        $member = MemberInfo::find($withdrawRequest->member_id);
+
         if (!$product || !$product->gl_income_id || !$product->gl_expense_id) {
             throw new \Exception('Product GL Mapping (Income/Expense) is missing.');
         }
@@ -167,6 +171,7 @@ class WithdrawRequestController extends Controller
         } while (Transaction::where('batch_num', $batchNum)->exists());
 
         $commonData = [
+            'samity_id' => $member ? $member->samity_id : null,
             'customer_id' => $savingsAccount->id,
             'product_id' => $product->id,
             'payment_mode' => 'cash',
