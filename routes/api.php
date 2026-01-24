@@ -133,4 +133,12 @@ Route::middleware('auth:sanctum')->group(function () {
     // Reports
     Route::get('/reports/trial-balance', [App\Http\Controllers\Api\ReportController::class, 'trialBalance']);
     Route::get('/reports/balance-sheet', [App\Http\Controllers\Api\ReportController::class, 'balanceSheet']);
+    Route::get('/reports/cash-flow', [App\Http\Controllers\Api\ReportController::class, 'cashFlow']);
+    Route::get('/reports/account-statement', [App\Http\Controllers\Api\ReportController::class, 'accountStatement']);
+    Route::get('/reports/account-balance', [App\Http\Controllers\Api\ReportController::class, 'accountBalance']);
+    Route::get('/reports/loan-report', [App\Http\Controllers\Api\ReportController::class, 'loanReport']);
+    Route::get('/reports/loan-due-report', [App\Http\Controllers\Api\ReportController::class, 'loanDueReport']);
+    Route::get('/reports/transaction-report', [App\Http\Controllers\Api\ReportController::class, 'transactionReport']);
+    Route::get('/reports/expense-report', [App\Http\Controllers\Api\ReportController::class, 'expenseReport']);
+    Route::get('/reports/revenue-report', [App\Http\Controllers\Api\ReportController::class, 'revenueReport']);
 });

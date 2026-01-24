@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\SamityProfile;
 use App\Models\MemberInfo;
 use App\Models\SavingsAccount;
+use App\Models\LoanAccount;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -31,7 +32,21 @@ class GlobalController extends Controller
 
     public function accounts($memberId)
     {
-        $accounts = SavingsAccount::with('product')->where('member_id', $memberId)->get();
-        return response()->json($accounts);
+        $savings = SavingsAccount::with('product')->where('member_id', $memberId)->get()->map(function($acc) {
+            $acc->type = 'savings';
+            return $acc;
+        });
+
+        $loans = LoanAccount::with(['loanApplication.product'])->where('member_id', $memberId)->get()->map(function($acc) {
+            $acc->type = 'loan';
+            // Normalize structure
+            $acc->product = $acc->loanApplication->product;
+            return $acc;
+        });
+
+        return response()->json([
+            'savings' => $savings,
+            'loans' => $loans
+        ]);
     }
 }
