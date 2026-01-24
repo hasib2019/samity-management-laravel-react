@@ -4,16 +4,77 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
     LayoutDashboard, 
     Users, 
-    ShieldCheck, 
+    User,
+    Shield,
+    Key,
     Menu as MenuIcon, 
+    Building,
+    Building2,
+    UserCheck,
+    Settings,
+    Package,
+    BookOpen,
+    GitCommit,
+    GitBranch,
+    Wallet,
+    ArrowDownCircle,
+    FileInput,
+    ArrowUpCircle,
+    FileOutput,
+    FileText,
+    Receipt,
+    ScrollText,
+    ArrowRightLeft,
+    Book,
+    Briefcase,
+    FilePlus,
+    HandCoins,
+    CreditCard,
     LogOut, 
     ChevronDown, 
     ChevronRight,
     UserCircle,
-    Building
+    ShieldCheck
 } from 'lucide-react';
 
-const Sidebar = ({ menus }) => {
+const iconMap = {
+    LayoutDashboard,
+    Users,
+    User,
+    Shield,
+    Key,
+    Menu: MenuIcon,
+    Building,
+    Building2,
+    UserCheck,
+    Settings,
+    Package,
+    BookOpen,
+    GitCommit,
+    GitBranch,
+    Wallet,
+    ArrowDownCircle,
+    FileInput,
+    ArrowUpCircle,
+    FileOutput,
+    FileText,
+    Receipt,
+    ScrollText,
+    ArrowRightLeft,
+    Book,
+    Briefcase,
+    FilePlus,
+    HandCoins,
+    CreditCard,
+    ShieldCheck
+};
+
+const DynamicIcon = ({ name, size = 20 }) => {
+    const IconComponent = iconMap[name] || ShieldCheck; 
+    return <IconComponent size={size} />;
+};
+
+const Sidebar = ({ menus, isOpen }) => {
     const location = useLocation();
     const [openMenus, setOpenMenus] = useState({});
 
@@ -72,16 +133,9 @@ const Sidebar = ({ menus }) => {
                         style={{ marginLeft: `${level * 12}px` }}
                     >
                         <span className="mr-3">
-                            {/* Simple icon mapping based on slug */}
-                            {menu.slug === 'dashboard' && <LayoutDashboard size={20} />}
-                            {(menu.slug === 'user-management-system' || menu.slug === 'users') && <Users size={20} />}
-                            {menu.slug === 'roles' && <ShieldCheck size={20} />}
-                            {menu.slug === 'permissions' && <ShieldCheck size={20} />}
-                            {menu.slug === 'menu-management' && <MenuIcon size={20} />}
-                            {menu.slug === 'samity-profile' && <Building size={20} />}
-                            {!['dashboard', 'user-management-system', 'users', 'roles', 'permissions', 'menu-management', 'samity-profile'].includes(menu.slug) && <ShieldCheck size={20} />}
-                        </span>
-                        <span className="flex-1">{menu.name} </span>
+                        <DynamicIcon name={menu.icon} size={20} />
+                    </span>
+                        <span className="flex-1 whitespace-nowrap">{menu.name} </span>
                     </Link>
                     
                     {hasChildren && (
@@ -104,18 +158,23 @@ const Sidebar = ({ menus }) => {
     };
 
     return (
-        <div className="flex flex-col w-64 min-h-screen text-white bg-blue-900">
-            <div className="flex justify-center items-center h-16 text-xl font-bold bg-blue-950">
+        <div className={`
+            flex flex-col min-h-screen text-white bg-blue-900
+            transition-all duration-300 ease-in-out
+            fixed md:relative z-30 inset-y-0 left-0
+            ${isOpen ? 'translate-x-0 w-64' : '-translate-x-full w-64 md:w-0 md:translate-x-0 md:overflow-hidden'}
+        `}>
+            <div className="flex justify-center items-center h-16 text-xl font-bold bg-blue-950 whitespace-nowrap overflow-hidden">
                 RBAC Admin
             </div>
-            <nav className="overflow-y-auto flex-1 px-2 py-4 space-y-1">
+            <nav className="overflow-y-auto flex-1 px-2 py-4 space-y-1 scrollbar-hide">
                 {menus.map(menu => renderMenuItem(menu))}
             </nav>
         </div>
     );
 };
 
-const TopNavbar = () => {
+const TopNavbar = ({ toggleSidebar }) => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
 
@@ -126,7 +185,15 @@ const TopNavbar = () => {
 
     return (
         <header className="flex justify-between items-center px-6 h-16 bg-white shadow-sm">
-            <h1 className="text-xl font-semibold text-gray-800">Dashboard</h1>
+            <div className="flex items-center">
+                <button 
+                    onClick={toggleSidebar} 
+                    className="mr-4 text-gray-500 hover:text-gray-700 focus:outline-none"
+                >
+                    <MenuIcon size={24} />
+                </button>
+                <h1 className="text-xl font-semibold text-gray-800">Dashboard</h1>
+            </div>
             <div className="flex items-center space-x-4">
                 <div className="flex items-center text-sm font-medium text-gray-700">
                     <UserCircle className="mr-2 w-6 h-6 text-gray-400" />
@@ -146,12 +213,37 @@ const TopNavbar = () => {
 
 const DashboardLayout = ({ children }) => {
     const { user, menus } = useAuth();
+    const [isSidebarOpen, setSidebarOpen] = useState(true);
+
+    useEffect(() => {
+        const handleResize = () => {
+            if (window.innerWidth < 768) {
+                setSidebarOpen(false);
+            } else {
+                setSidebarOpen(true);
+            }
+        };
+
+        // Initial check
+        handleResize();
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     return (
-        <div className="flex h-screen bg-gray-100">
-            <Sidebar menus={menus || []} />
+        <div className="flex h-screen bg-gray-100 overflow-hidden">
+             {/* Mobile Overlay */}
+             {isSidebarOpen && (
+                <div 
+                    className="fixed inset-0 z-20 bg-black bg-opacity-50 md:hidden" 
+                    onClick={() => setSidebarOpen(false)}
+                ></div>
+            )}
+
+            <Sidebar menus={menus || []} isOpen={isSidebarOpen} />
             <div className="flex overflow-hidden flex-col flex-1">
-                <TopNavbar />
+                <TopNavbar toggleSidebar={() => setSidebarOpen(!isSidebarOpen)} />
                 <main className="overflow-y-auto overflow-x-hidden flex-1 p-6 bg-gray-100">
                     {children}
                 </main>

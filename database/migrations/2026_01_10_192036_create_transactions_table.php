@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('customer_id')->nullable(); // Typically maps to member_infos.id
             $table->unsignedBigInteger('product_id')->nullable();
+            $table->unsignedBigInteger('samity_id')->nullable();
             
             $table->string('payment_mode')->nullable(); // cash, bank
             $table->string('tran_num')->nullable();
@@ -56,6 +57,7 @@ return new class extends Migration
             // Foreign Keys (Optional - keeping flexible as requested, but good practice to index)
             $table->index('customer_id');
             $table->index('product_id');
+            $table->index('samity_id');
             $table->index('tran_date');
             $table->index('tran_type');
             $table->index('status');

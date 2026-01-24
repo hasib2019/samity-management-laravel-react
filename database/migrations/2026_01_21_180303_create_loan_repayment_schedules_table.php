@@ -19,13 +19,15 @@ return new class extends Migration
             $table->decimal('principal_amount', 10, 2);
             $table->decimal('interest_amount', 10, 2);
             $table->decimal('total_amount', 10, 2);
+            $table->decimal('paid_amount', 12, 2)->default(0);
+            $table->decimal('paid_principal', 12, 2)->default(0);
+            $table->decimal('paid_interest', 12, 2)->default(0);
             $table->enum('status', ['pending', 'partial', 'paid', 'overdue'])->default('pending');
             $table->date('paid_date')->nullable();
             $table->decimal('fine_amount', 10, 2)->default(0);
             $table->timestamps();
         });
     }
-
     /**
      * Reverse the migrations.
      */

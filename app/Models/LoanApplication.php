@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class LoanApplication extends Model
 {
@@ -33,6 +34,16 @@ class LoanApplication extends Model
         'amount' => 'decimal:2',
         'interest_rate' => 'decimal:2',
     ];
+
+    public function nominees(): HasMany
+    {
+        return $this->hasMany(LoanNominee::class);
+    }
+
+    public function guarantors(): HasMany
+    {
+        return $this->hasMany(LoanGuarantor::class);
+    }
 
     public function member(): BelongsTo
     {

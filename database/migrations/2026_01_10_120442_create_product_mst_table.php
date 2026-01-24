@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('product_name');
             $table->enum('product_type', ['saving', 'share', 'fdr', 'dps', 'loan']);
             $table->enum('product_category', ['deposit', 'investment', 'credit']);
-
+            $table->string('rate_type')->nullable();
             // Amount Rules
             $table->decimal('min_amount', 15, 2)->default(0);
             $table->decimal('max_amount', 15, 2)->default(0);

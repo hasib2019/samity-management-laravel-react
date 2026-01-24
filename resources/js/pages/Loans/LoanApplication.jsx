@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import Swal from 'sweetalert2';
 import { Combobox } from '@headlessui/react';
-import { Check, ChevronsUpDown } from 'lucide-react';
+import { Check, ChevronsUpDown, Plus, Trash2, Edit } from 'lucide-react';
 
 const LoanApplication = () => {
     const [view, setView] = useState('list'); // list, create, edit
@@ -20,7 +20,38 @@ const LoanApplication = () => {
         installment_type: 'weekly',
         apply_date: new Date().toISOString().split('T')[0],
         purpose: '',
-        remarks: ''
+        remarks: '',
+        
+        // Nominees Array
+        nominees: [{
+            nominee_type: 'external', // member or external
+            member_id: '',
+            nominee_name: '',
+            relation: '',
+            dob: '',
+            nid: '',
+            percentage: 100,
+            image: null,
+            signature: null,
+            nid_image: null,
+            other_documents: null
+        }],
+
+        // Guarantors Array
+        guarantors: [{
+            guarantor_type: 'external',
+            member_id: '',
+            name: '',
+            father_name: '',
+            husband_name: '',
+            relation: '',
+            address: '',
+            contact_no: '',
+            nid: '',
+            image: null,
+            signature: null,
+            nid_image: null
+        }]
     });
 
     // Dropdown Data
@@ -111,21 +142,204 @@ const LoanApplication = () => {
         }
     };
 
+    // Nominee Handlers
+    const addNominee = () => {
+        setFormData(prev => ({
+            ...prev,
+            nominees: [...prev.nominees, {
+                nominee_type: 'external',
+                member_id: '',
+                nominee_name: '',
+                relation: '',
+                dob: '',
+                nid: '',
+                percentage: 0,
+                image: null,
+                signature: null,
+                nid_image: null,
+                other_documents: null
+            }]
+        }));
+    };
+
+    const removeNominee = (index) => {
+        if (formData.nominees.length > 1) {
+            setFormData(prev => ({
+                ...prev,
+                nominees: prev.nominees.filter((_, i) => i !== index)
+            }));
+        }
+    };
+
+    const updateNominee = (index, field, value) => {
+        setFormData(prev => {
+            const newNominees = [...prev.nominees];
+            newNominees[index] = { ...newNominees[index], [field]: value };
+            return { ...prev, nominees: newNominees };
+        });
+    };
+
+    // Guarantor Handlers
+    const addGuarantor = () => {
+        setFormData(prev => ({
+            ...prev,
+            guarantors: [...prev.guarantors, {
+                guarantor_type: 'external',
+                member_id: '',
+                name: '',
+                father_name: '',
+                husband_name: '',
+                relation: '',
+                address: '',
+                contact_no: '',
+                nid: '',
+                image: null,
+                signature: null,
+                nid_image: null
+            }]
+        }));
+    };
+
+    const removeGuarantor = (index) => {
+        if (formData.guarantors.length > 0) {
+            setFormData(prev => ({
+                ...prev,
+                guarantors: prev.guarantors.filter((_, i) => i !== index)
+            }));
+        }
+    };
+
+    const updateGuarantor = (index, field, value) => {
+        setFormData(prev => {
+            const newGuarantors = [...prev.guarantors];
+            newGuarantors[index] = { ...newGuarantors[index], [field]: value };
+            return { ...prev, guarantors: newGuarantors };
+        });
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setIsSubmitting(true);
         try {
+            const data = new FormData();
+            
+            // Append regular fields
+            Object.keys(formData).forEach(key => {
+                if (key !== 'nominees' && key !== 'guarantors') {
+                    if (formData[key] !== null && formData[key] !== undefined) {
+                        data.append(key, formData[key]);
+                    }
+                }
+            });
+
+            // Append Nominees
+            formData.nominees.forEach((nominee, index) => {
+                data.append(`nominees[${index}][nominee_type]`, nominee.nominee_type);
+                
+                if (nominee.nominee_type === 'member') {
+                    if (nominee.member_id) data.append(`nominees[${index}][member_id]`, nominee.member_id);
+                } else {
+                    if (nominee.nominee_name) data.append(`nominees[${index}][nominee_name]`, nominee.nominee_name);
+                    if (nominee.relation) data.append(`nominees[${index}][relation]`, nominee.relation);
+                    if (nominee.dob) data.append(`nominees[${index}][dob]`, nominee.dob);
+                    if (nominee.nid) data.append(`nominees[${index}][nid]`, nominee.nid);
+                }
+                
+                if (nominee.percentage) data.append(`nominees[${index}][percentage]`, nominee.percentage);
+                
+                // Files
+                if (nominee.image) {
+                    data.append(`nominees[${index}][image]`, nominee.image);
+                } else if (nominee.existing_image) {
+                    data.append(`nominees[${index}][existing_image]`, nominee.existing_image);
+                }
+
+                if (nominee.signature) {
+                    data.append(`nominees[${index}][signature]`, nominee.signature);
+                } else if (nominee.existing_signature) {
+                    data.append(`nominees[${index}][existing_signature]`, nominee.existing_signature);
+                }
+
+                if (nominee.nid_image) {
+                    data.append(`nominees[${index}][nid_image]`, nominee.nid_image);
+                } else if (nominee.existing_nid_image) {
+                    data.append(`nominees[${index}][existing_nid_image]`, nominee.existing_nid_image);
+                }
+
+                if (nominee.other_documents) {
+                    data.append(`nominees[${index}][other_documents]`, nominee.other_documents);
+                } else if (nominee.existing_other_documents) {
+                    data.append(`nominees[${index}][existing_other_documents]`, nominee.existing_other_documents);
+                }
+            });
+
+            // Append Guarantors
+            formData.guarantors.forEach((guarantor, index) => {
+                data.append(`guarantors[${index}][guarantor_type]`, guarantor.guarantor_type);
+                
+                if (guarantor.guarantor_type === 'member') {
+                    if (guarantor.member_id) data.append(`guarantors[${index}][member_id]`, guarantor.member_id);
+                } else {
+                    if (guarantor.name) data.append(`guarantors[${index}][name]`, guarantor.name);
+                    if (guarantor.relation) data.append(`guarantors[${index}][relation]`, guarantor.relation);
+                }
+                
+                if (guarantor.father_name) data.append(`guarantors[${index}][father_name]`, guarantor.father_name);
+                if (guarantor.husband_name) data.append(`guarantors[${index}][husband_name]`, guarantor.husband_name);
+                if (guarantor.address) data.append(`guarantors[${index}][address]`, guarantor.address);
+                if (guarantor.contact_no) data.append(`guarantors[${index}][contact_no]`, guarantor.contact_no);
+                if (guarantor.nid) data.append(`guarantors[${index}][nid]`, guarantor.nid);
+                
+                // Files
+                if (guarantor.image) {
+                    data.append(`guarantors[${index}][image]`, guarantor.image);
+                } else if (guarantor.existing_image) {
+                    data.append(`guarantors[${index}][existing_image]`, guarantor.existing_image);
+                }
+
+                if (guarantor.signature) {
+                    data.append(`guarantors[${index}][signature]`, guarantor.signature);
+                } else if (guarantor.existing_signature) {
+                    data.append(`guarantors[${index}][existing_signature]`, guarantor.existing_signature);
+                }
+
+                if (guarantor.nid_image) {
+                    data.append(`guarantors[${index}][nid_image]`, guarantor.nid_image);
+                } else if (guarantor.existing_nid_image) {
+                    data.append(`guarantors[${index}][existing_nid_image]`, guarantor.existing_nid_image);
+                }
+            });
+
+            // Important: Laravel needs _method=PUT for file uploads in updates
             if (formData.id) {
-                await api.put(`/loan-applications/${formData.id}`, formData);
+                data.append('_method', 'PUT');
+                await api.post(`/loan-applications/${formData.id}`, data, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
                 Swal.fire('Success', 'Loan Application updated successfully', 'success');
             } else {
-                await api.post('/loan-applications', formData);
+                await api.post('/loan-applications', data, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
                 Swal.fire('Success', 'Loan Application submitted successfully', 'success');
             }
             setView('list');
             resetForm();
         } catch (err) {
             console.error('Error submitting application', err);
-            Swal.fire('Error', err.response?.data?.message || 'Failed to submit application', 'error');
+            // Handle validation errors
+            if (err.response?.status === 422) {
+                 const errors = err.response.data.errors;
+                 let errorMsg = 'Validation Error:\n';
+                 for (const key in errors) {
+                     errorMsg += `${errors[key][0]}\n`;
+                 }
+                 Swal.fire('Error', errorMsg, 'error');
+            } else {
+                 Swal.fire('Error', err.response?.data?.message || 'Failed to submit application', 'error');
+            }
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -152,11 +366,101 @@ const LoanApplication = () => {
             installment_type: 'weekly',
             apply_date: new Date().toISOString().split('T')[0],
             purpose: '',
-            remarks: ''
+            remarks: '',
+            nominees: [{
+                nominee_type: 'external',
+                member_id: '',
+                nominee_name: '',
+                relation: '',
+                dob: '',
+                nid: '',
+                percentage: 100,
+                image: null,
+                signature: null,
+                nid_image: null,
+                other_documents: null
+            }],
+            guarantors: [{
+                guarantor_type: 'external',
+                member_id: '',
+                name: '',
+                father_name: '',
+                husband_name: '',
+                relation: '',
+                address: '',
+                contact_no: '',
+                nid: '',
+                image: null,
+                signature: null,
+                nid_image: null
+            }]
         });
     };
 
     const handleEdit = (app) => {
+        const mappedNominees = app.nominees && app.nominees.length > 0 ? app.nominees.map(n => ({
+            nominee_type: n.nominee_type,
+            member_id: n.member_id || '',
+            nominee_name: n.nominee_name || '',
+            relation: n.relation || '',
+            dob: n.dob || '',
+            nid: n.nid || '',
+            percentage: n.percentage || 100,
+            image: null,
+            signature: null,
+            nid_image: null,
+            other_documents: null,
+            // Keep track if existing
+            existing_image: n.image,
+            existing_signature: n.signature,
+            existing_nid_image: n.nid_image,
+            existing_other_documents: n.other_documents
+        })) : [{
+            nominee_type: 'external',
+            member_id: '',
+            nominee_name: '',
+            relation: '',
+            dob: '',
+            nid: '',
+            percentage: 100,
+            image: null,
+            signature: null,
+            nid_image: null,
+            other_documents: null
+        }];
+
+        const mappedGuarantors = app.guarantors && app.guarantors.length > 0 ? app.guarantors.map(g => ({
+            guarantor_type: g.guarantor_type,
+            member_id: g.member_id || '',
+            name: g.name || '',
+            father_name: g.father_name || '',
+            husband_name: g.husband_name || '',
+            relation: g.relation || '',
+            address: g.address || '',
+            contact_no: g.contact_no || '',
+            nid: g.nid || '',
+            image: null,
+            signature: null,
+            nid_image: null,
+            // Keep track if existing
+            existing_image: g.image,
+            existing_signature: g.signature,
+            existing_nid_image: g.nid_image
+        })) : [{
+            guarantor_type: 'external',
+            member_id: '',
+            name: '',
+            father_name: '',
+            husband_name: '',
+            relation: '',
+            address: '',
+            contact_no: '',
+            nid: '',
+            image: null,
+            signature: null,
+            nid_image: null
+        }];
+
         setFormData({
             id: app.id,
             samity_id: app.samity_id,
@@ -168,7 +472,9 @@ const LoanApplication = () => {
             installment_type: app.installment_type,
             apply_date: app.apply_date,
             purpose: app.purpose,
-            remarks: app.remarks
+            remarks: app.remarks,
+            nominees: mappedNominees,
+            guarantors: mappedGuarantors
         });
         setView('create');
     };
@@ -179,6 +485,7 @@ const LoanApplication = () => {
     const [selectedApplicationId, setSelectedApplicationId] = useState(null);
     const [approving, setApproving] = useState(false);
     const [previewLoading, setPreviewLoading] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const filteredMembers =
         query === ''
@@ -401,17 +708,34 @@ const LoanApplication = () => {
                                             </td>
                                             <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
                                                 {app.status === 'pending' && (
-                                                    <>
+                                                    <div className="flex items-center space-x-3">
                                                         <button 
                                                             onClick={() => handleApproveClick(app.id)} 
                                                             disabled={previewLoading}
-                                                            className={`text-green-600 hover:text-green-900 mr-3 ${previewLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                            title="Approve"
+                                                            className={`text-green-600 hover:text-green-900 ${previewLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                         >
-                                                            {previewLoading && selectedApplicationId === app.id ? 'Loading...' : 'Approve'}
+                                                            {previewLoading && selectedApplicationId === app.id ? (
+                                                                <span className="text-xs">...</span>
+                                                            ) : (
+                                                                <Check size={20} />
+                                                            )}
                                                         </button>
-                                                        <button onClick={() => handleEdit(app)} className="mr-3 text-indigo-600 hover:text-indigo-900">Edit</button>
-                                                        <button onClick={() => handleDelete(app.id)} className="text-red-600 hover:text-red-900">Delete</button>
-                                                    </>
+                                                        <button 
+                                                            onClick={() => handleEdit(app)} 
+                                                            title="Edit"
+                                                            className="text-indigo-600 hover:text-indigo-900"
+                                                        >
+                                                            <Edit size={20} />
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => handleDelete(app.id)} 
+                                                            title="Delete"
+                                                            className="text-red-600 hover:text-red-900"
+                                                        >
+                                                            <Trash2 size={20} />
+                                                        </button>
+                                                    </div>
                                                 )}
                                             </td>
                                         </tr>
@@ -424,189 +748,558 @@ const LoanApplication = () => {
             ) : (
                 <div className="p-6 mx-auto max-w-4xl bg-white rounded-lg shadow">
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                            {/* Samity Selection */}
-                            <div>
-                                <label className="block mb-1 text-sm font-medium text-gray-700">Samity</label>
-                                <select
-                                    value={formData.samity_id}
-                                    onChange={(e) => setFormData({ ...formData, samity_id: e.target.value })}
-                                    className="px-3 py-2 w-full rounded border focus:ring-blue-500 focus:border-blue-500"
-                                    required
-                                >
-                                    <option value="">Select Samity</option>
-                                    {samities.map(s => (
-                                        <option key={s.id} value={s.id}>{s.samity_name}</option>
-                                    ))}
-                                </select>
-                            </div>
+                        {/* Section 1: Loan Details */}
+                        <div className="bg-gray-50 p-4 rounded border">
+                            <h3 className="text-lg font-medium text-gray-800 mb-4 border-b pb-2">Loan Details</h3>
+                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                {/* Samity Selection */}
+                                <div>
+                                    <label className="block mb-1 text-sm font-medium text-gray-700">Samity</label>
+                                    <select
+                                        value={formData.samity_id}
+                                        onChange={(e) => setFormData({ ...formData, samity_id: e.target.value })}
+                                        className="px-3 py-2 w-full rounded border focus:ring-blue-500 focus:border-blue-500"
+                                        required
+                                    >
+                                        <option value="">Select Samity</option>
+                                        {samities.map(s => (
+                                            <option key={s.id} value={s.id}>{s.samity_name}</option>
+                                        ))}
+                                    </select>
+                                </div>
 
-                            {/* Apply Date */}
-                            <div>
-                                <label className="block mb-1 text-sm font-medium text-gray-700">Apply Date</label>
-                                <input
-                                    type="date"
-                                    value={formData.apply_date}
-                                    onChange={(e) => setFormData({ ...formData, apply_date: e.target.value })}
-                                    className="px-3 py-2 w-full rounded border focus:ring-blue-500 focus:border-blue-500"
-                                    required
-                                />
-                            </div>
+                                {/* Apply Date */}
+                                <div>
+                                    <label className="block mb-1 text-sm font-medium text-gray-700">Apply Date</label>
+                                    <input
+                                        type="date"
+                                        value={formData.apply_date}
+                                        onChange={(e) => setFormData({ ...formData, apply_date: e.target.value })}
+                                        className="px-3 py-2 w-full rounded border focus:ring-blue-500 focus:border-blue-500"
+                                        required
+                                    />
+                                </div>
 
-                            {/* Member Selection (Combobox) */}
-                            <div className="col-span-2">
-                                <label className="block mb-1 text-sm font-medium text-gray-700">Member</label>
-                                <Combobox value={formData.member_id} onChange={(value) => setFormData({ ...formData, member_id: value })}>
-                                    <div className="relative mt-1">
-                                        <div className="overflow-hidden relative w-full text-left bg-white rounded-lg border cursor-default focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-teal-300 sm:text-sm">
-                                            <Combobox.Input
-                                                className="py-2 pr-10 pl-3 w-full text-sm leading-5 text-gray-900 border-none focus:ring-0"
-                                                displayValue={(id) => {
-                                                    const m = members.find(m => m.id === id);
-                                                    return m ? `${m.member_name} - ${m.member_code}` : '';
-                                                }}
-                                                onChange={(event) => setQuery(event.target.value)}
-                                                placeholder="Search Member..."
-                                            />
-                                            <Combobox.Button className="flex absolute inset-y-0 right-0 items-center pr-2">
-                                                <ChevronsUpDown className="w-5 h-5 text-gray-400" aria-hidden="true" />
-                                            </Combobox.Button>
-                                        </div>
-                                        <Combobox.Options className="overflow-auto absolute z-10 py-1 mt-1 w-full max-h-60 text-base bg-white rounded-md ring-1 ring-black ring-opacity-5 shadow-lg focus:outline-none sm:text-sm">
-                                            {filteredMembers.length === 0 && query !== '' ? (
-                                                <div className="relative px-4 py-2 text-gray-700 cursor-default select-none">
-                                                    Nothing found.
-                                                </div>
-                                            ) : (
-                                                filteredMembers.map((member) => (
-                                                    <Combobox.Option
-                                                        key={member.id}
-                                                        className={({ active }) =>
-                                                            `relative cursor-default select-none py-2 pl-10 pr-4 ${
-                                                                active ? 'bg-blue-600 text-white' : 'text-gray-900'
-                                                            }`
-                                                        }
-                                                        value={member.id}
-                                                    >
-                                                        {({ selected, active }) => (
-                                                            <>
-                                                                <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>
-                                                                    {member.member_name} - {member.member_code}
-                                                                </span>
-                                                                {selected ? (
-                                                                    <span className={`absolute inset-y-0 left-0 flex items-center pl-3 ${active ? 'text-white' : 'text-blue-600'}`}>
-                                                                        <Check className="w-5 h-5" aria-hidden="true" />
+                                {/* Member Selection (Combobox) */}
+                                <div className="col-span-2">
+                                    <label className="block mb-1 text-sm font-medium text-gray-700">Member</label>
+                                    <Combobox value={formData.member_id} onChange={(value) => setFormData({ ...formData, member_id: value })}>
+                                        <div className="relative mt-1">
+                                            <div className="overflow-hidden relative w-full text-left bg-white rounded-lg border cursor-default focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-teal-300 sm:text-sm">
+                                                <Combobox.Input
+                                                    className="py-2 pr-10 pl-3 w-full text-sm leading-5 text-gray-900 border-none focus:ring-0"
+                                                    displayValue={(id) => {
+                                                        const m = members.find(m => m.id === id);
+                                                        return m ? `${m.member_name} - ${m.member_code}` : '';
+                                                    }}
+                                                    onChange={(event) => setQuery(event.target.value)}
+                                                    placeholder="Search Member..."
+                                                />
+                                                <Combobox.Button className="flex absolute inset-y-0 right-0 items-center pr-2">
+                                                    <ChevronsUpDown className="w-5 h-5 text-gray-400" aria-hidden="true" />
+                                                </Combobox.Button>
+                                            </div>
+                                            <Combobox.Options className="overflow-auto absolute z-10 py-1 mt-1 w-full max-h-60 text-base bg-white rounded-md ring-1 ring-black ring-opacity-5 shadow-lg focus:outline-none sm:text-sm">
+                                                {filteredMembers.length === 0 && query !== '' ? (
+                                                    <div className="relative px-4 py-2 text-gray-700 cursor-default select-none">
+                                                        Nothing found.
+                                                    </div>
+                                                ) : (
+                                                    filteredMembers.map((member) => (
+                                                        <Combobox.Option
+                                                            key={member.id}
+                                                            className={({ active }) =>
+                                                                `relative cursor-default select-none py-2 pl-10 pr-4 ${
+                                                                    active ? 'bg-blue-600 text-white' : 'text-gray-900'
+                                                                }`
+                                                            }
+                                                            value={member.id}
+                                                        >
+                                                            {({ selected, active }) => (
+                                                                <>
+                                                                    <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>
+                                                                        {member.member_name} - {member.member_code}
                                                                     </span>
-                                                                ) : null}
-                                                            </>
-                                                        )}
-                                                    </Combobox.Option>
-                                                ))
-                                            )}
-                                        </Combobox.Options>
+                                                                    {selected ? (
+                                                                        <span className={`absolute inset-y-0 left-0 flex items-center pl-3 ${active ? 'text-white' : 'text-blue-600'}`}>
+                                                                            <Check className="w-5 h-5" aria-hidden="true" />
+                                                                        </span>
+                                                                    ) : null}
+                                                                </>
+                                                            )}
+                                                        </Combobox.Option>
+                                                    ))
+                                                )}
+                                            </Combobox.Options>
+                                        </div>
+                                    </Combobox>
+                                </div>
+
+                                {/* Product Selection */}
+                                <div>
+                                    <label className="block mb-1 text-sm font-medium text-gray-700">Product</label>
+                                    <select
+                                        value={formData.product_id}
+                                        onChange={(e) => setFormData({ ...formData, product_id: e.target.value })}
+                                        className="px-3 py-2 w-full rounded border focus:ring-blue-500 focus:border-blue-500"
+                                        required
+                                    >
+                                        <option value="">Select Product</option>
+                                        {products.map(p => (
+                                            <option key={p.id} value={p.id}>{p.product_name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {/* Amount */}
+                                <div>
+                                    <label className="block mb-1 text-sm font-medium text-gray-700">Amount</label>
+                                    <input
+                                        type="number"
+                                        value={formData.amount}
+                                        onChange={(e) => {
+                                            const val = parseFloat(e.target.value);
+                                            const max = selectedProduct?.max_amount;
+                                            if (max && val > max) return; // Prevent typing more than max
+                                            setFormData({ ...formData, amount: e.target.value });
+                                        }}
+                                        className="px-3 py-2 w-full rounded border focus:ring-blue-500 focus:border-blue-500"
+                                        required
+                                        min={selectedProduct?.min_amount || "1"}
+                                        max={selectedProduct?.max_amount}
+                                    />
+                                    {selectedProduct && (
+                                        <p className="mt-1 text-xs text-gray-500">
+                                            Min: {selectedProduct.min_amount} - Max: {selectedProduct.max_amount}
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Duration */}
+                                <div>
+                                    <label className="block mb-1 text-sm font-medium text-gray-700">Duration (Months)</label>
+                                    <input
+                                        type="number"
+                                        value={formData.duration_months}
+                                        onChange={(e) => setFormData({ ...formData, duration_months: e.target.value })}
+                                        className="px-3 py-2 w-full rounded border focus:ring-blue-500 focus:border-blue-500"
+                                        required
+                                        min={selectedProduct?.min_tenure_month || "1"}
+                                        max={selectedProduct?.max_tenure_month}
+                                    />
+                                    {selectedProduct && (
+                                        <p className="mt-1 text-xs text-gray-500">
+                                            Min: {selectedProduct.min_tenure_month} - Max: {selectedProduct.max_tenure_month} Months
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Interest Rate */}
+                                <div>
+                                    <label className="block mb-1 text-sm font-medium text-gray-700">Interest Rate (%)</label>
+                                    <input
+                                        type="number"
+                                        value={formData.interest_rate}
+                                        onChange={(e) => setFormData({ ...formData, interest_rate: e.target.value })}
+                                        className={`w-full px-3 py-2 border rounded focus:ring-blue-500 focus:border-blue-500 ${selectedProduct ? 'bg-gray-100' : ''}`}
+                                        required
+                                        min="0"
+                                        step="0.01"
+                                        readOnly={!!selectedProduct}
+                                    />
+                                </div>
+
+                                {/* Installment Type */}
+                                <div>
+                                    <label className="block mb-1 text-sm font-medium text-gray-700">Installment Type</label>
+                                    <select
+                                        value={formData.installment_type}
+                                        onChange={(e) => setFormData({ ...formData, installment_type: e.target.value })}
+                                        className={`w-full px-3 py-2 border rounded focus:ring-blue-500 focus:border-blue-500 ${selectedProduct ? 'bg-gray-100' : ''}`}
+                                        required
+                                        disabled={!!selectedProduct}
+                                    >
+                                        <option value="weekly">Weekly</option>
+                                        <option value="monthly">Monthly</option>
+                                    </select>
+                                </div>
+
+                                {/* Purpose */}
+                                <div className="col-span-2">
+                                    <label className="block mb-1 text-sm font-medium text-gray-700">Purpose</label>
+                                    <textarea
+                                        value={formData.purpose}
+                                        onChange={(e) => setFormData({ ...formData, purpose: e.target.value })}
+                                        className="px-3 py-2 w-full rounded border focus:ring-blue-500 focus:border-blue-500"
+                                        rows="2"
+                                    ></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Nominee Section */}
+                        <div className="bg-gray-50 p-4 rounded border">
+                            <div className="flex justify-between items-center mb-4 border-b pb-2">
+                                <h3 className="text-lg font-medium text-gray-800">Nominee Information</h3>
+                                <button
+                                    type="button"
+                                    onClick={addNominee}
+                                    className="flex items-center px-3 py-1 text-sm text-white bg-blue-600 rounded hover:bg-blue-700"
+                                >
+                                    <Plus className="w-4 h-4 mr-1" /> Add Nominee
+                                </button>
+                            </div>
+                            
+                            {formData.nominees.map((nominee, index) => (
+                                <div key={index} className="p-4 mb-4 bg-white rounded border shadow-sm relative">
+                                    <div className="flex justify-between items-center mb-3">
+                                        <h4 className="font-medium text-gray-700">Nominee {index + 1}</h4>
+                                        {formData.nominees.length > 1 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => removeNominee(index)}
+                                                className="text-red-500 hover:text-red-700"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        )}
                                     </div>
-                                </Combobox>
-                            </div>
+                                    
+                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                        {/* Nominee Type */}
+                                        <div className="col-span-2">
+                                            <span className="block mb-2 text-sm font-medium text-gray-700">Nominee Type:</span>
+                                            <div className="flex space-x-4">
+                                                <label className="inline-flex items-center">
+                                                    <input
+                                                        type="radio"
+                                                        className="form-radio text-blue-600"
+                                                        name={`nominee_type_${index}`}
+                                                        value="external"
+                                                        checked={nominee.nominee_type === 'external'}
+                                                        onChange={(e) => updateNominee(index, 'nominee_type', 'external')}
+                                                    />
+                                                    <span className="ml-2">External Person</span>
+                                                </label>
+                                                <label className="inline-flex items-center">
+                                                    <input
+                                                        type="radio"
+                                                        className="form-radio text-blue-600"
+                                                        name={`nominee_type_${index}`}
+                                                        value="member"
+                                                        checked={nominee.nominee_type === 'member'}
+                                                        onChange={(e) => updateNominee(index, 'nominee_type', 'member')}
+                                                    />
+                                                    <span className="ml-2">Existing Member</span>
+                                                </label>
+                                            </div>
+                                        </div>
 
-                            {/* Product Selection */}
-                            <div>
-                                <label className="block mb-1 text-sm font-medium text-gray-700">Product</label>
-                                <select
-                                    value={formData.product_id}
-                                    onChange={(e) => setFormData({ ...formData, product_id: e.target.value })}
-                                    className="px-3 py-2 w-full rounded border focus:ring-blue-500 focus:border-blue-500"
-                                    required
+                                        {nominee.nominee_type === 'member' ? (
+                                            <div className="col-span-2">
+                                                <label className="block mb-1 text-sm font-medium text-gray-700">Select Member as Nominee</label>
+                                                <select
+                                                    value={nominee.member_id}
+                                                    onChange={(e) => updateNominee(index, 'member_id', e.target.value)}
+                                                    className="px-3 py-2 w-full rounded border focus:ring-blue-500 focus:border-blue-500"
+                                                    required
+                                                >
+                                                    <option value="">Select Member</option>
+                                                    {members.map(m => (
+                                                        <option key={m.id} value={m.id}>{m.member_name} - {m.member_code}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div>
+                                                    <label className="block mb-1 text-sm font-medium text-gray-700">Nominee Name</label>
+                                                    <input
+                                                        type="text"
+                                                        value={nominee.nominee_name}
+                                                        onChange={(e) => updateNominee(index, 'nominee_name', e.target.value)}
+                                                        className="px-3 py-2 w-full rounded border focus:ring-blue-500 focus:border-blue-500"
+                                                        required={nominee.nominee_type === 'external'}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block mb-1 text-sm font-medium text-gray-700">Relation</label>
+                                                    <input
+                                                        type="text"
+                                                        value={nominee.relation}
+                                                        onChange={(e) => updateNominee(index, 'relation', e.target.value)}
+                                                        className="px-3 py-2 w-full rounded border focus:ring-blue-500 focus:border-blue-500"
+                                                        required={nominee.nominee_type === 'external'}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block mb-1 text-sm font-medium text-gray-700">Date of Birth</label>
+                                                    <input
+                                                        type="date"
+                                                        value={nominee.dob}
+                                                        onChange={(e) => updateNominee(index, 'dob', e.target.value)}
+                                                        className="px-3 py-2 w-full rounded border focus:ring-blue-500 focus:border-blue-500"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block mb-1 text-sm font-medium text-gray-700">NID Number</label>
+                                                    <input
+                                                        type="text"
+                                                        value={nominee.nid}
+                                                        onChange={(e) => updateNominee(index, 'nid', e.target.value)}
+                                                        className="px-3 py-2 w-full rounded border focus:ring-blue-500 focus:border-blue-500"
+                                                    />
+                                                </div>
+                                            </>
+                                        )}
+
+                                        {/* Percentage Share */}
+                                        <div>
+                                            <label className="block mb-1 text-sm font-medium text-gray-700">Share Percentage (%)</label>
+                                            <input
+                                                type="number"
+                                                value={nominee.percentage}
+                                                onChange={(e) => updateNominee(index, 'percentage', e.target.value)}
+                                                className="px-3 py-2 w-full rounded border focus:ring-blue-500 focus:border-blue-500"
+                                                min="1"
+                                                max="100"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Nominee Documents */}
+                                    <div className="mt-4 pt-4 border-t">
+                                        <h5 className="text-sm font-medium text-gray-700 mb-3">Documents (Optional)</h5>
+                                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                            <div>
+                                                <label className="block mb-1 text-xs font-medium text-gray-600">Nominee Image</label>
+                                                <input
+                                                    type="file"
+                                                    onChange={(e) => updateNominee(index, 'image', e.target.files[0])}
+                                                    className="w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                                    accept="image/*"
+                                                />
+                                                {nominee.existing_image && <span className="text-xs text-green-600">Existing file present</span>}
+                                            </div>
+                                            <div>
+                                                <label className="block mb-1 text-xs font-medium text-gray-600">Nominee Signature</label>
+                                                <input
+                                                    type="file"
+                                                    onChange={(e) => updateNominee(index, 'signature', e.target.files[0])}
+                                                    className="w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                                    accept="image/*"
+                                                />
+                                                {nominee.existing_signature && <span className="text-xs text-green-600">Existing file present</span>}
+                                            </div>
+                                            <div>
+                                                <label className="block mb-1 text-xs font-medium text-gray-600">NID Image</label>
+                                                <input
+                                                    type="file"
+                                                    onChange={(e) => updateNominee(index, 'nid_image', e.target.files[0])}
+                                                    className="w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                                    accept="image/*,application/pdf"
+                                                />
+                                                {nominee.existing_nid_image && <span className="text-xs text-green-600">Existing file present</span>}
+                                            </div>
+                                            <div>
+                                                <label className="block mb-1 text-xs font-medium text-gray-600">Other Documents</label>
+                                                <input
+                                                    type="file"
+                                                    onChange={(e) => updateNominee(index, 'other_documents', e.target.files[0])}
+                                                    className="w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                                    accept="image/*,application/pdf"
+                                                />
+                                                {nominee.existing_other_documents && <span className="text-xs text-green-600">Existing file present</span>}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Guarantor Section */}
+                        <div className="bg-gray-50 p-4 rounded border mt-6">
+                            <div className="flex justify-between items-center mb-4 border-b pb-2">
+                                <h3 className="text-lg font-medium text-gray-800">Guarantor Information</h3>
+                                <button
+                                    type="button"
+                                    onClick={addGuarantor}
+                                    className="flex items-center px-3 py-1 text-sm text-white bg-blue-600 rounded hover:bg-blue-700"
                                 >
-                                    <option value="">Select Product</option>
-                                    {products.map(p => (
-                                        <option key={p.id} value={p.id}>{p.product_name}</option>
-                                    ))}
-                                </select>
+                                    <Plus className="w-4 h-4 mr-1" /> Add Guarantor
+                                </button>
                             </div>
+                            
+                            {formData.guarantors.map((guarantor, index) => (
+                                <div key={index} className="p-4 mb-4 bg-white rounded border shadow-sm relative">
+                                    <div className="flex justify-between items-center mb-3">
+                                        <h4 className="font-medium text-gray-700">Guarantor {index + 1}</h4>
+                                        {formData.guarantors.length > 0 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => removeGuarantor(index)}
+                                                className="text-red-500 hover:text-red-700"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        )}
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                        {/* Guarantor Type */}
+                                        <div className="col-span-2">
+                                            <span className="block mb-2 text-sm font-medium text-gray-700">Guarantor Type:</span>
+                                            <div className="flex space-x-4">
+                                                <label className="inline-flex items-center">
+                                                    <input
+                                                        type="radio"
+                                                        className="form-radio text-blue-600"
+                                                        name={`guarantor_type_${index}`}
+                                                        value="external"
+                                                        checked={guarantor.guarantor_type === 'external'}
+                                                        onChange={(e) => updateGuarantor(index, 'guarantor_type', 'external')}
+                                                    />
+                                                    <span className="ml-2">External Person</span>
+                                                </label>
+                                                <label className="inline-flex items-center">
+                                                    <input
+                                                        type="radio"
+                                                        className="form-radio text-blue-600"
+                                                        name={`guarantor_type_${index}`}
+                                                        value="member"
+                                                        checked={guarantor.guarantor_type === 'member'}
+                                                        onChange={(e) => updateGuarantor(index, 'guarantor_type', 'member')}
+                                                    />
+                                                    <span className="ml-2">Existing Member</span>
+                                                </label>
+                                            </div>
+                                        </div>
 
-                            {/* Amount */}
-                            <div>
-                                <label className="block mb-1 text-sm font-medium text-gray-700">Amount</label>
-                                <input
-                                    type="number"
-                                    value={formData.amount}
-                                    onChange={(e) => {
-                                        const val = parseFloat(e.target.value);
-                                        const max = selectedProduct?.max_amount;
-                                        if (max && val > max) return; // Prevent typing more than max
-                                        setFormData({ ...formData, amount: e.target.value });
-                                    }}
-                                    className="px-3 py-2 w-full rounded border focus:ring-blue-500 focus:border-blue-500"
-                                    required
-                                    min={selectedProduct?.min_amount || "1"}
-                                    max={selectedProduct?.max_amount}
-                                />
-                                {selectedProduct && (
-                                    <p className="mt-1 text-xs text-gray-500">
-                                        Min: {selectedProduct.min_amount} - Max: {selectedProduct.max_amount}
-                                    </p>
-                                )}
-                            </div>
+                                        {guarantor.guarantor_type === 'member' ? (
+                                            <div className="col-span-2">
+                                                <label className="block mb-1 text-sm font-medium text-gray-700">Select Member as Guarantor</label>
+                                                <select
+                                                    value={guarantor.member_id}
+                                                    onChange={(e) => updateGuarantor(index, 'member_id', e.target.value)}
+                                                    className="px-3 py-2 w-full rounded border focus:ring-blue-500 focus:border-blue-500"
+                                                    required
+                                                >
+                                                    <option value="">Select Member</option>
+                                                    {members.map(m => (
+                                                        <option key={m.id} value={m.id}>{m.member_name} - {m.member_code}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div>
+                                                    <label className="block mb-1 text-sm font-medium text-gray-700">Guarantor Name</label>
+                                                    <input
+                                                        type="text"
+                                                        value={guarantor.name}
+                                                        onChange={(e) => updateGuarantor(index, 'name', e.target.value)}
+                                                        className="px-3 py-2 w-full rounded border focus:ring-blue-500 focus:border-blue-500"
+                                                        required={guarantor.guarantor_type === 'external'}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block mb-1 text-sm font-medium text-gray-700">Relation</label>
+                                                    <input
+                                                        type="text"
+                                                        value={guarantor.relation}
+                                                        onChange={(e) => updateGuarantor(index, 'relation', e.target.value)}
+                                                        className="px-3 py-2 w-full rounded border focus:ring-blue-500 focus:border-blue-500"
+                                                        required={guarantor.guarantor_type === 'external'}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block mb-1 text-sm font-medium text-gray-700">Father's Name</label>
+                                                    <input
+                                                        type="text"
+                                                        value={guarantor.father_name}
+                                                        onChange={(e) => updateGuarantor(index, 'father_name', e.target.value)}
+                                                        className="px-3 py-2 w-full rounded border focus:ring-blue-500 focus:border-blue-500"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block mb-1 text-sm font-medium text-gray-700">Husband's Name</label>
+                                                    <input
+                                                        type="text"
+                                                        value={guarantor.husband_name}
+                                                        onChange={(e) => updateGuarantor(index, 'husband_name', e.target.value)}
+                                                        className="px-3 py-2 w-full rounded border focus:ring-blue-500 focus:border-blue-500"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block mb-1 text-sm font-medium text-gray-700">Address</label>
+                                                    <input
+                                                        type="text"
+                                                        value={guarantor.address}
+                                                        onChange={(e) => updateGuarantor(index, 'address', e.target.value)}
+                                                        className="px-3 py-2 w-full rounded border focus:ring-blue-500 focus:border-blue-500"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block mb-1 text-sm font-medium text-gray-700">Contact No</label>
+                                                    <input
+                                                        type="text"
+                                                        value={guarantor.contact_no}
+                                                        onChange={(e) => updateGuarantor(index, 'contact_no', e.target.value)}
+                                                        className="px-3 py-2 w-full rounded border focus:ring-blue-500 focus:border-blue-500"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block mb-1 text-sm font-medium text-gray-700">NID</label>
+                                                    <input
+                                                        type="text"
+                                                        value={guarantor.nid}
+                                                        onChange={(e) => updateGuarantor(index, 'nid', e.target.value)}
+                                                        className="px-3 py-2 w-full rounded border focus:ring-blue-500 focus:border-blue-500"
+                                                    />
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
 
-                            {/* Duration */}
-                            <div>
-                                <label className="block mb-1 text-sm font-medium text-gray-700">Duration (Months)</label>
-                                <input
-                                    type="number"
-                                    value={formData.duration_months}
-                                    onChange={(e) => setFormData({ ...formData, duration_months: e.target.value })}
-                                    className="px-3 py-2 w-full rounded border focus:ring-blue-500 focus:border-blue-500"
-                                    required
-                                    min={selectedProduct?.min_tenure_month || "1"}
-                                    max={selectedProduct?.max_tenure_month}
-                                />
-                                {selectedProduct && (
-                                    <p className="mt-1 text-xs text-gray-500">
-                                        Min: {selectedProduct.min_tenure_month} - Max: {selectedProduct.max_tenure_month} Months
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Interest Rate */}
-                            <div>
-                                <label className="block mb-1 text-sm font-medium text-gray-700">Interest Rate (%)</label>
-                                <input
-                                    type="number"
-                                    value={formData.interest_rate}
-                                    onChange={(e) => setFormData({ ...formData, interest_rate: e.target.value })}
-                                    className={`w-full px-3 py-2 border rounded focus:ring-blue-500 focus:border-blue-500 ${selectedProduct ? 'bg-gray-100' : ''}`}
-                                    required
-                                    min="0"
-                                    step="0.01"
-                                    readOnly={!!selectedProduct}
-                                />
-                            </div>
-
-                            {/* Installment Type */}
-                            <div>
-                                <label className="block mb-1 text-sm font-medium text-gray-700">Installment Type</label>
-                                <select
-                                    value={formData.installment_type}
-                                    onChange={(e) => setFormData({ ...formData, installment_type: e.target.value })}
-                                    className={`w-full px-3 py-2 border rounded focus:ring-blue-500 focus:border-blue-500 ${selectedProduct ? 'bg-gray-100' : ''}`}
-                                    required
-                                    disabled={!!selectedProduct}
-                                >
-                                    <option value="weekly">Weekly</option>
-                                    <option value="monthly">Monthly</option>
-                                </select>
-                            </div>
-
-                            {/* Purpose */}
-                            <div className="col-span-2">
-                                <label className="block mb-1 text-sm font-medium text-gray-700">Purpose</label>
-                                <textarea
-                                    value={formData.purpose}
-                                    onChange={(e) => setFormData({ ...formData, purpose: e.target.value })}
-                                    className="px-3 py-2 w-full rounded border focus:ring-blue-500 focus:border-blue-500"
-                                    rows="3"
-                                ></textarea>
-                            </div>
+                                    {/* Guarantor Documents */}
+                                    <div className="mt-4 pt-4 border-t">
+                                        <h5 className="text-sm font-medium text-gray-700 mb-3">Documents (Optional)</h5>
+                                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                            <div>
+                                                <label className="block mb-1 text-xs font-medium text-gray-600">Guarantor Image</label>
+                                                <input
+                                                    type="file"
+                                                    onChange={(e) => updateGuarantor(index, 'image', e.target.files[0])}
+                                                    className="w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                                    accept="image/*"
+                                                />
+                                                {guarantor.existing_image && <span className="text-xs text-green-600">Existing file present</span>}
+                                            </div>
+                                            <div>
+                                                <label className="block mb-1 text-xs font-medium text-gray-600">Guarantor Signature</label>
+                                                <input
+                                                    type="file"
+                                                    onChange={(e) => updateGuarantor(index, 'signature', e.target.files[0])}
+                                                    className="w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                                    accept="image/*"
+                                                />
+                                                {guarantor.existing_signature && <span className="text-xs text-green-600">Existing file present</span>}
+                                            </div>
+                                            <div>
+                                                <label className="block mb-1 text-xs font-medium text-gray-600">NID Image</label>
+                                                <input
+                                                    type="file"
+                                                    onChange={(e) => updateGuarantor(index, 'nid_image', e.target.files[0])}
+                                                    className="w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                                    accept="image/*,application/pdf"
+                                                />
+                                                {guarantor.existing_nid_image && <span className="text-xs text-green-600">Existing file present</span>}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
 
                         <div className="flex gap-4 justify-end mt-6">
@@ -619,9 +1312,10 @@ const LoanApplication = () => {
                             </button>
                             <button
                                 type="submit"
-                                className="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700"
+                                disabled={isSubmitting}
+                                className={`px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                             >
-                                Submit Application
+                                {isSubmitting ? 'Processing...' : 'Submit Application'}
                             </button>
                         </div>
                     </form>

@@ -26,7 +26,14 @@ return new class extends Migration
             $table->text('purpose')->nullable();
             
             // Approval info
+            $table->string('approval_no')->nullable();
+            $table->date('approval_date')->nullable();
+            $table->string('approval_by')->nullable();
+            // Rejection info
+            $table->string('rejection_reason')->nullable();
+            
             $table->string('status')->default('pending'); // pending, approved, rejected, disbursed
+            $table->date('disbursed_date')->nullable();
             $table->text('remarks')->nullable();
             
             $table->unsignedBigInteger('created_by')->nullable();
