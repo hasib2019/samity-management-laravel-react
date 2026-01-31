@@ -48,6 +48,7 @@ class MenuSeeder extends Seeder
                     ['name' => 'GL Setup', 'slug' => 'gl-setup', 'icon' => 'BookOpen', 'order' => 2],
                     ['name' => 'GL Mapping Type', 'slug' => 'gl-mapping-type', 'icon' => 'GitCommit', 'order' => 3],
                     ['name' => 'GL Mapping', 'slug' => 'gl-mapping', 'icon' => 'GitBranch', 'order' => 4],
+                    ['name' => 'Code Master', 'slug' => 'code-master', 'icon' => 'Database', 'order' => 5],
                     
                 ]
             ],

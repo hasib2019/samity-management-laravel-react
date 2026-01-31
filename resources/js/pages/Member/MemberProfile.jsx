@@ -15,6 +15,13 @@ const MemberProfile = () => {
     const [editingId, setEditingId] = useState(null);
     const [samityList, setSamityList] = useState([]);
     const [savingProducts, setSavingProducts] = useState([]);
+    const [codeMasters, setCodeMasters] = useState({
+        REL: [],
+        MST: [],
+        EDT: [],
+        GEN: [],
+        OCC: []
+    });
     const [imagePreviews, setImagePreviews] = useState({
         member_photo: null,
         member_sign: null,
@@ -67,7 +74,25 @@ const MemberProfile = () => {
         fetchMembers();
         fetchSamityList();
         fetchSavingProducts();
+        fetchCodeMasters();
     }, []);
+
+    const fetchCodeMasters = async () => {
+        try {
+            const types = ['REL', 'MST', 'EDT', 'GEN', 'OCC'];
+            const promises = types.map(type => api.get(`/code-masters?code_type=${type}`));
+            const results = await Promise.all(promises);
+            
+            const newCodeMasters = {};
+            types.forEach((type, index) => {
+                newCodeMasters[type] = results[index].data.data || [];
+            });
+            
+            setCodeMasters(newCodeMasters);
+        } catch (error) {
+            console.error('Failed to fetch code masters', error);
+        }
+    };
 
     const fetchMembers = async () => {
         try {
@@ -409,13 +434,28 @@ const MemberProfile = () => {
                                         </div>
 
                                         <div className="col-span-1">
-                                            <label className="block text-sm font-medium text-gray-700">Member Code</label>
-                                            <input type="text" name="member_code" value={formData.member_code} onChange={handleInputChange} className="block px-3 py-2 mt-1 w-full rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                                            <label className="block text-sm font-medium text-gray-700">Father's Name</label>
+                                            <input type="text" name="father_name" value={formData.father_name} onChange={handleInputChange} className="block px-3 py-2 mt-1 w-full rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                                        </div>
+
+                                        <div className="col-span-1">
+                                            <label className="block text-sm font-medium text-gray-700">Mother's Name</label>
+                                            <input type="text" name="mother_name" value={formData.mother_name} onChange={handleInputChange} className="block px-3 py-2 mt-1 w-full rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                                        </div>
+
+                                        <div className="col-span-1">
+                                            <label className="block text-sm font-medium text-gray-700">Spouse Name</label>
+                                            <input type="text" name="spouse_name" value={formData.spouse_name} onChange={handleInputChange} className="block px-3 py-2 mt-1 w-full rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
                                         </div>
 
                                         <div className="col-span-1">
                                             <label className="block text-sm font-medium text-gray-700">Mobile <span className="text-red-500">*</span></label>
                                             <input type="text" name="mobile" required value={formData.mobile} onChange={handleInputChange} className="block px-3 py-2 mt-1 w-full rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                                        </div>
+
+                                        <div className="col-span-1">
+                                            <label className="block text-sm font-medium text-gray-700">Email</label>
+                                            <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="block px-3 py-2 mt-1 w-full rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
                                         </div>
 
                                         <div className="col-span-1">
@@ -434,43 +474,146 @@ const MemberProfile = () => {
                                         </div>
 
                                         <div className="col-span-1">
-                                            <label className="block text-sm font-medium text-gray-700">Email</label>
-                                            <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="block px-3 py-2 mt-1 w-full rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
-                                        </div>
-
-                                        {/* Family Info */}
-                                        <div className="pb-2 mt-4 mb-2 border-b md:col-span-3">
-                                            <h4 className="text-sm font-semibold text-gray-500 uppercase">Family Information</h4>
+                                            <label className="block text-sm font-medium text-gray-700">Member Code</label>
+                                            <input type="text" name="member_code" value={formData.member_code} onChange={handleInputChange} className="block px-3 py-2 mt-1 w-full rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Leave blank to auto-generate" />
                                         </div>
 
                                         <div className="col-span-1">
-                                            <label className="block text-sm font-medium text-gray-700">Father's Name</label>
-                                            <input type="text" name="father_name" value={formData.father_name} onChange={handleInputChange} className="block px-3 py-2 mt-1 w-full rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                                            <label className="block text-sm font-medium text-gray-700">Gender</label>
+                                            <select
+                                                name="gender_id"
+                                                value={formData.gender_id}
+                                                onChange={handleInputChange}
+                                                className="block px-3 py-2 mt-1 w-full bg-white rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                            >
+                                                <option value="">Select Gender</option>
+                                                {codeMasters.GEN.map(item => (
+                                                    <option key={item.id} value={item.id}>{item.display_value}</option>
+                                                ))}
+                                            </select>
                                         </div>
 
                                         <div className="col-span-1">
-                                            <label className="block text-sm font-medium text-gray-700">Mother's Name</label>
-                                            <input type="text" name="mother_name" value={formData.mother_name} onChange={handleInputChange} className="block px-3 py-2 mt-1 w-full rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                                            <label className="block text-sm font-medium text-gray-700">Marital Status</label>
+                                            <select
+                                                name="marital_status_id"
+                                                value={formData.marital_status_id}
+                                                onChange={handleInputChange}
+                                                className="block px-3 py-2 mt-1 w-full bg-white rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                            >
+                                                <option value="">Select Status</option>
+                                                {codeMasters.MST.map(item => (
+                                                    <option key={item.id} value={item.id}>{item.display_value}</option>
+                                                ))}
+                                            </select>
                                         </div>
 
                                         <div className="col-span-1">
-                                            <label className="block text-sm font-medium text-gray-700">Spouse Name</label>
-                                            <input type="text" name="spouse_name" value={formData.spouse_name} onChange={handleInputChange} className="block px-3 py-2 mt-1 w-full rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
-                                        </div>
-
-                                        {/* Financial & Status */}
-                                        <div className="pb-2 mt-4 mb-2 border-b md:col-span-3">
-                                            <h4 className="text-sm font-semibold text-gray-500 uppercase">Financial & Status</h4>
+                                            <label className="block text-sm font-medium text-gray-700">Education</label>
+                                            <select
+                                                name="education_level_id"
+                                                value={formData.education_level_id}
+                                                onChange={handleInputChange}
+                                                className="block px-3 py-2 mt-1 w-full bg-white rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                            >
+                                                <option value="">Select Education</option>
+                                                {codeMasters.EDT.map(item => (
+                                                    <option key={item.id} value={item.id}>{item.display_value}</option>
+                                                ))}
+                                            </select>
                                         </div>
 
                                         <div className="col-span-1">
-                                            <label className="block text-sm font-medium text-gray-700">Share Amount</label>
+                                            <label className="block text-sm font-medium text-gray-700">Occupation</label>
+                                            <select
+                                                name="occupation_id"
+                                                value={formData.occupation_id}
+                                                onChange={handleInputChange}
+                                                className="block px-3 py-2 mt-1 w-full bg-white rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                            >
+                                                <option value="">Select Occupation</option>
+                                                {codeMasters.OCC.map(item => (
+                                                    <option key={item.id} value={item.id}>{item.display_value}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div className="col-span-1">
+                                            <label className="block text-sm font-medium text-gray-700">Religion</label>
+                                            <select
+                                                name="religion_id"
+                                                value={formData.religion_id}
+                                                onChange={handleInputChange}
+                                                className="block px-3 py-2 mt-1 w-full bg-white rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                            >
+                                                <option value="">Select Religion</option>
+                                                {codeMasters.REL.map(item => (
+                                                    <option key={item.id} value={item.id}>{item.display_value}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div className="col-span-1">
+                                            <label className="block text-sm font-medium text-gray-700">BRN</label>
+                                            <input type="text" name="brn" value={formData.brn} onChange={handleInputChange} className="block px-3 py-2 mt-1 w-full rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Birth Registration Number" />
+                                        </div>
+                                        
+                                        <div className="col-span-1">
+                                            <label className="block text-sm font-medium text-gray-700">Doptor ID</label>
+                                            <input type="number" name="doptor_id" value={formData.doptor_id} onChange={handleInputChange} className="block px-3 py-2 mt-1 w-full rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                                        </div>
+
+                                        <div className="col-span-1">
+                                            <label className="block text-sm font-medium text-gray-700">Reference Samity ID</label>
+                                            <input type="number" name="ref_samity_id" value={formData.ref_samity_id} onChange={handleInputChange} className="block px-3 py-2 mt-1 w-full rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                                        </div>
+                                        
+                                        <div className="col-span-1">
+                                            <label className="block text-sm font-medium text-gray-700">Number of Shares</label>
+                                            <input type="number" name="no_of_share" value={formData.no_of_share} onChange={handleInputChange} className="block px-3 py-2 mt-1 w-full rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                                        </div>
+                                        
+                                        <div className="col-span-1">
+                                            <label className="block text-sm font-medium text-gray-700">Share Price</label>
                                             <input type="number" name="share_price" value={formData.share_price} onChange={handleInputChange} className="block px-3 py-2 mt-1 w-full rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
                                         </div>
 
-                                        <div className="col-span-1">
-                                            <label className="block text-sm font-medium text-gray-700">No of Share</label>
-                                            <input type="number" name="no_of_share" value={formData.no_of_share} onChange={handleInputChange} className="block px-3 py-2 mt-1 w-full rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                                        <div className="col-span-3">
+                                            <div className="flex gap-4">
+                                                <div className="flex items-center">
+                                                    <input
+                                                        type="checkbox"
+                                                        name="committee_organizer"
+                                                        id="committee_organizer"
+                                                        checked={formData.committee_organizer === 'Y' || formData.committee_organizer === true}
+                                                        onChange={(e) => setFormData(prev => ({...prev, committee_organizer: e.target.checked ? 'Y' : 'N'}))}
+                                                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                    />
+                                                    <label htmlFor="committee_organizer" className="ml-2 text-sm text-gray-700">Committee Organizer</label>
+                                                </div>
+                                                <div className="flex items-center">
+                                                    <input
+                                                        type="checkbox"
+                                                        name="committee_contact_person"
+                                                        id="committee_contact_person"
+                                                        checked={formData.committee_contact_person === 'Y' || formData.committee_contact_person === true}
+                                                        onChange={(e) => setFormData(prev => ({...prev, committee_contact_person: e.target.checked ? 'Y' : 'N'}))}
+                                                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                    />
+                                                    <label htmlFor="committee_contact_person" className="ml-2 text-sm text-gray-700">Contact Person</label>
+                                                </div>
+                                                <div className="flex items-center">
+                                                    <input
+                                                        type="checkbox"
+                                                        name="committee_signatory_person"
+                                                        id="committee_signatory_person"
+                                                        checked={formData.committee_signatory_person === 'Y' || formData.committee_signatory_person === true}
+                                                        onChange={(e) => setFormData(prev => ({...prev, committee_signatory_person: e.target.checked ? 'Y' : 'N'}))}
+                                                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                    />
+                                                    <label htmlFor="committee_signatory_person" className="ml-2 text-sm text-gray-700">Signatory Person</label>
+                                                </div>
+                                            </div>
                                         </div>
 
                                         <div className="col-span-1">

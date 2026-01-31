@@ -121,6 +121,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/gl-mappings/{id}', [App\Http\Controllers\Api\GlMappingController::class, 'update']);
     Route::delete('/gl-mappings/{id}', [App\Http\Controllers\Api\GlMappingController::class, 'destroy']);
 
+    // Code Master Routes
+    Route::post('/code-masters/sync', [App\Http\Controllers\Api\CodeMasterController::class, 'sync'])->middleware('permission:code.master.sync');
+    Route::get('/code-masters', [App\Http\Controllers\Api\CodeMasterController::class, 'index']);
+    Route::post('/code-masters', [App\Http\Controllers\Api\CodeMasterController::class, 'store'])->middleware('permission:code.master.create');
+    Route::get('/code-masters/{codeMaster}', [App\Http\Controllers\Api\CodeMasterController::class, 'show'])->middleware('permission:code.master.view');
+    Route::put('/code-masters/{codeMaster}', [App\Http\Controllers\Api\CodeMasterController::class, 'update'])->middleware('permission:code.master.edit');
+    Route::delete('/code-masters/{codeMaster}', [App\Http\Controllers\Api\CodeMasterController::class, 'destroy'])->middleware('permission:code.master.delete');
+
     Route::get('/payment-voucher', [App\Http\Controllers\Api\PaymentVoucherController::class, 'index']);
     Route::post('/payment-voucher', [App\Http\Controllers\Api\PaymentVoucherController::class, 'store']);
     Route::get('/received-voucher', [App\Http\Controllers\Api\ReceivedVoucherController::class, 'index']);

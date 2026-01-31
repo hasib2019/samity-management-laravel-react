@@ -23,6 +23,7 @@ import GlAccountSetup from './pages/Setup/GlAccountSetup';
 import ProductSetup from './pages/Setup/ProductSetup';
 import GlMappingType from './pages/Setup/GlMappingType';
 import GlMapping from './pages/Setup/GlMapping';
+import CodeMasterList from './pages/Setup/CodeMaster/CodeMasterList';
 import PaymentVoucher from './pages/Vouchers/PaymentVoucher';
 import ReceivedVoucher from './pages/Vouchers/ReceivedVoucher';
 import ContraVoucher from './pages/Vouchers/ContraVoucher';
@@ -189,6 +190,14 @@ const App = () => {
                         element={
                             <ProtectedRoute>
                                 <GlMapping />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/code-master" 
+                        element={
+                            <ProtectedRoute>
+                                <CodeMasterList />
                             </ProtectedRoute>
                         } 
                     />

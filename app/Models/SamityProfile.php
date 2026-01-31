@@ -13,8 +13,26 @@ class SamityProfile extends Model
         'samity_code',
         'samity_address',
         'samity_type',
+        'samity_formation_date',
+        'old_registration_no',
+        'samity_registration_date',
+        'member_admission_fee',
+        'no_of_share',
+        'share_price',
+        'sold_share',
+        'phone',
+        'mobile',
+        'email',
+        'website',
         'created_by',
         'updated_by'
+    ];
+
+    protected $casts = [
+        'samity_formation_date' => 'date',
+        'samity_registration_date' => 'date',
+        'member_admission_fee' => 'decimal:2',
+        'share_price' => 'decimal:2',
     ];
 
     public function creator()

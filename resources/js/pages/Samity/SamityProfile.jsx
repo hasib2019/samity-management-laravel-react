@@ -15,7 +15,18 @@ const SamityProfile = () => {
         samity_type: 'P',
         monthly_subscription_fee: 1000,
         penalty_amount: 200,
-        penalty_late_date: 15
+        penalty_late_date: 15,
+        samity_formation_date: '',
+        old_registration_no: '',
+        samity_registration_date: '',
+        member_admission_fee: 0,
+        no_of_share: '',
+        share_price: '',
+        sold_share: '',
+        phone: '',
+        mobile: '',
+        email: '',
+        website: ''
     });
 console.log({profile})
     const { hasPermission } = useAuth();
@@ -48,7 +59,18 @@ console.log({profile})
             samity_type: 'P',
             monthly_subscription_fee: 1000,
             penalty_amount: 200,
-            penalty_late_date: 15
+            penalty_late_date: 15,
+            samity_formation_date: '',
+            old_registration_no: '',
+            samity_registration_date: '',
+            member_admission_fee: 0,
+            no_of_share: '',
+            share_price: '',
+            sold_share: '',
+            phone: '',
+            mobile: '',
+            email: '',
+            website: ''
         });
         setIsModalOpen(true);
     };
@@ -62,7 +84,18 @@ console.log({profile})
             samity_type: profile.samity_type,
             monthly_subscription_fee: profile.monthly_subscription_fee || 1000,
             penalty_amount: profile.penalty_amount || 200,
-            penalty_late_date: profile.penalty_late_date || 15
+            penalty_late_date: profile.penalty_late_date || 15,
+            samity_formation_date: profile.samity_formation_date || '',
+            old_registration_no: profile.old_registration_no || '',
+            samity_registration_date: profile.samity_registration_date || '',
+            member_admission_fee: profile.member_admission_fee || 0,
+            no_of_share: profile.no_of_share || '',
+            share_price: profile.share_price || '',
+            sold_share: profile.sold_share || '',
+            phone: profile.phone || '',
+            mobile: profile.mobile || '',
+            email: profile.email || '',
+            website: profile.website || ''
         });
         setIsModalOpen(true);
     };
@@ -191,6 +224,53 @@ console.log({profile})
                                     <span className="text-base text-gray-900">{profile.samity_address}</span>
                                 </div>
                             </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block mb-1 text-xs font-medium tracking-wider text-gray-500 uppercase">Formation Date</label>
+                                    <span className="text-base text-gray-900">{profile.samity_formation_date}</span>
+                                </div>
+                                <div>
+                                    <label className="block mb-1 text-xs font-medium tracking-wider text-gray-500 uppercase">Registration Date</label>
+                                    <span className="text-base text-gray-900">{profile.samity_registration_date}</span>
+                                </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block mb-1 text-xs font-medium tracking-wider text-gray-500 uppercase">Old Reg No</label>
+                                    <span className="text-base text-gray-900">{profile.old_registration_no}</span>
+                                </div>
+                                <div>
+                                    <label className="block mb-1 text-xs font-medium tracking-wider text-gray-500 uppercase">Admission Fee</label>
+                                    <span className="text-base text-gray-900">{profile.member_admission_fee} BDT</span>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-4">
+                                <div>
+                                    <label className="block mb-1 text-xs font-medium tracking-wider text-gray-500 uppercase">Share Price</label>
+                                    <span className="text-base text-gray-900">{profile.share_price} BDT</span>
+                                </div>
+                                <div>
+                                    <label className="block mb-1 text-xs font-medium tracking-wider text-gray-500 uppercase">Total Shares</label>
+                                    <span className="text-base text-gray-900">{profile.no_of_share}</span>
+                                </div>
+                                <div>
+                                    <label className="block mb-1 text-xs font-medium tracking-wider text-gray-500 uppercase">Sold Shares</label>
+                                    <span className="text-base text-gray-900">{profile.sold_share}</span>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block mb-1 text-xs font-medium tracking-wider text-gray-500 uppercase">Contact Info</label>
+                                <div className="grid grid-cols-2 gap-2 text-sm">
+                                    {profile.phone && <div><span className="text-gray-500">Phone:</span> {profile.phone}</div>}
+                                    {profile.mobile && <div><span className="text-gray-500">Mobile:</span> {profile.mobile}</div>}
+                                    {profile.email && <div className="col-span-2"><span className="text-gray-500">Email:</span> {profile.email}</div>}
+                                    {profile.website && <div className="col-span-2"><span className="text-gray-500">Web:</span> {profile.website}</div>}
+                                </div>
+                            </div>
                         </div>
 
                         <div className="p-4 space-y-4 bg-gray-50 rounded-lg border border-gray-100">
@@ -283,6 +363,125 @@ console.log({profile})
                                                     value={formData.samity_type}
                                                     onChange={(e) => setFormData({...formData, samity_type: e.target.value})}
                                                     placeholder="Default: P"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block mb-1 text-sm font-medium text-gray-700">Samity Formation Date</label>
+                                                <input
+                                                    type="date"
+                                                    className="block p-2 w-full rounded-md border border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                    value={formData.samity_formation_date}
+                                                    onChange={(e) => setFormData({...formData, samity_formation_date: e.target.value})}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block mb-1 text-sm font-medium text-gray-700">Old Registration No</label>
+                                                <input
+                                                    type="text"
+                                                    className="block p-2 w-full rounded-md border border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                    value={formData.old_registration_no}
+                                                    onChange={(e) => setFormData({...formData, old_registration_no: e.target.value})}
+                                                    placeholder="Old Reg No"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block mb-1 text-sm font-medium text-gray-700">Registration Date</label>
+                                                <input
+                                                    type="date"
+                                                    className="block p-2 w-full rounded-md border border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                    value={formData.samity_registration_date}
+                                                    onChange={(e) => setFormData({...formData, samity_registration_date: e.target.value})}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block mb-1 text-sm font-medium text-gray-700">Member Admission Fee</label>
+                                                <input
+                                                    type="number"
+                                                    className="block p-2 w-full rounded-md border border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                    value={formData.member_admission_fee}
+                                                    onChange={(e) => setFormData({...formData, member_admission_fee: e.target.value})}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-3 gap-4">
+                                            <div>
+                                                <label className="block mb-1 text-sm font-medium text-gray-700">No of Share</label>
+                                                <input
+                                                    type="number"
+                                                    className="block p-2 w-full rounded-md border border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                    value={formData.no_of_share}
+                                                    onChange={(e) => setFormData({...formData, no_of_share: e.target.value})}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block mb-1 text-sm font-medium text-gray-700">Share Price</label>
+                                                <input
+                                                    type="number"
+                                                    className="block p-2 w-full rounded-md border border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                    value={formData.share_price}
+                                                    onChange={(e) => setFormData({...formData, share_price: e.target.value})}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block mb-1 text-sm font-medium text-gray-700">Sold Share</label>
+                                                <input
+                                                    type="number"
+                                                    className="block p-2 w-full rounded-md border border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                    value={formData.sold_share}
+                                                    onChange={(e) => setFormData({...formData, sold_share: e.target.value})}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block mb-1 text-sm font-medium text-gray-700">Phone</label>
+                                                <input
+                                                    type="text"
+                                                    className="block p-2 w-full rounded-md border border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                    value={formData.phone}
+                                                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                                                    placeholder="Phone"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block mb-1 text-sm font-medium text-gray-700">Mobile</label>
+                                                <input
+                                                    type="text"
+                                                    className="block p-2 w-full rounded-md border border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                    value={formData.mobile}
+                                                    onChange={(e) => setFormData({...formData, mobile: e.target.value})}
+                                                    placeholder="Mobile"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block mb-1 text-sm font-medium text-gray-700">Email</label>
+                                                <input
+                                                    type="email"
+                                                    className="block p-2 w-full rounded-md border border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                    value={formData.email}
+                                                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                                    placeholder="Email"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block mb-1 text-sm font-medium text-gray-700">Website</label>
+                                                <input
+                                                    type="text"
+                                                    className="block p-2 w-full rounded-md border border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                    value={formData.website}
+                                                    onChange={(e) => setFormData({...formData, website: e.target.value})}
+                                                    placeholder="Website URL"
                                                 />
                                             </div>
                                         </div>

@@ -123,6 +123,21 @@ class PermissionSeeder extends Seeder
             }
         }
 
+        // Code Master Permissions
+        $codeMasterMenu = Menu::where('slug', 'code-master')->first();
+        if ($codeMasterMenu) {
+            $actions = ['view', 'create', 'edit', 'delete', 'sync'];
+            foreach ($actions as $action) {
+                Permission::updateOrCreate(
+                    ['slug' => 'code.master.' . $action],
+                    [
+                        'name' => 'Code Master ' . ucfirst($action),
+                        'menu_id' => $codeMasterMenu->id,
+                    ]
+                );
+            }
+        }
+
         // GL Mapping Type Permissions
         $glMappingTypeMenu = Menu::where('slug', 'gl-mapping-type')->first();
         if ($glMappingTypeMenu) {
