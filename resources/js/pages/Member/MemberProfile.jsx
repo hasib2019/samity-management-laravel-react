@@ -68,6 +68,17 @@ const MemberProfile = () => {
     };
 
     const [formData, setFormData] = useState(initialFormState);
+    
+    // Account Modal State
+    const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+    const [selectedMemberForAccount, setSelectedMemberForAccount] = useState(null);
+    const [accountFormData, setAccountFormData] = useState({
+        product_id: '',
+        principal_amount: '',
+        tenure_month: '',
+        description: ''
+    });
+
     const { hasPermission } = useAuth();
 
     useEffect(() => {
@@ -268,6 +279,47 @@ const MemberProfile = () => {
         }
     };
 
+    const handleOpenAccountModal = (member) => {
+        setSelectedMemberForAccount(member);
+        setAccountFormData({
+            product_id: '',
+            principal_amount: '',
+            tenure_month: '',
+            description: ''
+        });
+        setIsAccountModalOpen(true);
+    };
+
+    const handleAccountInputChange = (e) => {
+        const { name, value } = e.target;
+        setAccountFormData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
+    const handleAccountSubmit = async (e) => {
+        e.preventDefault();
+        if (!selectedMemberForAccount) return;
+
+        setSubmitting(true);
+        try {
+            await api.post(`/members/${selectedMemberForAccount.id}/accounts`, accountFormData);
+            showSuccessToast('Savings account created successfully');
+            setIsAccountModalOpen(false);
+            fetchMembers(); // Refresh list to update icon visibility
+        } catch (error) {
+            if (error.response && error.response.data && error.response.data.errors) {
+                const firstError = Object.values(error.response.data.errors)[0][0];
+                showErrorToast(firstError);
+            } else {
+                showErrorToast(error.response?.data?.message || 'Failed to create savings account');
+            }
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
     const handleDelete = async (id) => {
         const isConfirmed = await confirmDelete();
         if (isConfirmed) {
@@ -351,6 +403,11 @@ const MemberProfile = () => {
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-sm font-medium text-right whitespace-nowrap">
+                                        {hasPermission('member.edit') && (!member.savings_accounts || member.savings_accounts.length === 0) && (
+                                            <button onClick={() => handleOpenAccountModal(member)} className="mr-3 text-green-600 hover:text-green-900" title="Open Savings Account">
+                                                <CreditCard className="w-4 h-4" />
+                                            </button>
+                                        )}
                                         {hasPermission('member.view') && (
                                             <button onClick={() => handleViewMember(member)} className="mr-3 text-purple-600 hover:text-purple-900" title="View Details">
                                                 <Eye className="w-4 h-4" />
@@ -381,6 +438,110 @@ const MemberProfile = () => {
                 member={viewMember}
                 STORAGE_URL={STORAGE_URL}
             />
+
+            {/* Account Modal */}
+            {isAccountModalOpen && (
+                <div className="fixed inset-0 z-[100] overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+                    <div className="flex justify-center items-center px-4 pt-4 pb-20 min-h-screen text-center sm:block sm:p-0">
+                        <div className="fixed inset-0 backdrop-blur-sm transition-opacity bg-black/50" aria-hidden="true" onClick={() => setIsAccountModalOpen(false)}></div>
+                        <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                        <div className="relative inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full z-[101]">
+                            <form onSubmit={handleAccountSubmit}>
+                                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                                    <div className="flex justify-between items-center pb-3 mb-5 border-b border-gray-100">
+                                        <h3 className="text-lg font-medium text-gray-900">
+                                            Open Savings Account
+                                        </h3>
+                                        <button type="button" onClick={() => setIsAccountModalOpen(false)} className="text-gray-400 hover:text-gray-500 focus:outline-none">
+                                            <X className="w-5 h-5" />
+                                        </button>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Product <span className="text-red-500">*</span></label>
+                                            <select
+                                                name="product_id"
+                                                required
+                                                value={accountFormData.product_id}
+                                                onChange={handleAccountInputChange}
+                                                className="block px-3 py-2 mt-1 w-full bg-white rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                            >
+                                                <option value="">Select Product</option>
+                                                {savingProducts.map(product => (
+                                                    <option key={product.id} value={product.id}>{product.product_name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Principal Amount <span className="text-red-500">*</span></label>
+                                            <input
+                                                type="number"
+                                                name="principal_amount"
+                                                required
+                                                min="0"
+                                                value={accountFormData.principal_amount}
+                                                onChange={handleAccountInputChange}
+                                                className="block px-3 py-2 mt-1 w-full rounded-md border border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Tenure (Month)</label>
+                                            <input
+                                                type="number"
+                                                name="tenure_month"
+                                                min="1"
+                                                value={accountFormData.tenure_month}
+                                                onChange={handleAccountInputChange}
+                                                className="block px-3 py-2 mt-1 w-full rounded-md border border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Description</label>
+                                            <textarea
+                                                name="description"
+                                                rows="3"
+                                                value={accountFormData.description}
+                                                onChange={handleAccountInputChange}
+                                                className="block px-3 py-2 mt-1 w-full rounded-md border border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                            ></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="px-4 py-3 bg-gray-50 sm:px-6 sm:flex sm:flex-row-reverse">
+                                    <button
+                                        type="submit"
+                                        disabled={submitting}
+                                        className="inline-flex justify-center px-4 py-2 w-full text-base font-medium text-white bg-blue-600 rounded-md border border-transparent shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
+                                    >
+                                        {submitting ? (
+                                            <>
+                                                <Loader2 className="mr-2 w-4 h-4 animate-spin" />
+                                                Creating...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Save className="mr-2 w-4 h-4" />
+                                                Create Account
+                                            </>
+                                        )}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsAccountModalOpen(false)}
+                                        className="inline-flex justify-center px-4 py-2 mt-3 w-full text-base font-medium text-gray-700 bg-white rounded-md border border-gray-300 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Modal */}
             {isModalOpen && (

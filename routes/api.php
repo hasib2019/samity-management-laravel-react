@@ -78,6 +78,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/members', [MemberInfoController::class, 'store'])->middleware('permission:member.create');
     Route::get('/members/{id}', [MemberInfoController::class, 'show'])->middleware('permission:member.view');
     Route::put('/members/{id}', [MemberInfoController::class, 'update'])->middleware('permission:member.edit');
+    Route::post('/members/{id}/accounts', [MemberInfoController::class, 'storeAccount'])->middleware('permission:member.edit');
     Route::delete('/members/{id}', [MemberInfoController::class, 'destroy'])->middleware('permission:member.delete');
 
     // GL Account Management

@@ -26,6 +26,8 @@ class MemberInfoController extends Controller
 
         $query = MemberInfo::with(['creator', 'updator', 'samity', 'user', 'savingsAccounts.product'])->latest();
 
+
+
         if ($request->has('samity_id')) {
             $query->where('samity_id', $request->samity_id);
         }
@@ -196,6 +198,7 @@ class MemberInfoController extends Controller
 
                 $commonData = [
                     'customer_id' => $savingsAccount->id,
+                    'samity_id' => $member->samity_id,
                     'product_id' => $product->id,
                     'payment_mode' => 'cash',
                     'batch_num' => $batchNum,
@@ -375,5 +378,124 @@ class MemberInfoController extends Controller
         $member->delete();
 
         return response()->json(['message' => 'Member deleted successfully']);
+    }
+
+    public function storeAccount(Request $request, $id)
+    {
+        $member = MemberInfo::find($id);
+        if (!$member) {
+            return response()->json(['message' => 'Member not found'], 404);
+        }
+
+        // Validate account specific fields
+        $accountValidator = Validator::make($request->all(), [
+            'product_id' => 'required|exists:product_mst,id',
+            'principal_amount' => 'required|numeric|min:0',
+            'tenure_month' => 'nullable|integer|min:1',
+        ]);
+
+        if ($accountValidator->fails()) {
+            return response()->json(['errors' => $accountValidator->errors()], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // Retrieve Product and GL Info
+            $product = \App\Models\Product::find($request->product_id);
+            if (!$product->gl_income_id || !$product->gl_expense_id) {
+                throw new \Exception('Product GL Mapping (Income/Expense) is missing. Cannot create account.');
+            }
+
+            // Generate Account Number: YYYYMMDD + 4 digit serial
+            $prefix = date('Ymd');
+            $lastAccount = SavingsAccount::where('account_number', 'like', $prefix . '%')
+                ->orderBy('account_number', 'desc')
+                ->first();
+            
+            $nextSerial = 1;
+            if ($lastAccount) {
+                $lastSerial = (int)substr($lastAccount->account_number, -4);
+                $nextSerial = $lastSerial + 1;
+            }
+            
+            $accountNumber = $prefix . str_pad($nextSerial, 4, '0', STR_PAD_LEFT);
+
+            $savingsAccount = SavingsAccount::create([
+                'account_number' => $accountNumber,
+                'member_id' => $member->id,
+                'product_id' => $request->product_id,
+                'status' => true,
+                'principal_amount' => $request->principal_amount,
+                'current_balance' => $request->principal_amount,
+                'profit_balance' => 0,
+                'tenure_month' => $request->tenure_month,
+                'description' => $request->description ?? 'Opening Balance',
+                'created_user_id' => Auth::id(),
+                'updated_user_id' => Auth::id(),
+            ]);
+
+            // Transaction Creation
+            do {
+                $batchNum = 'sav' . str_pad(mt_rand(1, 99999), 5, '0', STR_PAD_LEFT);
+            } while (\App\Models\Transaction::where('batch_num', $batchNum)->exists());
+
+            $commonData = [
+                'customer_id' => $savingsAccount->id,
+                'samity_id' => $member->samity_id,
+                'product_id' => $product->id,
+                'payment_mode' => 'cash',
+                'batch_num' => $batchNum,
+                'tran_code' => 'DEP',
+                'tran_type' => 'Deposit',
+                'tran_date' => date('Y-m-d'),
+                'naration' => 'Account opening',
+                'authorize_status' => 'approved',
+                'authorized_by' => Auth::id(),
+                'authorized_at' => date('Y-m-d'),
+                'created_by' => Auth::id(),
+                'status' => 'posted',
+            ];
+
+            // Debit Transaction (Using gl_expense_id)
+            $tranNumDr = date('YmdHis') . rand(10, 99);
+
+            \App\Models\Transaction::create(array_merge($commonData, [
+                'tran_num' => $tranNumDr,
+                'glac_id' => $product->gl_expense_id,
+                'dr_amt' => $request->principal_amount,
+                'cr_amt' => 0,
+            ]));
+
+            // Credit Transaction (Using gl_income_id)
+            $tranNumCr = date('YmdHis') . rand(10, 99);
+
+            $creditTransaction = \App\Models\Transaction::create(array_merge($commonData, [
+                'tran_num' => $tranNumCr,
+                'glac_id' => $product->gl_income_id,
+                'dr_amt' => 0,
+                'cr_amt' => $request->principal_amount,
+            ]));
+
+            // Create Deposit Request Entry (Linked to Credit Transaction)
+            \App\Models\DepositRequest::create([
+                'member_id' => $member->id,
+                'savings_account_id' => $savingsAccount->id,
+                'amount' => $request->principal_amount,
+                'transaction_id' => $creditTransaction->id,
+                'status' => 'approved',
+                'request_date' => date('Y-m-d'),
+                'approved_by' => Auth::id(),
+                'approved_date' => date('Y-m-d'),
+            ]);
+
+            DB::commit();
+
+            return response()->json(['message' => 'Savings account created successfully', 'data' => $savingsAccount]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Failed to create savings account', 'error' => $e->getMessage()], 500);
+        }
     }
 }
