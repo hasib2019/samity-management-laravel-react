@@ -31,6 +31,10 @@ import JournalVoucher from './pages/Vouchers/JournalVoucher';
 import LoanApplication from './pages/Loans/LoanApplication';
 import LoanRepayment from './pages/Loans/LoanRepayment';
 import LoanDisbursement from './pages/Loans/LoanDisbursement';
+import DpsApplication from './pages/DPS/DpsApplication';
+import DpsCollection from './pages/DPS/DpsCollection';
+import DpsClosing from './pages/DPS/DpsClosing';
+import DpsList from './pages/DPS/DpsList';
 
 // Reports
 import AccountStatement from './pages/Reports/AccountStatement';
@@ -257,6 +261,41 @@ const App = () => {
                             </ProtectedRoute>
                         } 
                     />
+
+                    {/* DPS Management */}
+                    <Route 
+                        path="/dps-account" 
+                        element={
+                            <ProtectedRoute>
+                                <DpsApplication />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/dps-collection" 
+                        element={
+                            <ProtectedRoute>
+                                <DpsCollection />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/dps-closing" 
+                        element={
+                            <ProtectedRoute>
+                                <DpsClosing />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/dps-list" 
+                        element={
+                            <ProtectedRoute>
+                                <DpsList />
+                            </ProtectedRoute>
+                        } 
+                    />
+
                     {/* Removed routes for Accounts & SavingsProduct */}
                     {/* Reports Routes */}
                     <Route path="/account-statement" element={<ProtectedRoute><AccountStatement /></ProtectedRoute>} />

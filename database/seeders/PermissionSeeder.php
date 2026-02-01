@@ -308,5 +308,65 @@ class PermissionSeeder extends Seeder
                 );
             }
         }
+
+        // DPS Account Permissions
+        $dpsAccountMenu = Menu::where('slug', 'dps-account')->first();
+        if ($dpsAccountMenu) {
+            $actions = ['view', 'create', 'edit', 'delete', 'approve'];
+            foreach ($actions as $action) {
+                Permission::updateOrCreate(
+                    ['slug' => 'dps.account.' . $action],
+                    [
+                        'name' => 'DPS Account ' . ucfirst($action),
+                        'menu_id' => $dpsAccountMenu->id,
+                    ]
+                );
+            }
+        }
+
+        // DPS Collection Permissions
+        $dpsCollectionMenu = Menu::where('slug', 'dps-collection')->first();
+        if ($dpsCollectionMenu) {
+            $actions = ['view', 'create', 'edit', 'delete'];
+            foreach ($actions as $action) {
+                Permission::updateOrCreate(
+                    ['slug' => 'dps.collection.' . $action],
+                    [
+                        'name' => 'DPS Collection ' . ucfirst($action),
+                        'menu_id' => $dpsCollectionMenu->id,
+                    ]
+                );
+            }
+        }
+
+        // DPS Closing Permissions
+        $dpsClosingMenu = Menu::where('slug', 'dps-closing')->first();
+        if ($dpsClosingMenu) {
+            $actions = ['view', 'create', 'edit', 'delete'];
+            foreach ($actions as $action) {
+                Permission::updateOrCreate(
+                    ['slug' => 'dps.closing.' . $action],
+                    [
+                        'name' => 'DPS Closing ' . ucfirst($action),
+                        'menu_id' => $dpsClosingMenu->id,
+                    ]
+                );
+            }
+        }
+
+        // DPS List Permissions
+        $dpsListMenu = Menu::where('slug', 'dps-list')->first();
+        if ($dpsListMenu) {
+            $actions = ['view'];
+            foreach ($actions as $action) {
+                Permission::updateOrCreate(
+                    ['slug' => 'dps.list.' . $action],
+                    [
+                        'name' => 'DPS List ' . ucfirst($action),
+                        'menu_id' => $dpsListMenu->id,
+                    ]
+                );
+            }
+        }
     }
 }

@@ -19,7 +19,11 @@ class LoanRepaymentSchedule extends Model
         'total_amount',
         'status',
         'paid_date',
-        'fine_amount'
+        'fine_amount',
+        'paid_amount',
+        'paid_principal',
+        'paid_interest',
+        'paid_fine'
     ];
 
     protected $casts = [
@@ -29,6 +33,10 @@ class LoanRepaymentSchedule extends Model
         'interest_amount' => 'decimal:2',
         'total_amount' => 'decimal:2',
         'fine_amount' => 'decimal:2',
+        'paid_amount' => 'decimal:2',
+        'paid_principal' => 'decimal:2',
+        'paid_interest' => 'decimal:2',
+        'paid_fine' => 'decimal:2',
     ];
 
     public function loanApplication(): BelongsTo

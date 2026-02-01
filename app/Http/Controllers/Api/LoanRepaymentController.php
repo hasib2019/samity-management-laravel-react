@@ -79,20 +79,38 @@ class LoanRepaymentController extends Controller
                 ->orderBy('due_date', 'asc')
                 ->get();
             
+            // Calculate total unpaid fine from schedules
+            $totalUnpaidFine = $loan->schedules->sum(function ($schedule) {
+                return $schedule->fine_amount - $schedule->paid_fine;
+            });
+
             // Check if LoanAccount exists for accurate balance
             $loanAcc = LoanAccount::where('loan_application_id', $loan->id)->first();
             
             if ($loanAcc) {
-                $loan->total_due = $loanAcc->current_balance;
+                // Current Balance (Principal + Interest) + Unpaid Fines
+                $loan->total_due = $loanAcc->current_balance + $totalUnpaidFine;
                 $loan->total_paid = $loanAcc->total_paid;
                 $loan->account_no = $loanAcc->account_no;
             } else {
                 // Fallback to calculation
-                $loan->total_due = $loan->schedules->sum('total_amount');
+                // Sum of (Total Amount - Paid Amount) + Unpaid Fines
+                // Note: total_amount is P+I. paid_amount is P+I+Fine (historically) or P+I+Fine (now)
+                // Actually safer to calculate from components:
+                
+                $pendingPrincipalInterest = $loan->schedules->sum(function ($s) {
+                    return ($s->principal_amount + $s->interest_amount) - ($s->paid_principal + $s->paid_interest);
+                });
+
+                $loan->total_due = $pendingPrincipalInterest + $totalUnpaidFine;
+                
                 $loan->total_paid = LoanRepaymentSchedule::where('loan_application_id', $loan->id)
                     ->where('status', 'paid')
-                    ->sum('total_amount');
+                    ->sum('paid_amount'); // This is approximation for fallback
             }
+            
+            // Expose fine component explicitly for frontend if needed
+            $loan->total_fine_due = $totalUnpaidFine;
         }
 
         return response()->json($loans);
@@ -121,6 +139,7 @@ class LoanRepaymentController extends Controller
         $remainingAmount = $amount;
         $principalPaid = 0;
         $interestPaid = 0;
+        $finePaid = 0;
 
         try {
             DB::beginTransaction();
@@ -138,44 +157,72 @@ class LoanRepaymentController extends Controller
             foreach ($schedules as $schedule) {
                 if ($remainingAmount <= 0) break;
 
-                $pendingAmount = $schedule->total_amount - $schedule->paid_amount;
+                // Calculate pending amounts
+                // Note: paid_amount includes principal + interest + fine
+                // But we store paid_fine explicitly now
+                $alreadyPaidFine = $schedule->paid_fine; 
                 
-                if ($pendingAmount <= 0) {
-                    continue; // Should not happen given query, but safety check
-                }
+                $pendingFine = $schedule->fine_amount - $alreadyPaidFine;
+                $pendingFine = max(0, $pendingFine);
 
-                $payForThisSchedule = min($remainingAmount, $pendingAmount);
-                
-                // Distribute between Interest and Principal
-                // Priority: Interest first
                 $pendingInterest = $schedule->interest_amount - $schedule->paid_interest;
                 $pendingPrincipal = $schedule->principal_amount - $schedule->paid_principal;
 
+                $totalPendingForSchedule = $pendingFine + $pendingInterest + $pendingPrincipal;
+
+                if ($totalPendingForSchedule <= 0) {
+                     // If for some reason status is not paid but amounts are 0, mark paid
+                    $schedule->status = 'paid';
+                    $schedule->save();
+                    continue; 
+                }
+
+                $payForThisSchedule = min($remainingAmount, $totalPendingForSchedule);
+                $paymentLeft = $payForThisSchedule;
+                
+                // Distribute Payment: Fine -> Interest -> Principal
+                
+                $fineComponent = 0;
                 $interestComponent = 0;
                 $principalComponent = 0;
 
-                if ($payForThisSchedule <= $pendingInterest) {
-                    $interestComponent = $payForThisSchedule;
-                } else {
-                    $interestComponent = $pendingInterest;
-                    $principalComponent = $payForThisSchedule - $pendingInterest;
-                }
-                
-                // Safety cap on principal (rounding errors)
-                if ($principalComponent > $pendingPrincipal) {
-                    $principalComponent = $pendingPrincipal;
-                    // Any excess? Should be 0 if math is right
+                // 1. Pay Fine
+                if ($paymentLeft > 0 && $pendingFine > 0) {
+                    $amountToPay = min($paymentLeft, $pendingFine);
+                    $fineComponent = $amountToPay;
+                    $paymentLeft -= $amountToPay;
                 }
 
+                // 2. Pay Interest
+                if ($paymentLeft > 0 && $pendingInterest > 0) {
+                    $amountToPay = min($paymentLeft, $pendingInterest);
+                    $interestComponent = $amountToPay;
+                    $paymentLeft -= $amountToPay;
+                }
+
+                // 3. Pay Principal
+                if ($paymentLeft > 0 && $pendingPrincipal > 0) {
+                    $amountToPay = min($paymentLeft, $pendingPrincipal);
+                    $principalComponent = $amountToPay;
+                    $paymentLeft -= $amountToPay;
+                }
+                
                 // Update Schedule
                 $schedule->paid_amount += $payForThisSchedule;
                 $schedule->paid_interest += $interestComponent;
                 $schedule->paid_principal += $principalComponent;
+                $schedule->paid_fine += $fineComponent;
                 
                 $principalPaid += $principalComponent;
                 $interestPaid += $interestComponent;
+                $finePaid += $fineComponent;
 
-                if ($schedule->paid_amount >= $schedule->total_amount - 0.01) {
+                // Check if fully paid
+                // We compare paid_amount with total required (total_amount + fine_amount)
+                // Note: total_amount in DB usually is principal + interest. fine is separate.
+                $requiredTotal = $schedule->total_amount + $schedule->fine_amount;
+                
+                if ($schedule->paid_amount >= $requiredTotal - 0.01) {
                     $schedule->status = 'paid';
                     $schedule->paid_date = $request->tran_date;
                 } else {
@@ -189,10 +236,14 @@ class LoanRepaymentController extends Controller
             // Update LoanAccount Balance
             $loanAccount = LoanAccount::where('loan_application_id', $loan->id)->first();
             if ($loanAccount) {
-                $loanAccount->total_paid += ($amount - $remainingAmount); // Total actual paid in this session
+                // Update LoanAccount with Principal + Interest only
+                // Fines are tracked in schedules and do not reduce the core loan balance
+                $corePayment = $principalPaid + $interestPaid;
+                
+                $loanAccount->total_paid += $corePayment;
                 $loanAccount->principal_paid += $principalPaid;
                 $loanAccount->interest_paid += $interestPaid;
-                $loanAccount->current_balance -= ($amount - $remainingAmount);
+                $loanAccount->current_balance -= $corePayment;
                 
                 if ($loanAccount->current_balance <= 0) {
                     $loanAccount->status = 'closed';
@@ -242,13 +293,14 @@ class LoanRepaymentController extends Controller
             ]));
 
             // Credit Transaction (Principal -> Asset)
+            // User requested: "Loan Outstanding GL (Dr GL) this gl is Cr and this is principal amount"
             if ($principalPaid > 0) {
-                if (!$loan->product->gl_principal_id) { // Use portfolio/principal GL
-                     throw new \Exception("Product Principal GL not defined");
+                if (!$loan->product->gl_loan_outstanding_id) { // Use loan outstanding GL
+                     throw new \Exception("Product Loan Outstanding GL not defined");
                 }
                 Transaction::create(array_merge($commonData, [
                     'tran_num' => date('YmdHis') . rand(10, 99),
-                    'glac_id' => $loan->product->gl_principal_id,
+                    'glac_id' => $loan->product->gl_loan_outstanding_id,
                     'dr_amt' => 0,
                     'cr_amt' => $principalPaid,
                     'naration' => ($request->naration ?? 'Loan Repayment') . ' (Principal)',
@@ -256,6 +308,7 @@ class LoanRepaymentController extends Controller
             }
 
             // Credit Transaction (Interest -> Income)
+            // User requested: "Profit/Interest GL have gl CR is service charge"
             if ($interestPaid > 0) {
                 if (!$loan->product->gl_income_id) { // Use income GL
                      throw new \Exception("Product Income GL not defined");
@@ -266,6 +319,21 @@ class LoanRepaymentController extends Controller
                     'dr_amt' => 0,
                     'cr_amt' => $interestPaid,
                     'naration' => ($request->naration ?? 'Loan Repayment') . ' (Interest)',
+                ]));
+            }
+
+            // Credit Transaction (Penalty -> Income)
+            // User requested: "Penalty GL overdue gl CR"
+            if ($finePaid > 0) {
+                if (!$loan->product->gl_penalty_id) { 
+                     throw new \Exception("Product Penalty GL not defined");
+                }
+                Transaction::create(array_merge($commonData, [
+                    'tran_num' => date('YmdHis') . rand(10, 99),
+                    'glac_id' => $loan->product->gl_penalty_id,
+                    'dr_amt' => 0,
+                    'cr_amt' => $finePaid,
+                    'naration' => ($request->naration ?? 'Loan Repayment') . ' (Penalty)',
                 ]));
             }
 

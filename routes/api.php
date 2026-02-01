@@ -150,4 +150,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/reports/transaction-report', [App\Http\Controllers\Api\ReportController::class, 'transactionReport']);
     Route::get('/reports/expense-report', [App\Http\Controllers\Api\ReportController::class, 'expenseReport']);
     Route::get('/reports/revenue-report', [App\Http\Controllers\Api\ReportController::class, 'revenueReport']);
+
+    // DPS Management
+    Route::apiResource('dps-applications', App\Http\Controllers\Api\DpsApplicationController::class);
+    Route::get('dps-collections/search', [App\Http\Controllers\Api\DpsCollectionController::class, 'search'])->middleware('permission:dps.collection.view');
+    Route::post('dps-collections', [App\Http\Controllers\Api\DpsCollectionController::class, 'store'])->middleware('permission:dps.collection.create');
+    
+    // DPS Closing
+    Route::get('dps-closings/search', [App\Http\Controllers\Api\DpsClosingController::class, 'search'])->middleware('permission:dps.closing.view');
+    Route::post('dps-closings', [App\Http\Controllers\Api\DpsClosingController::class, 'store'])->middleware('permission:dps.closing.create');
 });

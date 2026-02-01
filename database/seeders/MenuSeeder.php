@@ -87,6 +87,18 @@ class MenuSeeder extends Seeder
                     ['name' => 'Loan Repayment', 'slug' => 'loan-repayment', 'icon' => 'CreditCard', 'order' => 3],
                 ]
             ],
+            [
+                'name' => 'DPS Management',
+                'slug' => 'dps-management',
+                'icon' => 'PiggyBank',
+                'order' => 6,
+                'children' => [
+                    ['name' => 'DPS Account', 'slug' => 'dps-account', 'icon' => 'FilePlus', 'order' => 1],
+                    ['name' => 'DPS Collection', 'slug' => 'dps-collection', 'icon' => 'HandCoins', 'order' => 2],
+                    ['name' => 'DPS Closing', 'slug' => 'dps-closing', 'icon' => 'XCircle', 'order' => 3],
+                    ['name' => 'DPS List', 'slug' => 'dps-list', 'icon' => 'List', 'order' => 4],
+                ]
+            ],
         ];
 
         foreach ($menus as $menuData) {
