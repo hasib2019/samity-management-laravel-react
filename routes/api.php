@@ -163,4 +163,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // DPS Closing
     Route::get('dps-closings/search', [App\Http\Controllers\Api\DpsClosingController::class, 'search'])->middleware('permission:dps.closing.view');
     Route::post('dps-closings', [App\Http\Controllers\Api\DpsClosingController::class, 'store'])->middleware('permission:dps.closing.create');
+
+    // FDR Management
+    Route::apiResource('fdr-applications', App\Http\Controllers\Api\FdrApplicationController::class);
+    // FDR Closing
+    Route::get('fdr-closings/search', [App\Http\Controllers\Api\FdrClosingController::class, 'search'])->middleware('permission:fdr.closing.view');
+    Route::post('fdr-closings', [App\Http\Controllers\Api\FdrClosingController::class, 'store'])->middleware('permission:fdr.closing.create');
 });
