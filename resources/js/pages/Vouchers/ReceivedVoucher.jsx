@@ -28,7 +28,10 @@ const ReceivedVoucher = () => {
   const fetchGlAccounts = async () => {
     try {
       const res = await api.get('/gl-accounts', { params: { parent_child: 'C' } });
-      const active = (res.data || []).filter(a => a.status === 'A');
+      const active = (res.data || []).filter(a => 
+        a.status === 'A' && 
+        ['A', 'L', 'E'].includes(a.glac_type)
+      );
       setGlAccounts(active);
     } catch (e) {
       setGlAccounts([]);

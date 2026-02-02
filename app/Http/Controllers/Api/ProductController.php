@@ -44,6 +44,7 @@ class ProductController extends Controller
             'installment_amount' => 'nullable|numeric',
             'penalty_rate' => 'nullable|numeric',
             'gl_waiver_id' => 'nullable|exists:glac_mst,id',
+            'loan_loss_provision_gl_id' => 'nullable|exists:glac_mst,id',
             'status' => 'required|in:active,inactive',
         ]);
 

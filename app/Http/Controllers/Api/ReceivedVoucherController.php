@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Transaction;
 use App\Models\GlMstMapping;
+use App\Models\GlAccount;
 
 class ReceivedVoucherController extends Controller
 {
@@ -35,6 +36,29 @@ class ReceivedVoucherController extends Controller
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        // Check Balance for Asset/Liability/Expense
+        $glAccount = GlAccount::find($request->gl_mst_id);
+        if ($glAccount && in_array($glAccount->glac_type, ['A', 'L', 'E'])) {
+            $totalDr = Transaction::where('glac_id', $glAccount->id)->where('status', 'posted')->sum('dr_amt');
+            $totalCr = Transaction::where('glac_id', $glAccount->id)->where('status', 'posted')->sum('cr_amt');
+            
+            $currentBalance = 0;
+            // Asset/Expense (Debit Nature) -> Credit reduces balance
+            if ($glAccount->gl_nature == 'D') {
+                $currentBalance = $totalDr - $totalCr;
+                if (($currentBalance - $request->amount) < 0) {
+                    return response()->json(['message' => 'Insufficient Balance: Transaction would result in negative balance.'], 422);
+                }
+            } 
+            // Liability (Credit Nature) -> Credit increases balance (Usually safe, but checking just in case)
+            else {
+                $currentBalance = $totalCr - $totalDr;
+                if (($currentBalance + $request->amount) < 0) {
+                     return response()->json(['message' => 'Insufficient Balance: Transaction would result in negative balance.'], 422);
+                }
+            }
         }
 
         $cashMap = GlMstMapping::where('gl_code_type', strtoupper('CASH'))->where('status', true)->first();

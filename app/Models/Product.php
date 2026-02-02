@@ -66,4 +66,6 @@ class Product extends Model
     public function glPenalty() { return $this->belongsTo(GlAccount::class, 'gl_penalty_id'); }
     public function glIncome() { return $this->belongsTo(GlAccount::class, 'gl_income_id'); }
     public function glExpense() { return $this->belongsTo(GlAccount::class, 'gl_expense_id'); }
+    public function glWaiver() { return $this->belongsTo(GlAccount::class, 'gl_waiver_id'); }
+    public function glLoanLossProvision() { return $this->belongsTo(GlAccount::class, 'loan_loss_provision_gl_id'); }
 }
