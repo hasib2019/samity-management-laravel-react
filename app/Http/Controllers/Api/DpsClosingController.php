@@ -44,17 +44,18 @@ class DpsClosingController extends Controller
         $totalDeposited = $dpsApplication->balance;
         $payableAmount = $totalDeposited;
         $interest = 0;
+        $penalty = 0;
 
         if ($isMatured) {
             $payableAmount = $dpsApplication->maturity_amount;
             $interest = $payableAmount - $totalDeposited;
         } else {
             // Premature Closing Logic
-            // For now, let's assume simple interest calculation or just return principal
-            // Or maybe a fixed percentage deduction?
-            // Let's return the deposited amount as base, and let user adjust.
-            // But if we want to be helpful, maybe calculate interest based on duration passed.
-            // Placeholder: Just return balance.
+            // If penalty applicable, we might want to suggest one.
+            // For now, let's keep it 0 and let user enter it.
+            if ($dpsApplication->product->penalty_applicable) {
+                // $penalty = ... logic if defined
+            }
         }
 
         return response()->json([
@@ -64,6 +65,7 @@ class DpsClosingController extends Controller
                 'total_deposited' => $totalDeposited,
                 'calculated_payable' => $payableAmount,
                 'calculated_interest' => $interest,
+                'calculated_penalty' => $penalty,
                 'duration_passed' => $today->diffInMonths($dpsApplication->start_date)
             ]
         ]);
@@ -76,6 +78,7 @@ class DpsClosingController extends Controller
             'closing_date' => 'required|date',
             'total_paid' => 'required|numeric|min:0',
             'interest_paid' => 'required|numeric|min:0',
+            'penalty_amount' => 'nullable|numeric|min:0',
             'naration' => 'nullable|string',
         ]);
 
@@ -159,31 +162,54 @@ class DpsClosingController extends Controller
                 }
             }
 
-            // 3. Credit Cash - Total Paid (Balance + Interest)
-            // Wait, user inputs total_paid.
-            // Validation: total_paid should roughly equal balance + interest_paid.
-            // Actually, in accounting: Dr Principal + Dr Interest = Cr Cash.
-            // So Cash Cr = Balance + Interest Paid.
-            
-            $totalCashOut = $dpsApplication->balance + $request->interest_paid;
-            
-            Transaction::create(array_merge($commonData, [
-                'tran_num' => date('YmdHis') . rand(12, 99),
-                'glac_id' => $cashMap->gl_mst_id,
-                'dr_amt' => 0,
-                'cr_amt' => $totalCashOut,
-            ]));
+            // 3. Credit Penalty Income (if any)
+            $penalty = $request->penalty_amount ?? 0;
+            if ($penalty > 0) {
+                // We need a Penalty Income GL.
+                // Assuming product has gl_penalty_id or we use a global mapping.
+                // Let's try product specific first, then global.
+                $penaltyGlId = $dpsApplication->product->gl_penalty_id;
+                
+                if (!$penaltyGlId) {
+                    // Try global mapping
+                    $penaltyMap = GlMstMapping::where('gl_code_type', 'PENALTY')->first(); // Assuming 'PENALTY' type exists
+                    $penaltyGlId = $penaltyMap ? $penaltyMap->gl_mst_id : null;
+                }
+
+                if ($penaltyGlId) {
+                    Transaction::create(array_merge($commonData, [
+                        'tran_num' => date('YmdHis') . rand(12, 99),
+                        'glac_id' => $penaltyGlId,
+                        'dr_amt' => 0,
+                        'cr_amt' => $penalty,
+                    ]));
+                } else {
+                     // Fallback: Credit Interest Expense (reduce expense) or throw error?
+                     // Usually better to have a dedicated GL. If not, maybe 'Other Income'.
+                     // For now, let's throw error to force setup.
+                     throw new \Exception("Penalty GL not defined for Product or Global Mapping");
+                }
+            }
+
+            // 4. Credit Cash - Actual Cash Out
+            // Cash Out = (Principal + Interest) - Penalty
+            $totalCashOut = ($dpsApplication->balance + $request->interest_paid) - $penalty;
+
+            if ($totalCashOut > 0) {
+                Transaction::create(array_merge($commonData, [
+                    'tran_num' => date('YmdHis') . rand(13, 99),
+                    'glac_id' => $cashMap->gl_mst_id,
+                    'dr_amt' => 0,
+                    'cr_amt' => $totalCashOut,
+                ]));
+            }
 
             DB::commit();
-
-            return response()->json([
-                'message' => 'DPS Closed successfully',
-                'batch' => $batch
-            ]);
+            return response()->json(['message' => 'DPS Account Closed Successfully', 'batch' => $batch]);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => 'Closing failed: ' . $e->getMessage()], 500);
+            return response()->json(['message' => $e->getMessage()], 500);
         }
     }
 }

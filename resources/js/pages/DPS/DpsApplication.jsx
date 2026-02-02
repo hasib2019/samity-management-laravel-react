@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import Swal from 'sweetalert2';
-import { Plus, Trash2, Edit, Save, X } from 'lucide-react';
+import { Plus, Trash2, Edit, Save, X, Loader } from 'lucide-react';
 
 const DpsApplication = () => {
     const [view, setView] = useState('list'); // list, create, edit
     const [applications, setApplications] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [processing, setProcessing] = useState(false);
     
     // Form Data
     const [formData, setFormData] = useState({
@@ -76,6 +77,7 @@ const DpsApplication = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setProcessing(true);
         try {
             await api.post('/dps-applications', formData);
             Swal.fire('Success', 'DPS Application created successfully', 'success');
@@ -84,6 +86,8 @@ const DpsApplication = () => {
         } catch (err) {
             console.error(err);
             Swal.fire('Error', 'Failed to create application', 'error');
+        } finally {
+            setProcessing(false);
         }
     };
 
@@ -261,8 +265,20 @@ const DpsApplication = () => {
                     </div>
 
                     <div className="flex justify-end">
-                        <button type="submit" className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
-                            <Save className="w-4 h-4 mr-2" /> Save Application
+                        <button 
+                            type="submit" 
+                            disabled={processing}
+                            className={`flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 ${processing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                            {processing ? (
+                                <>
+                                    <Loader className="w-4 h-4 mr-2 animate-spin" /> Saving...
+                                </>
+                            ) : (
+                                <>
+                                    <Save className="w-4 h-4 mr-2" /> Save Application
+                                </>
+                            )}
                         </button>
                     </div>
                 </form>

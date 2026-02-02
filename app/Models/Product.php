@@ -40,6 +40,7 @@ class Product extends Model
         'gl_penalty_id',
         'gl_income_id',
         'gl_expense_id',
+        'gl_waiver_id',
         'status',
         'created_by',
         'updated_by',

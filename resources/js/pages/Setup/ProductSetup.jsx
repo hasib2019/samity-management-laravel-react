@@ -125,6 +125,7 @@ const ProductSetup = () => {
         gl_penalty_id: '',
         gl_income_id: '',
         gl_expense_id: '',
+        gl_waiver_id: '',
         status: 'active'
     });
 
@@ -225,6 +226,7 @@ const ProductSetup = () => {
             gl_penalty_id: product.gl_penalty_id || '',
             gl_income_id: product.gl_income_id || '',
             gl_expense_id: product.gl_expense_id || '',
+            gl_waiver_id: product.gl_waiver_id || '',
         });
         setIsModalOpen(true);
     };
@@ -703,6 +705,14 @@ const ProductSetup = () => {
                                             label="Asset/Expense Dr-GL"
                                             value={formData.gl_expense_id}
                                             onChange={(val) => setFormData(prev => ({ ...prev, gl_expense_id: val }))}
+                                            options={glAccounts}
+                                        />
+                                    </div>
+                                    <div>
+                                        <GlCombobox
+                                            label="Loan Waiver / Rebate"
+                                            value={formData.gl_waiver_id}
+                                            onChange={(val) => setFormData(prev => ({ ...prev, gl_waiver_id: val }))}
                                             options={glAccounts}
                                         />
                                     </div>

@@ -59,7 +59,7 @@ class DpsApplicationController extends Controller
 
             // Calculate maturity date
             $startDate = Carbon::parse($request->start_date);
-            $maturityDate = $startDate->copy()->addMonths($request->duration);
+            $maturityDate = $startDate->copy()->addMonths((int)$request->duration);
 
             // Create Application
             $dpsApplication = DpsApplication::create([
@@ -85,11 +85,12 @@ class DpsApplicationController extends Controller
 
             // Generate Installments
             $installments = [];
-            for ($i = 1; $i <= $request->duration; $i++) {
-                $dueDate = $startDate->copy()->addMonths($i); // First installment due after 1 month? Or starting immediately?
-                // Usually DPS starts immediately or next month. Let's assume next month is 2nd installment or if start date is payment date.
-                // Standard: Start date is opening date. 1st installment usually paid on opening or within month.
-                // Let's set 1st due date as start date, and subsequent ones +1 month.
+            $duration = (int)$request->duration;
+            for ($i = 1; $i <= $duration; $i++) {
+                // First installment due on start date? Or next month?
+                // Standard: Start date is opening date. 1st installment usually paid on opening.
+                // But let's follow the code: $startDate->copy()->addMonths($i - 1)
+                // i=1 -> addMonths(0) -> Start Date. Correct.
                 
                 $dueDate = $startDate->copy()->addMonths($i - 1);
 

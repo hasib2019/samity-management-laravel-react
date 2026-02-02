@@ -85,6 +85,7 @@ class MenuSeeder extends Seeder
                     ['name' => 'Loan Application', 'slug' => 'loan-application', 'icon' => 'FilePlus', 'order' => 1],
                     ['name' => 'Loan Disbursement', 'slug' => 'loan-disbursement', 'icon' => 'HandCoins', 'order' => 2],
                     ['name' => 'Loan Repayment', 'slug' => 'loan-repayment', 'icon' => 'CreditCard', 'order' => 3],
+                    ['name' => 'Loan Closing', 'slug' => 'loan-closing', 'icon' => 'XCircle', 'order' => 4],
                 ]
             ],
             [

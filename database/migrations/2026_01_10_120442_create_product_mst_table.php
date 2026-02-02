@@ -48,6 +48,8 @@ return new class extends Migration
 
             // Accounting Mapping (FKs to glac_mst)
             $table->unsignedBigInteger('gl_principal_id')->nullable();
+            $table->unsignedBigInteger('gl_loan_outstanding_id')->nullable();
+            $table->unsignedBigInteger('gl_loan_disbursement_id')->nullable();
             $table->unsignedBigInteger('gl_profit_id')->nullable();
             $table->unsignedBigInteger('gl_penalty_id')->nullable();
             $table->unsignedBigInteger('gl_income_id')->nullable();

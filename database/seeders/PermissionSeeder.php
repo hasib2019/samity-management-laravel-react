@@ -309,6 +309,21 @@ class PermissionSeeder extends Seeder
             }
         }
 
+        // Loan Closing Permissions
+        $loanClosingMenu = Menu::where('slug', 'loan-closing')->first();
+        if ($loanClosingMenu) {
+            $actions = ['view', 'create'];
+            foreach ($actions as $action) {
+                Permission::updateOrCreate(
+                    ['slug' => 'loan.closing.' . $action],
+                    [
+                        'name' => 'Loan Closing ' . ucfirst($action),
+                        'menu_id' => $loanClosingMenu->id,
+                    ]
+                );
+            }
+        }
+
         // DPS Account Permissions
         $dpsAccountMenu = Menu::where('slug', 'dps-account')->first();
         if ($dpsAccountMenu) {

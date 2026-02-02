@@ -43,6 +43,7 @@ class ProductController extends Controller
             'profit_rate' => 'nullable|numeric',
             'installment_amount' => 'nullable|numeric',
             'penalty_rate' => 'nullable|numeric',
+            'gl_waiver_id' => 'nullable|exists:glac_mst,id',
             'status' => 'required|in:active,inactive',
         ]);
 
@@ -88,6 +89,7 @@ class ProductController extends Controller
             'profit_rate' => 'nullable|numeric',
             'installment_amount' => 'nullable|numeric',
             'penalty_rate' => 'nullable|numeric',
+            'gl_waiver_id' => 'nullable|exists:glac_mst,id',
             'status' => 'required|in:active,inactive',
         ]);
 

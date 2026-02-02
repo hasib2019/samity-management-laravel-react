@@ -35,6 +35,23 @@ return new class extends Migration
             $table->string('status')->default('pending'); // pending, approved, rejected, disbursed
             $table->date('disbursed_date')->nullable();
             $table->text('remarks')->nullable();
+
+            $table->enum('nominee_type', ['member', 'external'])->default('external');
+            
+            // For Member Nominee
+            $table->foreignId('nominee_member_id')->nullable()->after('nominee_type')->constrained('member_infos');
+            
+            // For External Nominee (or Member fallback)
+            $table->string('nominee_name')->nullable();
+            $table->string('nominee_relation')->nullable();
+            $table->date('nominee_dob')->nullable();
+            $table->string('nominee_nid')->nullable();
+            
+            // Documents
+            $table->string('nominee_image')->nullable();
+            $table->string('nominee_sign')->nullable();
+            $table->string('nominee_nid_image')->nullable();
+            $table->string('other_documents')->nullable(); // Can store JSON or path
             
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();

@@ -30,6 +30,7 @@ import ContraVoucher from './pages/Vouchers/ContraVoucher';
 import JournalVoucher from './pages/Vouchers/JournalVoucher';
 import LoanApplication from './pages/Loans/LoanApplication';
 import LoanRepayment from './pages/Loans/LoanRepayment';
+import LoanClosing from './pages/Loans/LoanClosing';
 import LoanDisbursement from './pages/Loans/LoanDisbursement';
 import DpsApplication from './pages/DPS/DpsApplication';
 import DpsCollection from './pages/DPS/DpsCollection';
@@ -229,6 +230,16 @@ const App = () => {
                             </ProtectedRoute>
                         } 
                     />
+                    <Route 
+                        path="/loan-closing" 
+                        element={
+                            <ProtectedRoute>
+                                <LoanClosing />
+                            </ProtectedRoute>
+                        } 
+                    />
+
+                    {/* Accounting Routes */}
                     <Route 
                         path="/payment-voucher" 
                         element={
