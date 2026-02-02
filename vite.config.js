@@ -13,7 +13,7 @@ export default defineConfig({
         react(),
     ],
     build: {
-        outDir: 'public/build',   // 👈 build যাবে public/build এ
+        outDir: '/home/hasib2020/samity.creativeitbari.com/public/build',   // 👈 build যাবে public/build এ
         emptyOutDir: true,
     },
     base: '/build/', // 👈 খুব important (asset path ঠিক রাখে)
