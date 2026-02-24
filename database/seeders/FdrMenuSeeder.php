@@ -19,7 +19,7 @@ class FdrMenuSeeder extends Seeder
                 'icon' => 'Landmark', // Or 'Briefcase', 'PiggyBank'
                 'order' => 7,
                 'parent_id' => null,
-                'is_active' => true,
+                'is_hidden' => false,
             ]
         );
 
@@ -37,25 +37,30 @@ class FdrMenuSeeder extends Seeder
                     'icon' => $child['icon'],
                     'order' => $child['order'],
                     'parent_id' => $parentMenu->id,
-                    'is_active' => true,
+                    'is_hidden' => false,
                 ]
             );
         }
 
+        // Fetch menus for permission assignment
+        $fdrAccountMenu = Menu::where('slug', 'fdr-account')->first();
+        $fdrClosingMenu = Menu::where('slug', 'fdr-closing')->first();
+        $fdrListMenu = Menu::where('slug', 'fdr-list')->first();
+
         // 2. Create Permissions
         $permissions = [
             // FDR Application
-            ['name' => 'fdr.application.view', 'slug' => 'fdr.application.view', 'group_name' => 'FDR Application'],
-            ['name' => 'fdr.application.create', 'slug' => 'fdr.application.create', 'group_name' => 'FDR Application'],
-            ['name' => 'fdr.application.edit', 'slug' => 'fdr.application.edit', 'group_name' => 'FDR Application'],
-            ['name' => 'fdr.application.delete', 'slug' => 'fdr.application.delete', 'group_name' => 'FDR Application'],
+            ['name' => 'FDR Application View', 'slug' => 'fdr.application.view', 'menu_id' => $fdrAccountMenu->id],
+            ['name' => 'FDR Application Create', 'slug' => 'fdr.application.create', 'menu_id' => $fdrAccountMenu->id],
+            ['name' => 'FDR Application Edit', 'slug' => 'fdr.application.edit', 'menu_id' => $fdrAccountMenu->id],
+            ['name' => 'FDR Application Delete', 'slug' => 'fdr.application.delete', 'menu_id' => $fdrAccountMenu->id],
             
             // FDR Closing
-            ['name' => 'fdr.closing.view', 'slug' => 'fdr.closing.view', 'group_name' => 'FDR Closing'],
-            ['name' => 'fdr.closing.create', 'slug' => 'fdr.closing.create', 'group_name' => 'FDR Closing'],
+            ['name' => 'FDR Closing View', 'slug' => 'fdr.closing.view', 'menu_id' => $fdrClosingMenu->id],
+            ['name' => 'FDR Closing Create', 'slug' => 'fdr.closing.create', 'menu_id' => $fdrClosingMenu->id],
             
             // FDR List
-            ['name' => 'fdr.list.view', 'slug' => 'fdr.list.view', 'group_name' => 'FDR List'],
+            ['name' => 'FDR List View', 'slug' => 'fdr.list.view', 'menu_id' => $fdrListMenu->id],
         ];
 
         foreach ($permissions as $permission) {
