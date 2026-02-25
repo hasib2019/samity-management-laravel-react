@@ -183,4 +183,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('fdr-closings/{id}', [App\Http\Controllers\Api\FdrClosingController::class, 'show'])->middleware('permission:fdr.closing.view');
     Route::put('fdr-closings/{id}', [App\Http\Controllers\Api\FdrClosingController::class, 'update'])->middleware('permission:fdr.closing.edit');
     Route::delete('fdr-closings/{id}', [App\Http\Controllers\Api\FdrClosingController::class, 'destroy'])->middleware('permission:fdr.closing.delete');
+
+    // Committee Management
+    Route::apiResource('committee-types', App\Http\Controllers\Api\CommitteeTypeController::class);
+    Route::get('committee-types-active', [App\Http\Controllers\Api\CommitteeTypeController::class, 'getActive'])->middleware('permission:committee.view');
+    
+    Route::apiResource('committees', App\Http\Controllers\Api\CommitteeController::class);
+    Route::post('committees/{id}/submit', [App\Http\Controllers\Api\CommitteeController::class, 'submit'])->middleware('permission:committee.create');
+    Route::post('committees/{id}/approve', [App\Http\Controllers\Api\CommitteeController::class, 'approve'])->middleware('permission:committee.approve');
+    Route::post('committees/{id}/reject', [App\Http\Controllers\Api\CommitteeController::class, 'reject'])->middleware('permission:committee.approve');
+    Route::get('committees-available-members', [App\Http\Controllers\Api\CommitteeController::class, 'getAvailableMembers'])->middleware('permission:committee.view');
 });
