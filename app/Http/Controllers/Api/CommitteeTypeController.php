@@ -11,13 +11,6 @@ use Illuminate\Support\Facades\DB;
 
 class CommitteeTypeController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('permission:committee.type.view')->only(['index', 'show']);
-        $this->middleware('permission:committee.type.create')->only(['store']);
-        $this->middleware('permission:committee.type.edit')->only(['update']);
-        $this->middleware('permission:committee.type.delete')->only(['destroy']);
-    }
 
     public function index(Request $request)
     {

@@ -17,14 +17,7 @@ use Carbon\Carbon;
 
 class FdrClosingController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('permission:fdr.closing.view')->only(['index', 'search', 'show']);
-        $this->middleware('permission:fdr.closing.create')->only(['store']);
-        $this->middleware('permission:fdr.closing.edit')->only(['update']);
-        $this->middleware('permission:fdr.closing.delete')->only(['destroy']);
-    }
-
+    
     /**
      * Get all FDR closings
      */

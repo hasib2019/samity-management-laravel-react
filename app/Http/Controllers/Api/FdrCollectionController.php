@@ -16,14 +16,6 @@ use Illuminate\Support\Facades\Validator;
 
 class FdrCollectionController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('permission:fdr.collection.view')->only(['index', 'search']);
-        $this->middleware('permission:fdr.collection.create')->only(['store']);
-        $this->middleware('permission:fdr.collection.edit')->only(['update']);
-        $this->middleware('permission:fdr.collection.delete')->only(['destroy']);
-    }
-
     public function index(Request $request)
     {
         $query = FdrCollection::with(['fdrApplication.member', 'fdrApplication.product']);

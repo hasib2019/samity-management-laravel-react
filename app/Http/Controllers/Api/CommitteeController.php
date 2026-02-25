@@ -17,15 +17,7 @@ use Illuminate\Support\Facades\Storage;
 
 class CommitteeController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('permission:committee.view')->only(['index', 'show']);
-        $this->middleware('permission:committee.create')->only(['store']);
-        $this->middleware('permission:committee.edit')->only(['update']);
-        $this->middleware('permission:committee.delete')->only(['destroy']);
-        $this->middleware('permission:committee.approve')->only(['approve']);
-    }
-
+   
     public function index(Request $request)
     {
         $query = Committee::with(['samity', 'committeeType', 'members.memberInfo', 'documents']);

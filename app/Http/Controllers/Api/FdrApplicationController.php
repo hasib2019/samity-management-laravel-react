@@ -17,15 +17,7 @@ use Illuminate\Support\Facades\Auth;
 
 class FdrApplicationController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('permission:fdr.application.view|fdr.list.view')->only(['index']);
-        $this->middleware('permission:fdr.application.view')->only(['show']);
-        $this->middleware('permission:fdr.application.create')->only(['store']);
-        $this->middleware('permission:fdr.application.edit')->only(['update']);
-        $this->middleware('permission:fdr.application.delete')->only(['destroy']);
-    }
-
+  
     /**
      * List all FDR applications
      */
