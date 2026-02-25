@@ -166,7 +166,21 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // FDR Management
     Route::apiResource('fdr-applications', App\Http\Controllers\Api\FdrApplicationController::class);
+    
+    // FDR Collections
+    Route::get('fdr-collections/search', [App\Http\Controllers\Api\FdrCollectionController::class, 'search'])->middleware('permission:fdr.collection.view');
+    Route::post('fdr-collections', [App\Http\Controllers\Api\FdrCollectionController::class, 'store'])->middleware('permission:fdr.collection.create');
+    Route::get('fdr-collections', [App\Http\Controllers\Api\FdrCollectionController::class, 'index'])->middleware('permission:fdr.collection.view');
+    Route::get('fdr-collections/{id}', [App\Http\Controllers\Api\FdrCollectionController::class, 'show'])->middleware('permission:fdr.collection.view');
+    Route::put('fdr-collections/{id}', [App\Http\Controllers\Api\FdrCollectionController::class, 'update'])->middleware('permission:fdr.collection.edit');
+    Route::delete('fdr-collections/{id}', [App\Http\Controllers\Api\FdrCollectionController::class, 'destroy'])->middleware('permission:fdr.collection.delete');
+    Route::post('fdr-collections/generate-pending', [App\Http\Controllers\Api\FdrCollectionController::class, 'generatePendingCollections'])->middleware('permission:fdr.collection.create');
+    
     // FDR Closing
     Route::get('fdr-closings/search', [App\Http\Controllers\Api\FdrClosingController::class, 'search'])->middleware('permission:fdr.closing.view');
+    Route::get('fdr-closings', [App\Http\Controllers\Api\FdrClosingController::class, 'index'])->middleware('permission:fdr.closing.view');
     Route::post('fdr-closings', [App\Http\Controllers\Api\FdrClosingController::class, 'store'])->middleware('permission:fdr.closing.create');
+    Route::get('fdr-closings/{id}', [App\Http\Controllers\Api\FdrClosingController::class, 'show'])->middleware('permission:fdr.closing.view');
+    Route::put('fdr-closings/{id}', [App\Http\Controllers\Api\FdrClosingController::class, 'update'])->middleware('permission:fdr.closing.edit');
+    Route::delete('fdr-closings/{id}', [App\Http\Controllers\Api\FdrClosingController::class, 'destroy'])->middleware('permission:fdr.closing.delete');
 });

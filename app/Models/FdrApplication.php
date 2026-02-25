@@ -47,4 +47,24 @@ class FdrApplication extends Model
     {
         return $this->hasMany(FdrNominee::class);
     }
+
+    public function closings()
+    {
+        return $this->hasMany(FdrClosing::class);
+    }
+
+    public function collections()
+    {
+        return $this->hasMany(FdrCollection::class);
+    }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function updatedBy()
+    {
+        return $this->belongsTo(User::class, 'updated_by');
+    }
 }
