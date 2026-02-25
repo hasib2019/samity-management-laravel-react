@@ -265,6 +265,13 @@ const Dashboard = () => {
                             </div>
                             <ArrowRight className="text-gray-400 group-hover:text-sky-600" size={18} />
                         </Link>
+                        <Link to="/hr-dashboard" className="group flex items-center justify-between p-4 rounded-lg border hover:border-gray-300 hover:bg-gray-50 transition">
+                            <div className="flex items-center gap-3">
+                                <Users className="text-gray-600" size={20} />
+                                <span className="font-medium text-gray-800">HR Dashboard</span>
+                            </div>
+                            <ArrowRight className="text-gray-400 group-hover:text-gray-700" size={18} />
+                        </Link>
                     </div>
                 </div>
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">

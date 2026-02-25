@@ -42,6 +42,13 @@ import FdrClosing from './pages/FDR/FdrClosing';
 import CommitteeType from './pages/Committee/CommitteeType';
 import CommitteeList from './pages/Committee/CommitteeList';
 import CommitteeReport from './pages/Committee/CommitteeReport';
+import HRDashboard from './pages/HR/HRDashboard';
+import Employees from './pages/HR/Employees';
+import Payroll from './pages/HR/Payroll';
+import HRSettings from './pages/HR/HRSettings';
+import AuditLogs from './pages/HR/AuditLogs';
+import Attendance from './pages/HR/Attendance';
+import Leaves from './pages/HR/Leaves';
 
 // Reports
 import AccountStatement from './pages/Reports/AccountStatement';
@@ -353,6 +360,62 @@ const App = () => {
                         element={
                             <ProtectedRoute>
                                 <CommitteeList />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/hr-dashboard" 
+                        element={
+                            <ProtectedRoute>
+                                <HRDashboard />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/hr/employees" 
+                        element={
+                            <ProtectedRoute>
+                                <Employees />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/hr/payroll" 
+                        element={
+                            <ProtectedRoute>
+                                <Payroll />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/hr/attendance" 
+                        element={
+                            <ProtectedRoute>
+                                <Attendance />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/hr/leaves" 
+                        element={
+                            <ProtectedRoute>
+                                <Leaves />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/hr/settings" 
+                        element={
+                            <ProtectedRoute>
+                                <HRSettings />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/hr/audit-logs" 
+                        element={
+                            <ProtectedRoute>
+                                <AuditLogs />
                             </ProtectedRoute>
                         } 
                     />

@@ -214,6 +214,25 @@ const TopNavbar = ({ toggleSidebar }) => {
 const DashboardLayout = ({ children }) => {
     const { user, menus } = useAuth();
     const [isSidebarOpen, setSidebarOpen] = useState(true);
+    const mergedMenus = React.useMemo(() => {
+        const hrMenu = {
+            id: -100,
+            name: 'HR',
+            slug: 'hr',
+            icon: 'Briefcase',
+            children: [
+                { id: -101, name: 'HR Dashboard', slug: 'hr-dashboard', icon: 'LayoutDashboard' },
+                { id: -102, name: 'Employees', slug: 'hr/employees', icon: 'Users' },
+                { id: -106, name: 'Attendance', slug: 'hr/attendance', icon: 'UserCheck' },
+                { id: -107, name: 'Leaves', slug: 'hr/leaves', icon: 'FileText' },
+                { id: -103, name: 'Payroll', slug: 'hr/payroll', icon: 'Wallet' },
+                { id: -104, name: 'HR Settings', slug: 'hr/settings', icon: 'Settings' },
+                { id: -105, name: 'Audit Logs', slug: 'hr/audit-logs', icon: 'ScrollText' }
+            ]
+        };
+        const exists = (menus || []).some(m => m.slug === 'hr');
+        return exists ? (menus || []) : ([...(menus || []), hrMenu]);
+    }, [menus]);
 
     useEffect(() => {
         const handleResize = () => {
@@ -241,7 +260,7 @@ const DashboardLayout = ({ children }) => {
                 ></div>
             )}
 
-            <Sidebar menus={menus || []} isOpen={isSidebarOpen} />
+            <Sidebar menus={mergedMenus || []} isOpen={isSidebarOpen} />
             <div className="flex overflow-hidden flex-col flex-1">
                 <TopNavbar toggleSidebar={() => setSidebarOpen(!isSidebarOpen)} />
                 <main className="overflow-y-auto overflow-x-hidden flex-1 p-6 bg-gray-100">

@@ -8,6 +8,15 @@ use App\Http\Controllers\Api\MenuController;
 use App\Http\Controllers\Api\SamityProfileController;
 use App\Http\Controllers\Api\MemberInfoController;
 use App\Http\Controllers\Api\GlobalController;
+use App\Http\Controllers\Api\HR\DepartmentController as HrDepartmentController;
+use App\Http\Controllers\Api\HR\DesignationController as HrDesignationController;
+use App\Http\Controllers\Api\HR\ShiftController as HrShiftController;
+use App\Http\Controllers\Api\HR\HolidayController as HrHolidayController;
+use App\Http\Controllers\Api\HR\EmployeeController as HrEmployeeController;
+use App\Http\Controllers\Api\AuditLogController;
+use App\Http\Controllers\Api\HR\AttendanceController as HrAttendanceController;
+use App\Http\Controllers\Api\HR\LeaveTypeController as HrLeaveTypeController;
+use App\Http\Controllers\Api\HR\LeaveRequestController as HrLeaveRequestController;
 use App\Http\Controllers\Api\DepositRequestController;
 use App\Http\Controllers\Api\WithdrawRequestController;
 use App\Http\Controllers\Api\GlMappingTypeController;
@@ -193,4 +202,66 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('committees/{id}/approve', [App\Http\Controllers\Api\CommitteeController::class, 'approve'])->middleware('permission:committee.approve');
     Route::post('committees/{id}/reject', [App\Http\Controllers\Api\CommitteeController::class, 'reject'])->middleware('permission:committee.approve');
     Route::get('committees-available-members', [App\Http\Controllers\Api\CommitteeController::class, 'getAvailableMembers'])->middleware('permission:committee.view');
+
+    // HR Module (Phase 1)
+    Route::prefix('hr')->group(function () {
+        // Audit Logs (HR scope)
+        Route::get('/audit-logs', [AuditLogController::class, 'index'])->middleware('permission:hr.setup.view');
+
+        // Attendance
+        Route::get('/attendances', [HrAttendanceController::class, 'index'])->middleware('permission:hr.attendance.view');
+        Route::post('/attendances', [HrAttendanceController::class, 'store'])->middleware('permission:hr.attendance.create');
+        Route::get('/attendances/{id}', [HrAttendanceController::class, 'show'])->middleware('permission:hr.attendance.view');
+        Route::put('/attendances/{id}', [HrAttendanceController::class, 'update'])->middleware('permission:hr.attendance.edit');
+        Route::delete('/attendances/{id}', [HrAttendanceController::class, 'destroy'])->middleware('permission:hr.attendance.delete');
+
+        // Leave Types
+        Route::get('/leave-types', [HrLeaveTypeController::class, 'index'])->middleware('permission:hr.leave.view');
+        Route::post('/leave-types', [HrLeaveTypeController::class, 'store'])->middleware('permission:hr.leave.create');
+        Route::put('/leave-types/{id}', [HrLeaveTypeController::class, 'update'])->middleware('permission:hr.leave.edit');
+        Route::delete('/leave-types/{id}', [HrLeaveTypeController::class, 'destroy'])->middleware('permission:hr.leave.delete');
+
+        // Leave Requests
+        Route::get('/leave-requests', [HrLeaveRequestController::class, 'index'])->middleware('permission:hr.leave.view');
+        Route::post('/leave-requests', [HrLeaveRequestController::class, 'store'])->middleware('permission:hr.leave.create');
+        Route::post('/leave-requests/{id}/approve', [HrLeaveRequestController::class, 'approve'])->middleware('permission:hr.leave.approve');
+        Route::post('/leave-requests/{id}/reject', [HrLeaveRequestController::class, 'reject'])->middleware('permission:hr.leave.approve');
+        Route::delete('/leave-requests/{id}', [HrLeaveRequestController::class, 'destroy'])->middleware('permission:hr.leave.delete');
+
+        // Departments
+        Route::get('/departments', [HrDepartmentController::class, 'index'])->middleware('permission:hr.setup.view');
+        Route::post('/departments', [HrDepartmentController::class, 'store'])->middleware('permission:hr.setup.create');
+        Route::get('/departments/{id}', [HrDepartmentController::class, 'show'])->middleware('permission:hr.setup.view');
+        Route::put('/departments/{id}', [HrDepartmentController::class, 'update'])->middleware('permission:hr.setup.edit');
+        Route::delete('/departments/{id}', [HrDepartmentController::class, 'destroy'])->middleware('permission:hr.setup.delete');
+
+        // Designations
+        Route::get('/designations', [HrDesignationController::class, 'index'])->middleware('permission:hr.setup.view');
+        Route::post('/designations', [HrDesignationController::class, 'store'])->middleware('permission:hr.setup.create');
+        Route::get('/designations/{id}', [HrDesignationController::class, 'show'])->middleware('permission:hr.setup.view');
+        Route::put('/designations/{id}', [HrDesignationController::class, 'update'])->middleware('permission:hr.setup.edit');
+        Route::delete('/designations/{id}', [HrDesignationController::class, 'destroy'])->middleware('permission:hr.setup.delete');
+
+        // Shifts
+        Route::get('/shifts', [HrShiftController::class, 'index'])->middleware('permission:hr.setup.view');
+        Route::post('/shifts', [HrShiftController::class, 'store'])->middleware('permission:hr.setup.create');
+        Route::get('/shifts/{id}', [HrShiftController::class, 'show'])->middleware('permission:hr.setup.view');
+        Route::put('/shifts/{id}', [HrShiftController::class, 'update'])->middleware('permission:hr.setup.edit');
+        Route::delete('/shifts/{id}', [HrShiftController::class, 'destroy'])->middleware('permission:hr.setup.delete');
+
+        // Holidays
+        Route::get('/holidays', [HrHolidayController::class, 'index'])->middleware('permission:hr.setup.view');
+        Route::post('/holidays', [HrHolidayController::class, 'store'])->middleware('permission:hr.setup.create');
+        Route::get('/holidays/{id}', [HrHolidayController::class, 'show'])->middleware('permission:hr.setup.view');
+        Route::put('/holidays/{id}', [HrHolidayController::class, 'update'])->middleware('permission:hr.setup.edit');
+        Route::delete('/holidays/{id}', [HrHolidayController::class, 'destroy'])->middleware('permission:hr.setup.delete');
+
+        // Employees
+        Route::get('/employees', [HrEmployeeController::class, 'index'])->middleware('permission:hr.employee.view');
+        Route::post('/employees', [HrEmployeeController::class, 'store'])->middleware('permission:hr.employee.create');
+        Route::get('/employees/{id}', [HrEmployeeController::class, 'show'])->middleware('permission:hr.employee.view');
+        Route::put('/employees/{id}', [HrEmployeeController::class, 'update'])->middleware('permission:hr.employee.edit');
+        Route::delete('/employees/{id}', [HrEmployeeController::class, 'destroy'])->middleware('permission:hr.employee.delete');
+        Route::post('/employees/{id}/documents', [HrEmployeeController::class, 'uploadDocument'])->middleware('permission:hr.employee.edit');
+    });
 });

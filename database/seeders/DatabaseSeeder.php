@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
             CommitteePermissionSeeder::class,
             CommitteeTypeSeeder::class,
             CommitteeMenuSeeder::class,
+            HRPermissionSeeder::class,
             UserSeeder::class,
         ]);
     }
