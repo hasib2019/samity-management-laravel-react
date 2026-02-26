@@ -65,6 +65,17 @@ class HRPermissionSeeder extends Seeder
             ]
         );
 
+        $payrollMenu = Menu::firstOrCreate(
+            ['slug' => 'hr-payroll'],
+            [
+                'name' => 'Payroll',
+                'icon' => 'Wallet',
+                'parent_id' => $hrMenu->id,
+                'order' => 5,
+                'is_hidden' => true,
+            ]
+        );
+
         foreach (['view','create','edit','delete'] as $action) {
             Permission::updateOrCreate(
                 ['slug' => 'hr.setup.' . $action],
@@ -110,6 +121,24 @@ class HRPermissionSeeder extends Seeder
             [
                 'name' => 'HR Leave Approve',
                 'menu_id' => $leavesMenu->id,
+            ]
+        );
+
+        foreach (['view','create','edit','delete'] as $action) {
+            Permission::updateOrCreate(
+                ['slug' => 'hr.payroll.' . $action],
+                [
+                    'name' => 'HR Payroll ' . ucfirst($action),
+                    'menu_id' => $payrollMenu->id,
+                ]
+            );
+        }
+
+        Permission::updateOrCreate(
+            ['slug' => 'hr.payroll.run'],
+            [
+                'name' => 'HR Payroll Run',
+                'menu_id' => $payrollMenu->id,
             ]
         );
     }

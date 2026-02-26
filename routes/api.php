@@ -17,6 +17,9 @@ use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\HR\AttendanceController as HrAttendanceController;
 use App\Http\Controllers\Api\HR\LeaveTypeController as HrLeaveTypeController;
 use App\Http\Controllers\Api\HR\LeaveRequestController as HrLeaveRequestController;
+use App\Http\Controllers\Api\HR\SalaryComponentController as HrSalaryComponentController;
+use App\Http\Controllers\Api\HR\EmployeeSalaryController as HrEmployeeSalaryController;
+use App\Http\Controllers\Api\HR\PayrollController as HrPayrollController;
 use App\Http\Controllers\Api\DepositRequestController;
 use App\Http\Controllers\Api\WithdrawRequestController;
 use App\Http\Controllers\Api\GlMappingTypeController;
@@ -227,6 +230,30 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/leave-requests/{id}/approve', [HrLeaveRequestController::class, 'approve'])->middleware('permission:hr.leave.approve');
         Route::post('/leave-requests/{id}/reject', [HrLeaveRequestController::class, 'reject'])->middleware('permission:hr.leave.approve');
         Route::delete('/leave-requests/{id}', [HrLeaveRequestController::class, 'destroy'])->middleware('permission:hr.leave.delete');
+
+        // Payroll Components
+        Route::get('/salary-components', [HrSalaryComponentController::class, 'index'])->middleware('permission:hr.payroll.view');
+        Route::post('/salary-components', [HrSalaryComponentController::class, 'store'])->middleware('permission:hr.payroll.create');
+        Route::put('/salary-components/{id}', [HrSalaryComponentController::class, 'update'])->middleware('permission:hr.payroll.edit');
+        Route::delete('/salary-components/{id}', [HrSalaryComponentController::class, 'destroy'])->middleware('permission:hr.payroll.delete');
+
+        // Employee Salaries
+        Route::get('/employee-salaries', [HrEmployeeSalaryController::class, 'index'])->middleware('permission:hr.payroll.view');
+        Route::post('/employee-salaries', [HrEmployeeSalaryController::class, 'store'])->middleware('permission:hr.payroll.create');
+        Route::put('/employee-salaries/{id}', [HrEmployeeSalaryController::class, 'update'])->middleware('permission:hr.payroll.edit');
+        Route::delete('/employee-salaries/{id}', [HrEmployeeSalaryController::class, 'destroy'])->middleware('permission:hr.payroll.delete');
+
+        // Payroll Run
+        Route::get('/payroll-runs', [HrPayrollController::class, 'runs'])->middleware('permission:hr.payroll.view');
+        Route::post('/payroll-runs/run', [HrPayrollController::class, 'run'])->middleware('permission:hr.payroll.run');
+        Route::get('/payslips', [HrPayrollController::class, 'payslips'])->middleware('permission:hr.payroll.view');
+        Route::get('/payslips/{id}/pdf', [HrPayrollController::class, 'payslipPdf'])->middleware('permission:hr.payroll.view');
+        Route::get('/payroll-summary', [HrPayrollController::class, 'summary'])->middleware('permission:hr.payroll.view');
+        Route::get('/payroll-summary.csv', [HrPayrollController::class, 'summaryCsv'])->middleware('permission:hr.payroll.view');
+        Route::post('/payroll-runs/{id}/post-gl', [HrPayrollController::class, 'postGl'])->middleware('permission:hr.payroll.run');
+        Route::get('/payroll-bank.csv', [HrPayrollController::class, 'bankCsv'])->middleware('permission:hr.payroll.view');
+        Route::post('/payroll-runs/{id}/accrue-gl', [HrPayrollController::class, 'accrueGl'])->middleware('permission:hr.payroll.run');
+        Route::post('/payroll-runs/{id}/pay-gl', [HrPayrollController::class, 'payGl'])->middleware('permission:hr.payroll.run');
 
         // Departments
         Route::get('/departments', [HrDepartmentController::class, 'index'])->middleware('permission:hr.setup.view');

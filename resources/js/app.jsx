@@ -442,6 +442,12 @@ const App = () => {
                     <Route path="/trial-balance" element={<ProtectedRoute><TrialBalance /></ProtectedRoute>} />
 
                     <Route path="/" element={<Navigate to="/dashboard" />} />
+                    <Route path="/hr-payroll" element={<Navigate to="/hr/payroll" />} />
+                    <Route path="/hr-leaves" element={<Navigate to="/hr/leaves" />} />
+                    <Route path="/hr-attendance" element={<Navigate to="/hr/attendance" />} />
+                    <Route path="/hr-employees" element={<Navigate to="/hr/employees" />} />
+                    <Route path="/hr-settings" element={<Navigate to="/hr/settings" />} />
+                    <Route path="*" element={<Navigate to="/dashboard" />} />
                 </Routes>
             </BrowserRouter>
         </AuthProvider>
