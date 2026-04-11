@@ -20,6 +20,11 @@ class DatabaseSeeder extends Seeder
             MenuSeeder::class,
             ReportMenuSeeder::class,
             PermissionSeeder::class,
+            CodeMasterMenuSeeder::class,
+            FdrMenuSeeder::class,
+            CommitteePermissionSeeder::class,
+            CommitteeTypeSeeder::class,
+            CommitteeMenuSeeder::class,
             UserSeeder::class,
         ]);
     }

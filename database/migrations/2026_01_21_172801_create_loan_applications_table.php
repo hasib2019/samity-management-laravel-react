@@ -39,7 +39,7 @@ return new class extends Migration
             $table->enum('nominee_type', ['member', 'external'])->default('external');
             
             // For Member Nominee
-            $table->foreignId('nominee_member_id')->nullable()->after('nominee_type')->constrained('member_infos');
+            $table->foreignId('nominee_member_id')->nullable()->constrained('member_infos');
             
             // For External Nominee (or Member fallback)
             $table->string('nominee_name')->nullable();

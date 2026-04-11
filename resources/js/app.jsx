@@ -36,6 +36,12 @@ import DpsApplication from './pages/DPS/DpsApplication';
 import DpsCollection from './pages/DPS/DpsCollection';
 import DpsClosing from './pages/DPS/DpsClosing';
 import DpsList from './pages/DPS/DpsList';
+import FdrApplication from './pages/FDR/FdrApplication';
+import FdrList from './pages/FDR/FdrList';
+import FdrClosing from './pages/FDR/FdrClosing';
+import CommitteeType from './pages/Committee/CommitteeType';
+import CommitteeList from './pages/Committee/CommitteeList';
+import CommitteeReport from './pages/Committee/CommitteeReport';
 
 // Reports
 import AccountStatement from './pages/Reports/AccountStatement';
@@ -303,6 +309,58 @@ const App = () => {
                         element={
                             <ProtectedRoute>
                                 <DpsList />
+                            </ProtectedRoute>
+                        } 
+                    />
+
+                    {/* FDR Management */}
+                    <Route 
+                        path="/fdr-account" 
+                        element={
+                            <ProtectedRoute>
+                                <FdrApplication />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/fdr-closing" 
+                        element={
+                            <ProtectedRoute>
+                                <FdrClosing />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/fdr-list" 
+                        element={
+                            <ProtectedRoute>
+                                <FdrList />
+                            </ProtectedRoute>
+                        } 
+                    />
+
+                    {/* Committee Management */}
+                    <Route 
+                        path="/committee-types" 
+                        element={
+                            <ProtectedRoute>
+                                <CommitteeType />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/committees-list" 
+                        element={
+                            <ProtectedRoute>
+                                <CommitteeList />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/committee-reports" 
+                        element={
+                            <ProtectedRoute>
+                                <CommitteeReport />
                             </ProtectedRoute>
                         } 
                     />
