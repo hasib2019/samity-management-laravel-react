@@ -69,9 +69,11 @@ const WithdrawMoney = () => {
     const fetchAccounts = async (memberId) => {
         try {
             const response = await api.get(`/global/members/${memberId}/accounts`);
-            setAccounts(response.data);
+            // response.data is { savings: [...], loans: [...] }
+            setAccounts(response.data.savings || []);
         } catch (err) {
             console.error('Error fetching accounts', err);
+            setAccounts([]);
         }
     };
 

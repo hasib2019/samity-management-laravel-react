@@ -40,7 +40,8 @@ const WithdrawRequest = () => {
                     return;
                 }
                 const accountsRes = await api.get(`/global/members/${memberId}/accounts`);
-                const acc = Array.isArray(accountsRes.data) ? accountsRes.data.find(a => String(a.id) === String(req.savings_account_id)) : null;
+                const savingsAccounts = accountsRes.data?.savings || [];
+                const acc = savingsAccounts.find(a => String(a.id) === String(req.savings_account_id));
                 if (!acc) {
                     Swal.fire({
                         position: 'top-end',
