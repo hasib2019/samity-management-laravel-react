@@ -37,8 +37,12 @@ import DpsCollection from './pages/DPS/DpsCollection';
 import DpsClosing from './pages/DPS/DpsClosing';
 import DpsList from './pages/DPS/DpsList';
 import FdrApplication from './pages/FDR/FdrApplication';
+import FdrCollection from './pages/FDR/FdrCollection';
 import FdrList from './pages/FDR/FdrList';
 import FdrClosing from './pages/FDR/FdrClosing';
+import SharePurchase from './pages/Share/SharePurchase';
+import ShareSale from './pages/Share/ShareSale';
+import ShareList from './pages/Share/ShareList';
 import CommitteeType from './pages/Committee/CommitteeType';
 import CommitteeList from './pages/Committee/CommitteeList';
 import CommitteeReport from './pages/Committee/CommitteeReport';
@@ -323,6 +327,14 @@ const App = () => {
                         } 
                     />
                     <Route 
+                        path="/fdr-collection" 
+                        element={
+                            <ProtectedRoute>
+                                <FdrCollection />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
                         path="/fdr-closing" 
                         element={
                             <ProtectedRoute>
@@ -335,6 +347,32 @@ const App = () => {
                         element={
                             <ProtectedRoute>
                                 <FdrList />
+                            </ProtectedRoute>
+                        } 
+                    />
+
+                    {/* Share Management */}
+                    <Route 
+                        path="/share-purchase" 
+                        element={
+                            <ProtectedRoute>
+                                <SharePurchase />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/share-sale" 
+                        element={
+                            <ProtectedRoute>
+                                <ShareSale />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/share-list" 
+                        element={
+                            <ProtectedRoute>
+                                <ShareList />
                             </ProtectedRoute>
                         } 
                     />

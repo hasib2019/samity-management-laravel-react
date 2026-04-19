@@ -112,20 +112,40 @@ class FdrCollectionController extends Controller
             ]);
 
             // Create Accounting Transactions
-            // Dr. Cash/Bank (Asset Increase)
-            // Cr. Interest Income / FDR Interest GL (Income)
+            // Dr. Interest Expense / FDR Interest GL (Expense)
+            // Cr. Cash/Bank (Asset Decrease)
 
             $commonData = [
                 'branch_id' => 1, // Default Branch
                 'customer_id' => $fdrApplication->member_id,
                 'tran_date' => $request->collection_date,
                 'tran_type' => 'FDR_COLLECTION',
-                'naration' => $request->remarks ?? 'FDR Interest Collection for ' . $fdrApplication->account_no,
+                'naration' => $request->remarks ?? 'FDR Interest Payment for ' . $fdrApplication->account_no,
                 'status' => 'posted',
                 'created_by' => Auth::id(),
             ];
 
-            // 1. Debit Cash/Bank (Asset)
+            // 1. Debit Interest Expense GL (Expense)
+            $profitGlId = $fdrApplication->product->gl_profit_id; // "Interest on FDR" (Expense)
+            
+            if (!$profitGlId) {
+                // Try to get from mapping
+                $profitGlMap = GlMstMapping::where('gl_code_type', 'FDR_INTEREST_EXPENSE')->first();
+                $profitGlId = $profitGlMap ? $profitGlMap->gl_mst_id : null;
+            }
+
+            if ($profitGlId) {
+                Transaction::create(array_merge($commonData, [
+                    'tran_num' => date('YmdHis') . rand(10, 99),
+                    'glac_id' => $profitGlId,
+                    'dr_amt' => $request->interest_amount,
+                    'cr_amt' => 0,
+                ]));
+            } else {
+                throw new \Exception("Interest GL not found");
+            }
+
+            // 2. Credit Cash/Bank (Asset)
             $cashGlMap = GlMstMapping::where('gl_code_type', 'CASH_IN_HAND')->first();
             $cashGlId = $cashGlMap ? $cashGlMap->gl_mst_id : null;
 
@@ -136,29 +156,9 @@ class FdrCollectionController extends Controller
             Transaction::create(array_merge($commonData, [
                 'tran_num' => date('YmdHis') . rand(10, 99),
                 'glac_id' => $cashGlId,
-                'dr_amt' => $request->interest_amount,
-                'cr_amt' => 0,
+                'dr_amt' => 0,
+                'cr_amt' => $request->interest_amount,
             ]));
-
-            // 2. Credit Interest Income GL (Income)
-            $profitGlId = $fdrApplication->product->gl_profit_id; // "Interest on FDR" (Income)
-            
-            if (!$profitGlId) {
-                // Try to get from mapping
-                $profitGlMap = GlMstMapping::where('gl_code_type', 'FDR_INTEREST_INCOME')->first();
-                $profitGlId = $profitGlMap ? $profitGlMap->gl_mst_id : null;
-            }
-
-            if ($profitGlId) {
-                Transaction::create(array_merge($commonData, [
-                    'tran_num' => date('YmdHis') . rand(10, 99),
-                    'glac_id' => $profitGlId,
-                    'dr_amt' => 0,
-                    'cr_amt' => $request->interest_amount,
-                ]));
-            } else {
-                throw new \Exception("Interest GL not found");
-            }
 
             DB::commit();
 

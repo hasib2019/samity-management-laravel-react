@@ -185,6 +185,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('fdr-closings/{id}', [App\Http\Controllers\Api\FdrClosingController::class, 'update'])->middleware('permission:fdr.closing.edit');
     Route::delete('fdr-closings/{id}', [App\Http\Controllers\Api\FdrClosingController::class, 'destroy'])->middleware('permission:fdr.closing.delete');
 
+    // Share Management
+    Route::get('share-accounts', [App\Http\Controllers\Api\ShareManagementController::class, 'index'])->middleware('permission:share.list.view');
+    Route::get('share-accounts/search', [App\Http\Controllers\Api\ShareManagementController::class, 'search'])->middleware('permission:share.list.view');
+    Route::post('share-purchase', [App\Http\Controllers\Api\ShareManagementController::class, 'purchase'])->middleware('permission:share.purchase.create');
+    Route::post('share-sale', [App\Http\Controllers\Api\ShareManagementController::class, 'sale'])->middleware('permission:share.sale.create');
+
     // Committee Management
     Route::apiResource('committee-types', App\Http\Controllers\Api\CommitteeTypeController::class);
     Route::get('committee-types-active', [App\Http\Controllers\Api\CommitteeTypeController::class, 'getActive'])->middleware('permission:committee.view');
