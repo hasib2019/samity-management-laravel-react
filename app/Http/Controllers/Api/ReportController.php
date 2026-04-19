@@ -440,7 +440,7 @@ class ReportController extends Controller
                     $reportData[] = [
                         'samity_name' => $member->samity->samity_name,
                         'member_code' => $member->member_code,
-                        'member_name' => $member->name_en,
+                        'member_name' => $member->member_name,
                         'account_no' => $acc->account_number,
                         'product_name' => $acc->product->product_name,
                         'type' => 'Savings',
@@ -469,7 +469,7 @@ class ReportController extends Controller
                      $reportData[] = [
                         'samity_name' => $member->samity->samity_name,
                         'member_code' => $member->member_code,
-                        'member_name' => $member->name_en,
+                        'member_name' => $member->member_name,
                         'account_no' => $acc->account_no,
                         'product_name' => $acc->loanApplication->product->product_name,
                         'type' => 'Loan',
@@ -514,7 +514,7 @@ class ReportController extends Controller
             return [
                 'samity_name' => $loan->member->samity->samity_name,
                 'member_code' => $loan->member->member_code,
-                'member_name' => $loan->member->name_en,
+                'member_name' => $loan->member->member_name,
                 'account_no' => $loan->account_no,
                 'product_name' => $loan->loanApplication->product->product_name,
                 'disbursed_date' => $loan->disbursed_date,
@@ -563,7 +563,7 @@ class ReportController extends Controller
             ->select(
                 'samity.samity_name',
                 'm.member_code',
-                'm.name_en as member_name',
+                'm.member_name as member_name',
                 'l.account_no',
                 'prod.product_name',
                 's.due_date',

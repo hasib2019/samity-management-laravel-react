@@ -197,15 +197,15 @@ class MemberInfoController extends Controller
                 } while (\App\Models\Transaction::where('batch_num', $batchNum)->exists());
 
                 $commonData = [
-                    'customer_id' => $savingsAccount->id,
                     'samity_id' => $member->samity_id,
+                    'customer_id' => $member->id,
                     'product_id' => $product->id,
                     'payment_mode' => 'cash',
                     'batch_num' => $batchNum,
-                    'tran_code' => 'DEP',
+                    'tran_code' => 'OPN',
                     'tran_type' => 'Deposit',
                     'tran_date' => date('Y-m-d'),
-                    'naration' => 'Account opening',
+                    'naration' => 'Opening Balance',
                     'authorize_status' => 'approved',
                     'authorized_by' => Auth::id(),
                     'authorized_at' => date('Y-m-d'),

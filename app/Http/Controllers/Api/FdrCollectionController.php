@@ -117,10 +117,10 @@ class FdrCollectionController extends Controller
 
             $commonData = [
                 'branch_id' => 1, // Default Branch
-                'member_id' => $fdrApplication->member_id,
+                'customer_id' => $fdrApplication->member_id,
                 'tran_date' => $request->collection_date,
                 'tran_type' => 'FDR_COLLECTION',
-                'description' => $request->remarks ?? 'FDR Interest Collection for ' . $fdrApplication->account_no,
+                'naration' => $request->remarks ?? 'FDR Interest Collection for ' . $fdrApplication->account_no,
                 'status' => 'posted',
                 'created_by' => Auth::id(),
             ];

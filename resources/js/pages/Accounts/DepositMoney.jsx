@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import Swal from 'sweetalert2';
+import { useAuth } from '../../context/AuthContext';
 
 
 const DepositMoney = () => {
+    const { user } = useAuth();
+    const isUser = user?.roles?.some(role => role.slug === 'user');
+    console.log({isUser, user});
+
     const [samities, setSamities] = useState([]);
     const [members, setMembers] = useState([]);
     const [accounts, setAccounts] = useState([]);
@@ -45,15 +50,17 @@ const DepositMoney = () => {
     const fetchSamities = async () => {
         try {
             const response = await api.get('/global/samities');
-            console.log('Samities API Response:', response);
+            let samityList = [];
             if (response.data && Array.isArray(response.data)) {
-                setSamities(response.data);
-            } else {
-                console.error('Unexpected samities data format:', response.data);
-                // Fallback if wrapped in data.data
-                if (response.data?.data && Array.isArray(response.data.data)) {
-                     setSamities(response.data.data);
-                }
+                samityList = response.data;
+            } else if (response.data?.data && Array.isArray(response.data.data)) {
+                samityList = response.data.data;
+            }
+            setSamities(samityList);
+            
+            // Auto-select if only one samity
+            if (samityList.length === 1) {
+                setFormData(prev => ({ ...prev, samity_id: samityList[0].id }));
             }
         } catch (err) {
             console.error('Error fetching samities', err);
@@ -63,7 +70,13 @@ const DepositMoney = () => {
     const fetchMembers = async (samityId) => {
         try {
             const response = await api.get(`/global/members?samity_id=${samityId}`);
-            setMembers(response.data);
+            const memberList = response.data || [];
+            setMembers(memberList);
+            
+            // Auto-select if only one member
+            if (memberList.length === 1) {
+                setFormData(prev => ({ ...prev, member_id: memberList[0].id }));
+            }
         } catch (err) {
             console.error('Error fetching members', err);
         }
@@ -73,7 +86,13 @@ const DepositMoney = () => {
         try {
             const response = await api.get(`/global/members/${memberId}/accounts`);
             // response.data is { savings: [...], loans: [...] }
-            setAccounts(response.data.savings || []);
+            const savingsList = response.data.savings || [];
+            setAccounts(savingsList);
+            
+            // Auto-select if only one account
+            if (savingsList.length === 1) {
+                setFormData(prev => ({ ...prev, savings_account_id: savingsList[0].id }));
+            }
         } catch (err) {
             console.error('Error fetching accounts', err);
             setAccounts([]);
@@ -227,23 +246,25 @@ const DepositMoney = () => {
                         />
                     </div>
 
-                    <div className="mb-4">
-                        <label className="block mb-2 text-sm font-bold text-gray-700" htmlFor="status">
-                            Status
-                        </label>
-                        <select
-                            name="status"
-                            id="status"
-                            value={formData.status}
-                            onChange={handleChange}
-                            className="px-3 py-2 w-full leading-tight text-gray-700 rounded border shadow focus:outline-none focus:shadow-outline"
-                            required
-                        >
-                            <option value="pending">Pending</option>
-                            <option value="approved">Approved</option>
-                            <option value="cancelled">Cancelled</option>
-                        </select>
-                    </div>
+                    {!isUser && (
+                        <div className="mb-4">
+                            <label className="block mb-2 text-sm font-bold text-gray-700" htmlFor="status">
+                                Status
+                            </label>
+                            <select
+                                name="status"
+                                id="status"
+                                value={formData.status}
+                                onChange={handleChange}
+                                className="px-3 py-2 w-full leading-tight text-gray-700 rounded border shadow focus:outline-none focus:shadow-outline"
+                                required
+                            >
+                                <option value="pending">Pending</option>
+                                <option value="approved">Approved</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                    )}
                 </div>
 
                 <div className="mb-4">

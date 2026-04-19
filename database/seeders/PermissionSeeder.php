@@ -383,5 +383,125 @@ class PermissionSeeder extends Seeder
                 );
             }
         }
+
+        // FDR Account Permissions
+        $fdrAccountMenu = Menu::where('slug', 'fdr-account')->first();
+        if ($fdrAccountMenu) {
+            $actions = ['view', 'create', 'edit', 'delete', 'approve'];
+            foreach ($actions as $action) {
+                Permission::updateOrCreate(
+                    ['slug' => 'fdr.account.' . $action],
+                    [
+                        'name' => 'FDR Account ' . ucfirst($action),
+                        'menu_id' => $fdrAccountMenu->id,
+                    ]
+                );
+            }
+        }
+
+        // FDR Collection Permissions
+        $fdrCollectionMenu = Menu::where('slug', 'fdr-collection')->first();
+        if ($fdrCollectionMenu) {
+            $actions = ['view', 'create', 'edit', 'delete'];
+            foreach ($actions as $action) {
+                Permission::updateOrCreate(
+                    ['slug' => 'fdr.collection.' . $action],
+                    [
+                        'name' => 'FDR Collection ' . ucfirst($action),
+                        'menu_id' => $fdrCollectionMenu->id,
+                    ]
+                );
+            }
+        }
+
+        // FDR Closing Permissions
+        $fdrClosingMenu = Menu::where('slug', 'fdr-closing')->first();
+        if ($fdrClosingMenu) {
+            $actions = ['view', 'create', 'edit', 'delete'];
+            foreach ($actions as $action) {
+                Permission::updateOrCreate(
+                    ['slug' => 'fdr.closing.' . $action],
+                    [
+                        'name' => 'FDR Closing ' . ucfirst($action),
+                        'menu_id' => $fdrClosingMenu->id,
+                    ]
+                );
+            }
+        }
+
+        // FDR List Permissions
+        $fdrListMenu = Menu::where('slug', 'fdr-list')->first();
+        if ($fdrListMenu) {
+            $actions = ['view'];
+            foreach ($actions as $action) {
+                Permission::updateOrCreate(
+                    ['slug' => 'fdr.list.' . $action],
+                    [
+                        'name' => 'FDR List ' . ucfirst($action),
+                        'menu_id' => $fdrListMenu->id,
+                    ]
+                );
+            }
+        }
+
+        // Share Purchase Permissions
+        $sharePurchaseMenu = Menu::where('slug', 'share-purchase')->first();
+        if ($sharePurchaseMenu) {
+            $actions = ['view', 'create', 'edit', 'delete'];
+            foreach ($actions as $action) {
+                Permission::updateOrCreate(
+                    ['slug' => 'share.purchase.' . $action],
+                    [
+                        'name' => 'Share Purchase ' . ucfirst($action),
+                        'menu_id' => $sharePurchaseMenu->id,
+                    ]
+                );
+            }
+        }
+
+        // Share Sale Permissions
+        $shareSaleMenu = Menu::where('slug', 'share-sale')->first();
+        if ($shareSaleMenu) {
+            $actions = ['view', 'create', 'edit', 'delete'];
+            foreach ($actions as $action) {
+                Permission::updateOrCreate(
+                    ['slug' => 'share.sale.' . $action],
+                    [
+                        'name' => 'Share Sale ' . ucfirst($action),
+                        'menu_id' => $shareSaleMenu->id,
+                    ]
+                );
+            }
+        }
+
+        // Share Transfer Permissions
+        $shareTransferMenu = Menu::where('slug', 'share-transfer')->first();
+        if ($shareTransferMenu) {
+            $actions = ['view', 'create', 'edit', 'delete'];
+            foreach ($actions as $action) {
+                Permission::updateOrCreate(
+                    ['slug' => 'share.transfer.' . $action],
+                    [
+                        'name' => 'Share Transfer ' . ucfirst($action),
+                        'menu_id' => $shareTransferMenu->id,
+                    ]
+                );
+            }
+        }
+
+        // Share List Permissions
+        $shareListMenu = Menu::where('slug', 'share-list')->first();
+        if ($shareListMenu) {
+            $actions = ['view'];
+            foreach ($actions as $action) {
+                Permission::updateOrCreate(
+                    ['slug' => 'share.list.' . $action],
+                    [
+                        'name' => 'Share List ' . ucfirst($action),
+                        'menu_id' => $shareListMenu->id,
+                    ]
+                );
+            }
+        }
     }
 }

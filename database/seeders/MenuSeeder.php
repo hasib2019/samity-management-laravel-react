@@ -100,6 +100,30 @@ class MenuSeeder extends Seeder
                     ['name' => 'DPS List', 'slug' => 'dps-list', 'icon' => 'List', 'order' => 4],
                 ]
             ],
+            [
+                'name' => 'FDR Management',
+                'slug' => 'fdr-management',
+                'icon' => 'Landmark',
+                'order' => 7,
+                'children' => [
+                    ['name' => 'FDR Account', 'slug' => 'fdr-account', 'icon' => 'FilePlus', 'order' => 1],
+                    ['name' => 'FDR Collection', 'slug' => 'fdr-collection', 'icon' => 'HandCoins', 'order' => 2],
+                    ['name' => 'FDR Closing', 'slug' => 'fdr-closing', 'icon' => 'XCircle', 'order' => 3],
+                    ['name' => 'FDR List', 'slug' => 'fdr-list', 'icon' => 'List', 'order' => 4],
+                ]
+            ],
+            [
+                'name' => 'Share Management',
+                'slug' => 'share-management',
+                'icon' => 'PieChart',
+                'order' => 8,
+                'children' => [
+                    ['name' => 'Share Purchase', 'slug' => 'share-purchase', 'icon' => 'PlusCircle', 'order' => 1],
+                    ['name' => 'Share Sale', 'slug' => 'share-sale', 'icon' => 'MinusCircle', 'order' => 2],
+                    ['name' => 'Share Transfer', 'slug' => 'share-transfer', 'icon' => 'Move', 'order' => 3],
+                    ['name' => 'Share List', 'slug' => 'share-list', 'icon' => 'List', 'order' => 4],
+                ]
+            ],
         ];
 
         foreach ($menus as $menuData) {

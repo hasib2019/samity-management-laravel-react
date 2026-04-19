@@ -25,6 +25,16 @@ class RoleSeeder extends Seeder
                 $permissions = Permission::all();
                 $role->permissions()->sync($permissions->pluck('id'));
             }
+            // Assign specific permissions to User role
+            if ($role->slug === 'user') {
+                $userPermissions = [
+                    'dashboard.view',
+                    'member.view',
+                    // Add more as needed for a basic user
+                ];
+                $perms = Permission::whereIn('slug', $userPermissions)->get();
+                $role->permissions()->sync($perms->pluck('id'));
+            }
         }
     }
 }

@@ -201,7 +201,7 @@ const FdrApplication = () => {
                             setSelectedApplication(null);
                             setView('create');
                         }}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700"
+                        className="flex gap-2 items-center px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700"
                     >
                         <Plus size={20} /> New Application
                     </button>
@@ -209,7 +209,7 @@ const FdrApplication = () => {
                 {view !== 'list' && (
                     <button
                         onClick={() => setView('list')}
-                        className="bg-gray-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-600"
+                        className="flex gap-2 items-center px-4 py-2 text-white bg-gray-500 rounded-lg hover:bg-gray-600"
                     >
                         <ArrowLeft size={20} /> Back to List
                     </button>
@@ -217,14 +217,14 @@ const FdrApplication = () => {
             </div>
 
             {view === 'list' ? (
-                <div className="bg-white rounded-lg shadow overflow-hidden">
+                <div className="overflow-hidden bg-white rounded-lg shadow">
                     <div className="p-4 border-b">
                         <div className="relative">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                            <Search className="absolute left-3 top-1/2 text-gray-400 transform -translate-y-1/2" size={20} />
                             <input
                                 type="text"
                                 placeholder="Search by Account No or Member Name..."
-                                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
+                                className="py-2 pr-4 pl-10 w-full rounded-lg border focus:outline-none focus:border-blue-500"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
@@ -235,13 +235,13 @@ const FdrApplication = () => {
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account No</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Member</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Maturity Date</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Account No</th>
+                                    <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Member</th>
+                                    <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Amount</th>
+                                    <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Start Date</th>
+                                    <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Maturity Date</th>
+                                    <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Status</th>
+                                    <th className="px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
@@ -249,7 +249,7 @@ const FdrApplication = () => {
                                     <tr>
                                         <td colSpan="7" className="px-6 py-4 text-center">
                                             <div className="flex justify-center items-center">
-                                                <Loader className="animate-spin mr-2" /> Loading...
+                                                <Loader className="mr-2 animate-spin" /> Loading...
                                             </div>
                                         </td>
                                     </tr>
@@ -262,19 +262,19 @@ const FdrApplication = () => {
                                 ) : (
                                     applications.map((app) => (
                                         <tr key={app.id}>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                            <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
                                                 {app.account_no}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {app.member?.name_en} ({app.member?.member_code})
+                                            <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                                {app.member?.member_name} ({app.member?.member_code})
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
                                                 {parseFloat(app.fdr_amount).toFixed(2)}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
                                                 {app.start_date}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
                                                 {app.maturity_date}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
@@ -285,10 +285,10 @@ const FdrApplication = () => {
                                                     {app.status}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            <td className="px-6 py-4 text-sm font-medium text-right whitespace-nowrap">
                                                 <button
                                                     onClick={() => handleEdit(app)}
-                                                    className="text-indigo-600 hover:text-indigo-900 mr-4"
+                                                    className="mr-4 text-indigo-600 hover:text-indigo-900"
                                                 >
                                                     <Edit size={18} />
                                                 </button>
@@ -307,34 +307,34 @@ const FdrApplication = () => {
                     </div>
                 </div>
             ) : (
-                <div className="bg-white rounded-lg shadow p-6">
+                <div className="p-6 bg-white rounded-lg shadow">
                     <form onSubmit={handleSubmit}>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div className="grid grid-cols-1 gap-6 mb-6 md:grid-cols-2">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Member</label>
+                                <label className="block mb-2 text-sm font-medium text-gray-700">Member</label>
                                 <select
                                     name="member_id"
                                     value={formData.member_id}
                                     onChange={handleInputChange}
-                                    className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+                                    className="px-3 py-2 w-full rounded-lg border focus:outline-none focus:border-blue-500"
                                     required
                                 >
                                     <option value="">Select Member</option>
                                     {members.map(member => (
                                         <option key={member.id} value={member.id}>
-                                            {member.name_en} ({member.member_code})
+                                            {member.member_name} ({member.member_code})
                                         </option>
                                     ))}
                                 </select>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Product</label>
+                                <label className="block mb-2 text-sm font-medium text-gray-700">Product</label>
                                 <select
                                     name="product_id"
                                     value={formData.product_id}
                                     onChange={handleInputChange}
-                                    className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+                                    className="px-3 py-2 w-full rounded-lg border focus:outline-none focus:border-blue-500"
                                     required
                                 >
                                     <option value="">Select Product</option>
@@ -347,49 +347,49 @@ const FdrApplication = () => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">FDR Amount</label>
+                                <label className="block mb-2 text-sm font-medium text-gray-700">FDR Amount</label>
                                 <input
                                     type="number"
                                     name="fdr_amount"
                                     value={formData.fdr_amount}
                                     onChange={handleInputChange}
-                                    className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+                                    className="px-3 py-2 w-full rounded-lg border focus:outline-none focus:border-blue-500"
                                     required
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Duration (Months)</label>
+                                <label className="block mb-2 text-sm font-medium text-gray-700">Duration (Months)</label>
                                 <input
                                     type="number"
                                     name="duration"
                                     value={formData.duration}
                                     onChange={handleInputChange}
-                                    className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+                                    className="px-3 py-2 w-full rounded-lg border focus:outline-none focus:border-blue-500"
                                     required
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Interest Rate (%)</label>
+                                <label className="block mb-2 text-sm font-medium text-gray-700">Interest Rate (%)</label>
                                 <input
                                     type="number"
                                     step="0.01"
                                     name="interest_rate"
                                     value={formData.interest_rate}
                                     onChange={handleInputChange}
-                                    className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+                                    className="px-3 py-2 w-full rounded-lg border focus:outline-none focus:border-blue-500"
                                     required
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Interest Payment Type</label>
+                                <label className="block mb-2 text-sm font-medium text-gray-700">Interest Payment Type</label>
                                 <select
                                     name="interest_payment_type"
                                     value={formData.interest_payment_type}
                                     onChange={handleInputChange}
-                                    className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+                                    className="px-3 py-2 w-full rounded-lg border focus:outline-none focus:border-blue-500"
                                     required
                                 >
                                     <option value="monthly">Monthly</option>
@@ -401,13 +401,13 @@ const FdrApplication = () => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                                <label className="block mb-2 text-sm font-medium text-gray-700">Start Date</label>
                                 <input
                                     type="date"
                                     name="start_date"
                                     value={formData.start_date}
                                     onChange={handleInputChange}
-                                    className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+                                    className="px-3 py-2 w-full rounded-lg border focus:outline-none focus:border-blue-500"
                                     required
                                 />
                             </div>
@@ -420,14 +420,14 @@ const FdrApplication = () => {
                                 <button
                                     type="button"
                                     onClick={addNominee}
-                                    className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1"
+                                    className="flex gap-1 items-center text-sm font-medium text-blue-600 hover:text-blue-800"
                                 >
                                     <Plus size={16} /> Add Nominee
                                 </button>
                             </div>
                             
                             {formData.nominees.map((nominee, index) => (
-                                <div key={index} className="bg-gray-50 p-4 rounded-lg mb-4 relative">
+                                <div key={index} className="relative p-4 mb-4 bg-gray-50 rounded-lg">
                                     {formData.nominees.length > 1 && (
                                         <button
                                             type="button"
@@ -437,9 +437,9 @@ const FdrApplication = () => {
                                             <X size={20} />
                                         </button>
                                     )}
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                                         <div>
-                                            <label className="block text-xs font-medium text-gray-500 mb-1">Nominee Name</label>
+                                            <label className="block mb-1 text-xs font-medium text-gray-500">Nominee Name</label>
                                             <input
                                                 type="text"
                                                 value={nominee.nominee_name}
@@ -449,7 +449,7 @@ const FdrApplication = () => {
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-medium text-gray-500 mb-1">Relation</label>
+                                            <label className="block mb-1 text-xs font-medium text-gray-500">Relation</label>
                                             <input
                                                 type="text"
                                                 value={nominee.relation}
@@ -459,7 +459,7 @@ const FdrApplication = () => {
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-medium text-gray-500 mb-1">Percentage (%)</label>
+                                            <label className="block mb-1 text-xs font-medium text-gray-500">Percentage (%)</label>
                                             <input
                                                 type="number"
                                                 value={nominee.percentage}
@@ -469,7 +469,7 @@ const FdrApplication = () => {
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-medium text-gray-500 mb-1">Date of Birth</label>
+                                            <label className="block mb-1 text-xs font-medium text-gray-500">Date of Birth</label>
                                             <input
                                                 type="date"
                                                 value={nominee.dob}
@@ -479,7 +479,7 @@ const FdrApplication = () => {
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-medium text-gray-500 mb-1">NID</label>
+                                            <label className="block mb-1 text-xs font-medium text-gray-500">NID</label>
                                             <input
                                                 type="text"
                                                 value={nominee.nid}
@@ -492,7 +492,7 @@ const FdrApplication = () => {
                             ))}
                         </div>
 
-                        <div className="flex justify-end gap-4">
+                        <div className="flex gap-4 justify-end">
                             <button
                                 type="button"
                                 onClick={() => {
@@ -500,14 +500,14 @@ const FdrApplication = () => {
                                     setFormData(initialFormState);
                                     setSelectedApplication(null);
                                 }}
-                                className="px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-50"
+                                className="px-4 py-2 text-gray-600 rounded-lg border hover:bg-gray-50"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="submit"
                                 disabled={processing}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                                className="flex gap-2 items-center px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700"
                             >
                                 {processing ? <Loader className="animate-spin" size={20} /> : <Save size={20} />}
                                 {selectedApplication ? 'Update Application' : 'Create Application'}

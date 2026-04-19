@@ -268,7 +268,7 @@ class FdrClosingController extends Controller
 
             // Delete transactions related to this closing
             Transaction::where('tran_type', 'FDR_CLOSING')
-                ->where('description', 'like', '%' . $fdrApplication->account_no . '%')
+                ->where('naration', 'like', '%' . $fdrApplication->account_no . '%')
                 ->where('tran_date', $closing->closing_date)
                 ->delete();
 
@@ -298,10 +298,10 @@ class FdrClosingController extends Controller
 
         $commonData = [
             'branch_id' => 1,
-            'member_id' => $fdrApplication->member_id,
+            'customer_id' => $fdrApplication->member_id,
             'tran_date' => $request->closing_date,
             'tran_type' => 'FDR_CLOSING',
-            'description' => $request->remarks ?? 'FDR Closing for ' . $fdrApplication->account_no,
+            'naration' => $request->remarks ?? 'FDR Closing for ' . $fdrApplication->account_no,
             'status' => 'posted',
             'created_by' => Auth::id(),
         ];

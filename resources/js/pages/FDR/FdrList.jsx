@@ -104,7 +104,7 @@ const FdrList = () => {
                                     <tr key={app.id} className="hover:bg-gray-50/50 transition-colors">
                                         <td className="px-6 py-4 font-medium text-gray-900">{app.account_no}</td>
                                         <td className="px-6 py-4">
-                                            <div className="font-medium text-gray-900">{app.member?.member_name || app.member?.name_en}</div>
+                                            <div className="font-medium text-gray-900">{app.member?.member_name}</div>
                                             <div className="text-xs text-gray-500">{app.member?.member_code}</div>
                                         </td>
                                         <td className="px-6 py-4 text-gray-600">{app.product?.product_name}</td>

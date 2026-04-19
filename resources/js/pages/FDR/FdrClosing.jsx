@@ -120,7 +120,7 @@ const FdrClosing = () => {
                                         </div>
                                         <div>
                                             <p className="text-sm text-gray-500 mb-1">Member Name</p>
-                                            <p className="font-medium text-gray-900">{fdrData.member?.member_name || fdrData.member?.name_en}</p>
+                                            <p className="font-medium text-gray-900">{fdrData.member?.member_name}</p>
                                         </div>
                                         <div>
                                             <p className="text-sm text-gray-500 mb-1">Product</p>

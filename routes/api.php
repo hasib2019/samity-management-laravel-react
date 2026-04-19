@@ -39,6 +39,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('loan-closings', [App\Http\Controllers\Api\LoanClosingController::class, 'store'])->middleware('permission:loan.closing.create');
 
     // Global Routes (No specific permission required, just valid token)
+    Route::get('/dashboard/user', [GlobalController::class, 'userDashboard']);
     Route::get('/global/samities', [GlobalController::class, 'samities']);
     Route::get('/global/members', [GlobalController::class, 'members']);
     Route::get('/global/members/{id}/accounts', [GlobalController::class, 'accounts']);

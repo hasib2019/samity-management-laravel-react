@@ -41,6 +41,7 @@ class Product extends Model
         'gl_income_id',
         'gl_expense_id',
         'gl_waiver_id',
+        'loan_loss_provision_gl_id',
         'status',
         'created_by',
         'updated_by',

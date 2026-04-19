@@ -44,4 +44,9 @@ class SamityProfile extends Model
     {
         return $this->belongsTo(User::class, 'updated_by');
     }
+
+    public function members()
+    {
+        return $this->hasMany(MemberInfo::class, 'samity_id');
+    }
 }

@@ -196,6 +196,7 @@ const ProductSetup = () => {
             gl_income_id: '',
             gl_expense_id: '',
             gl_waiver_id: '',
+            gl_loan_disbursement_id: '',
             loan_loss_provision_gl_id: '',
             status: 'active'
         });
@@ -230,6 +231,8 @@ const ProductSetup = () => {
             gl_income_id: product.gl_income_id || '',
             gl_expense_id: product.gl_expense_id || '',
             gl_waiver_id: product.gl_waiver_id || '',
+            gl_loan_disbursement_id: product.gl_loan_disbursement_id || '',
+            loan_loss_provision_gl_id: product.loan_loss_provision_gl_id || '',
         });
         setIsModalOpen(true);
     };
@@ -655,49 +658,103 @@ const ProductSetup = () => {
                             <div className="pt-4 border-t">
                                 <h3 className="mb-4 text-lg font-medium text-gray-900">GL Account Mapping</h3>
                                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                    {/* Principal GL - Common for all, but with different labels */}
                                     <div>
                                         <GlCombobox
-                                            label="Principal GL"
+                                            label={
+                                                formData.product_type === 'loan' ? "Principal GL (Loan Portfolio - Asset)" :
+                                                formData.product_type === 'share' ? "Share Capital GL (Liability/Equity)" :
+                                                "Deposit Liability GL (Liability)"
+                                            }
                                             value={formData.gl_principal_id}
                                             onChange={(val) => setFormData(prev => ({ ...prev, gl_principal_id: val }))}
                                             options={glAccounts}
                                         />
                                     </div>
+
+                                    {/* Product-Specific GLs */}
+                                    {formData.product_type === 'loan' && (
+                                        <>
+                                            <div>
+                                                <GlCombobox
+                                                    label="Loan Outstanding GL (Dr GL)"
+                                                    value={formData.gl_loan_outstanding_id}
+                                                    onChange={(val) => setFormData(prev => ({ ...prev, gl_loan_outstanding_id: val }))}
+                                                    options={glAccounts}
+                                                />
+                                            </div>
+                                            <div>
+                                                <GlCombobox
+                                                    label="Loan Disbursement Source GL (Cr GL)"
+                                                    value={formData.gl_loan_disbursement_id}
+                                                    onChange={(val) => setFormData(prev => ({ ...prev, gl_loan_disbursement_id: val }))}
+                                                    options={glAccounts}
+                                                />
+                                            </div>
+                                            <div>
+                                                <GlCombobox
+                                                    label="Interest Income GL"
+                                                    value={formData.gl_profit_id}
+                                                    onChange={(val) => setFormData(prev => ({ ...prev, gl_profit_id: val }))}
+                                                    options={glAccounts}
+                                                />
+                                            </div>
+                                            <div>
+                                                <GlCombobox
+                                                    label="Penalty Income GL"
+                                                    value={formData.gl_penalty_id}
+                                                    onChange={(val) => setFormData(prev => ({ ...prev, gl_penalty_id: val }))}
+                                                    options={glAccounts}
+                                                />
+                                            </div>
+                                            <div>
+                                                <GlCombobox
+                                                    label="Loan Waiver / Rebate GL (Expense)"
+                                                    value={formData.gl_waiver_id}
+                                                    onChange={(val) => setFormData(prev => ({ ...prev, gl_waiver_id: val }))}
+                                                    options={glAccounts}
+                                                />
+                                            </div>
+                                            <div>
+                                                <GlCombobox
+                                                    label="Loan Loss Provision GL (Expense)"
+                                                    value={formData.loan_loss_provision_gl_id}
+                                                    onChange={(val) => setFormData(prev => ({ ...prev, loan_loss_provision_gl_id: val }))}
+                                                    options={glAccounts}
+                                                />
+                                            </div>
+                                        </>
+                                    )}
+
+                                    {(formData.product_type === 'saving' || formData.product_type === 'dps' || formData.product_type === 'fdr') && (
+                                        <>
+                                            <div>
+                                                <GlCombobox
+                                                    label="Interest Expense GL"
+                                                    value={formData.gl_profit_id}
+                                                    onChange={(val) => setFormData(prev => ({ ...prev, gl_profit_id: val }))}
+                                                    options={glAccounts}
+                                                />
+                                            </div>
+                                            <div>
+                                                <GlCombobox
+                                                    label="Penalty Income GL"
+                                                    value={formData.gl_penalty_id}
+                                                    onChange={(val) => setFormData(prev => ({ ...prev, gl_penalty_id: val }))}
+                                                    options={glAccounts}
+                                                />
+                                            </div>
+                                        </>
+                                    )}
+
+                                    {/* Generic/Incidental Mapping - Common for most */}
                                     <div>
                                         <GlCombobox
-                                            label="Loan Outstanding GL (Dr GL)"
-                                            value={formData.gl_loan_outstanding_id}
-                                            onChange={(val) => setFormData(prev => ({ ...prev, gl_loan_outstanding_id: val }))}
-                                            options={glAccounts}
-                                        />
-                                    </div>
-                                    <div>
-                                        <GlCombobox
-                                            label="Loan Disbursement GL (Cr GL)"
-                                            value={formData.gl_loan_disbursement_id}
-                                            onChange={(val) => setFormData(prev => ({ ...prev, gl_loan_disbursement_id: val }))}
-                                            options={glAccounts}
-                                        />
-                                    </div>
-                                    <div>
-                                        <GlCombobox
-                                            label="Profit/Interest GL"
-                                            value={formData.gl_profit_id}
-                                            onChange={(val) => setFormData(prev => ({ ...prev, gl_profit_id: val }))}
-                                            options={glAccounts}
-                                        />
-                                    </div>
-                                    <div>
-                                        <GlCombobox
-                                            label="Penalty GL"
-                                            value={formData.gl_penalty_id}
-                                            onChange={(val) => setFormData(prev => ({ ...prev, gl_penalty_id: val }))}
-                                            options={glAccounts}
-                                        />
-                                    </div>
-                                    <div>
-                                        <GlCombobox
-                                            label="Income/Liability Cr-GL"
+                                            label={
+                                                formData.product_type === 'loan' ? "Incidental Income Cr-GL" :
+                                                formData.product_type === 'share' ? "Share Fee Income GL" :
+                                                "Incidental Income GL"
+                                            }
                                             value={formData.gl_income_id}
                                             onChange={(val) => setFormData(prev => ({ ...prev, gl_income_id: val }))}
                                             options={glAccounts}
@@ -705,17 +762,12 @@ const ProductSetup = () => {
                                     </div>
                                     <div>
                                         <GlCombobox
-                                            label="Asset/Expense Dr-GL"
+                                            label={
+                                                formData.product_type === 'loan' ? "Asset/Expense Dr-GL" :
+                                                "Related Expense GL"
+                                            }
                                             value={formData.gl_expense_id}
                                             onChange={(val) => setFormData(prev => ({ ...prev, gl_expense_id: val }))}
-                                            options={glAccounts}
-                                        />
-                                    </div>
-                                    <div>
-                                        <GlCombobox
-                                            label="Loan Waiver / Rebate"
-                                            value={formData.gl_waiver_id}
-                                            onChange={(val) => setFormData(prev => ({ ...prev, gl_waiver_id: val }))}
                                             options={glAccounts}
                                         />
                                     </div>

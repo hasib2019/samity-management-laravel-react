@@ -164,7 +164,7 @@ class DepositRequestController extends Controller
 
         $commonData = [
             'samity_id' => $member ? $member->samity_id : null,
-            'customer_id' => $savingsAccount->id,
+            'customer_id' => $depositRequest->member_id,
             'product_id' => $product->id,
             'payment_mode' => 'cash',
             'batch_num' => $batchNum,
