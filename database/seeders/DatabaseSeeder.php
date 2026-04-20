@@ -19,12 +19,15 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             MenuSeeder::class,
             ReportMenuSeeder::class,
+            ProjectInvestmentMenuSeeder::class,
             PermissionSeeder::class,
+            ProjectInvestmentPermissionSeeder::class,
             CodeMasterMenuSeeder::class,
             FdrMenuSeeder::class,
             CommitteePermissionSeeder::class,
             CommitteeTypeSeeder::class,
             CommitteeMenuSeeder::class,
+            RoleSeeder::class,
             UserSeeder::class,
         ]);
     }

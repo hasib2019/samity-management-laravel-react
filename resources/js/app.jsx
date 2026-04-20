@@ -44,6 +44,10 @@ import SharePurchase from './pages/Share/SharePurchase';
 import ShareSale from './pages/Share/ShareSale';
 import ShareList from './pages/Share/ShareList';
 import ShareTransfer from './pages/Share/ShareTransfer';
+import ProjectDeclaration from './pages/Project/ProjectDeclaration';
+import ProjectShareSale from './pages/Project/ProjectShareSale';
+import ProjectClosing from './pages/Project/ProjectClosing';
+import ProjectInvestors from './pages/Project/ProjectInvestors';
 import CommitteeType from './pages/Committee/CommitteeType';
 import CommitteeList from './pages/Committee/CommitteeList';
 import CommitteeReport from './pages/Committee/CommitteeReport';
@@ -382,6 +386,40 @@ const App = () => {
                         element={
                             <ProtectedRoute>
                                 <ShareList />
+                            </ProtectedRoute>
+                        } 
+                    />
+
+                    {/* Project Investment */}
+                    <Route 
+                        path="/project-declarations" 
+                        element={
+                            <ProtectedRoute>
+                                <ProjectDeclaration />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/project-share-sales" 
+                        element={
+                            <ProtectedRoute>
+                                <ProjectShareSale />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/project-closings" 
+                        element={
+                            <ProtectedRoute>
+                                <ProjectClosing />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/project-investors" 
+                        element={
+                            <ProtectedRoute>
+                                <ProjectInvestors />
                             </ProtectedRoute>
                         } 
                     />

@@ -12,6 +12,9 @@ use App\Http\Controllers\Api\DepositRequestController;
 use App\Http\Controllers\Api\WithdrawRequestController;
 use App\Http\Controllers\Api\GlMappingTypeController;
 use App\Http\Controllers\Api\LoanApplicationController;
+use App\Http\Controllers\Api\ProjectClosingController;
+use App\Http\Controllers\Api\ProjectDeclarationController;
+use App\Http\Controllers\Api\ProjectShareSaleController;
 use App\Http\Controllers\Api\ShareManagementController;
 use Illuminate\Support\Facades\Route;
 
@@ -192,6 +195,19 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('share-purchase', [ShareManagementController::class, 'purchase'])->middleware('permission:share.purchase.create');
     Route::post('share-sale', [ShareManagementController::class, 'sale'])->middleware('permission:share.sale.create');
     Route::post('share-transfer', [ShareManagementController::class, 'transfer'])->middleware('permission:share.transfer.create');
+
+    // Project Investment
+    Route::get('project-declarations', [ProjectDeclarationController::class, 'index'])->middleware('permission:project.declaration.view');
+    Route::post('project-declarations', [ProjectDeclarationController::class, 'store'])->middleware('permission:project.declaration.create');
+    Route::get('project-declarations/{id}', [ProjectDeclarationController::class, 'show'])->middleware('permission:project.declaration.view');
+    Route::put('project-declarations/{id}', [ProjectDeclarationController::class, 'update'])->middleware('permission:project.declaration.edit');
+    Route::get('project-declarations/{id}/investors', [ProjectDeclarationController::class, 'investors'])->middleware('permission:project.investor.view');
+
+    Route::get('project-share-sales', [ProjectShareSaleController::class, 'index'])->middleware('permission:project.share.sale.view');
+    Route::post('project-share-sales', [ProjectShareSaleController::class, 'store'])->middleware('permission:project.share.sale.create');
+
+    Route::get('project-closings', [ProjectClosingController::class, 'index'])->middleware('permission:project.closing.view');
+    Route::post('project-closings', [ProjectClosingController::class, 'store'])->middleware('permission:project.closing.create');
 
     // Committee Management
     Route::apiResource('committee-types', App\Http\Controllers\Api\CommitteeTypeController::class);
