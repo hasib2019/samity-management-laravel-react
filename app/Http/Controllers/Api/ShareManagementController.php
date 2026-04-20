@@ -40,6 +40,7 @@ class ShareManagementController extends Controller
     public function purchase(Request $request)
     {
         $validator = Validator::make($request->all(), [
+            'samity_id' => 'required|exists:samity_profiles,id',
             'member_id' => 'required|exists:member_infos,id',
             'product_id' => 'required|exists:product_mst,id',
             'tran_date' => 'required|date',
@@ -90,6 +91,7 @@ class ShareManagementController extends Controller
             $product = Product::findOrFail($request->product_id);
             $commonData = [
                 'branch_id' => 1,
+                'samity_id' => $request->samity_id,
                 'customer_id' => $request->member_id,
                 'product_id' => $request->product_id,
                 'tran_date' => $request->tran_date,
@@ -150,7 +152,7 @@ class ShareManagementController extends Controller
         try {
             DB::beginTransaction();
 
-            $shareAccount = ShareAccount::findOrFail($request->share_account_id);
+            $shareAccount = ShareAccount::with('member')->findOrFail($request->share_account_id);
             
             if ($shareAccount->total_shares < $request->quantity) {
                 throw new \Exception("Insufficient shares. Current balance: " . $shareAccount->total_shares);
@@ -180,6 +182,7 @@ class ShareManagementController extends Controller
             $product = $shareAccount->product;
             $commonData = [
                 'branch_id' => 1,
+                'samity_id' => $shareAccount->member->samity_id,
                 'customer_id' => $shareAccount->member_id,
                 'product_id' => $shareAccount->product_id,
                 'tran_date' => $request->tran_date,

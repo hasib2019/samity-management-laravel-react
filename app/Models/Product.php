@@ -19,6 +19,7 @@ class Product extends Model
         'rate_type',
         'min_amount',
         'max_amount',
+        'face_value',
         'tenure_required',
         'min_tenure_month',
         'max_tenure_month',

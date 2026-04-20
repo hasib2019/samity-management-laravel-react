@@ -40,6 +40,7 @@ class ProductController extends Controller
             'rate_type' => 'nullable|string',
             'min_amount' => 'nullable|numeric',
             'max_amount' => 'nullable|numeric',
+            'face_value' => 'nullable|numeric',
             'profit_rate' => 'nullable|numeric',
             'installment_amount' => 'nullable|numeric',
             'penalty_rate' => 'nullable|numeric',

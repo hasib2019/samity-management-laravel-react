@@ -104,6 +104,7 @@ const ProductSetup = () => {
         rate_type: '',
         min_amount: 0,
         max_amount: 0,
+        face_value: '',
         tenure_required: false,
         min_tenure_month: '',
         max_tenure_month: '',
@@ -174,6 +175,7 @@ const ProductSetup = () => {
             rate_type: '',
             min_amount: 0,
             max_amount: 0,
+            face_value: '',
             tenure_required: false,
             min_tenure_month: '',
             max_tenure_month: '',
@@ -381,277 +383,246 @@ const ProductSetup = () => {
                         
                         <form onSubmit={handleSubmit} className="p-6 space-y-6">
                             {/* Basic Info */}
-                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                                <div>
-                                    <label className="block mb-1 text-sm font-medium text-gray-700">Product Code</label>
-                                    <input
-                                        type="text"
-                                        name="product_code"
-                                        value={formData.product_code}
-                                        onChange={handleInputChange}
-                                        className="px-3 py-2 w-full rounded-md border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block mb-1 text-sm font-medium text-gray-700">Product Name</label>
-                                    <input
-                                        type="text"
-                                        name="product_name"
-                                        value={formData.product_name}
-                                        onChange={handleInputChange}
-                                        className="px-3 py-2 w-full rounded-md border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block mb-1 text-sm font-medium text-gray-700">Type</label>
-                                    <select
-                                        name="product_type"
-                                        value={formData.product_type}
-                                        onChange={handleInputChange}
-                                        className="px-3 py-2 w-full rounded-md border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                    >
-                                        <option value="saving">Saving</option>
-                                        <option value="share">Share</option>
-                                        <option value="fdr">FDR</option>
-                                        <option value="dps">DPS</option>
-                                        <option value="loan">Loan</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block mb-1 text-sm font-medium text-gray-700">Category</label>
-                                    <select
-                                        name="product_category"
-                                        value={formData.product_category}
-                                        onChange={handleInputChange}
-                                        className="px-3 py-2 w-full rounded-md border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                    >
-                                        <option value="deposit">Deposit</option>
-                                        <option value="investment">Investment</option>
-                                        <option value="credit">Credit</option>
-                                    </select>
-                                </div>
-                                {formData.product_type === 'loan' && (
+                            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                                <h3 className="mb-4 text-sm font-bold text-blue-600 uppercase tracking-wider">Basic Information</h3>
+                                <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                                     <div>
-                                        <label className="block mb-1 text-sm font-medium text-gray-700">Rate Type</label>
-                                        <select
-                                            name="rate_type"
-                                            value={formData.rate_type || ''}
+                                        <label className="block mb-1 text-sm font-semibold text-gray-700">Product Code</label>
+                                        <input
+                                            type="text"
+                                            name="product_code"
+                                            value={formData.product_code}
                                             onChange={handleInputChange}
-                                            className="px-3 py-2 w-full rounded-md border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                            placeholder="e.g. SAV-001"
+                                            required
+                                        />
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <label className="block mb-1 text-sm font-semibold text-gray-700">Product Name</label>
+                                        <input
+                                            type="text"
+                                            name="product_name"
+                                            value={formData.product_name}
+                                            onChange={handleInputChange}
+                                            className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                            placeholder="e.g. Regular Savings Account"
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block mb-1 text-sm font-semibold text-gray-700">Product Type</label>
+                                        <select
+                                            name="product_type"
+                                            value={formData.product_type}
+                                            onChange={handleInputChange}
+                                            className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                                         >
-                                            <option value="">Select Rate Type</option>
-                                            <option value="fixed">Fixed Rate</option>
-                                            <option value="floating">Floating / Variable Rate</option>
-                                            <option value="flat">Flat Rate</option>
-                                            <option value="reducing">Reducing Balance Rate (Reducing / Declining)</option>
-                                            <option value="interest_free">Interest-Free / Service Charge Rate</option>
+                                            <option value="saving">Saving</option>
+                                            <option value="share">Share</option>
+                                            <option value="fdr">FDR</option>
+                                            <option value="dps">DPS</option>
+                                            <option value="loan">Loan</option>
                                         </select>
                                     </div>
-                                )}
-                                <div>
-                                    <label className="block mb-1 text-sm font-medium text-gray-700">Status</label>
-                                    <select
-                                        name="status"
-                                        value={formData.status}
-                                        onChange={handleInputChange}
-                                        className="px-3 py-2 w-full rounded-md border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                    >
-                                        <option value="active">Active</option>
-                                        <option value="inactive">Inactive</option>
-                                    </select>
+                                    <div>
+                                        <label className="block mb-1 text-sm font-semibold text-gray-700">Category</label>
+                                        <select
+                                            name="product_category"
+                                            value={formData.product_category}
+                                            onChange={handleInputChange}
+                                            className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                        >
+                                            <option value="deposit">Deposit</option>
+                                            <option value="investment">Investment</option>
+                                            <option value="credit">Credit</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block mb-1 text-sm font-semibold text-gray-700">Status</label>
+                                        <select
+                                            name="status"
+                                            value={formData.status}
+                                            onChange={handleInputChange}
+                                            className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                        >
+                                            <option value="active">Active</option>
+                                            <option value="inactive">Inactive</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
 
                             {/* Rules Section - Dynamic based on Type */}
-                            <div className="pt-4 border-t">
-                                <h3 className="mb-4 text-lg font-medium text-gray-900">Rules & Configuration</h3>
-                                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                                    {/* Amount Rules */}
-                                    <div>
-                                        <label className="block mb-1 text-sm font-medium text-gray-700">Min Amount</label>
-                                        <input
-                                            type="number"
-                                            name="min_amount"
-                                            value={formData.min_amount}
-                                            onChange={handleInputChange}
-                                            className="px-3 py-2 w-full rounded-md border border-gray-300"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block mb-1 text-sm font-medium text-gray-700">Max Amount</label>
-                                        <input
-                                            type="number"
-                                            name="max_amount"
-                                            value={formData.max_amount}
-                                            onChange={handleInputChange}
-                                            className="px-3 py-2 w-full rounded-md border border-gray-300"
-                                        />
-                                    </div>
-
-                                    {/* Tenure Rules */}
-                                    <div className="col-span-2">
-                                        <label className="flex items-center space-x-2">
-                                            <input
-                                                type="checkbox"
-                                                name="tenure_required"
-                                                checked={formData.tenure_required}
-                                                onChange={handleInputChange}
-                                                className="text-blue-600 rounded focus:ring-blue-500"
-                                            />
-                                            <span className="text-sm font-medium text-gray-700">Tenure Required</span>
-                                        </label>
-                                    </div>
-                                    {formData.tenure_required && (
-                                        <>
-                                            <div>
-                                                <label className="block mb-1 text-sm font-medium text-gray-700">Min Tenure (Months)</label>
-                                                <input
-                                                    type="number"
-                                                    name="min_tenure_month"
-                                                    value={formData.min_tenure_month}
-                                                    onChange={handleInputChange}
-                                                    className="px-3 py-2 w-full rounded-md border border-gray-300"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block mb-1 text-sm font-medium text-gray-700">Max Tenure (Months)</label>
-                                                <input
-                                                    type="number"
-                                                    name="max_tenure_month"
-                                                    value={formData.max_tenure_month}
-                                                    onChange={handleInputChange}
-                                                    className="px-3 py-2 w-full rounded-md border border-gray-300"
-                                                />
-                                            </div>
-                                        </>
-                                    )}
-
-                                    {/* Profit Rules */}
-                                    <div className="col-span-2">
-                                        <label className="flex items-center space-x-2">
-                                            <input
-                                                type="checkbox"
-                                                name="profit_applicable"
-                                                checked={formData.profit_applicable}
-                                                onChange={handleInputChange}
-                                                className="text-blue-600 rounded focus:ring-blue-500"
-                                            />
-                                            <span className="text-sm font-medium text-gray-700">Profit Applicable</span>
-                                        </label>
-                                    </div>
-                                    {formData.profit_applicable && (
-                                        <>
-                                            <div>
-                                                <label className="block mb-1 text-sm font-medium text-gray-700">Profit Rate (%)</label>
-                                                <input
-                                                    type="number"
-                                                    step="0.01"
-                                                    name="profit_rate"
-                                                    value={formData.profit_rate}
-                                                    onChange={handleInputChange}
-                                                    className="px-3 py-2 w-full rounded-md border border-gray-300"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block mb-1 text-sm font-medium text-gray-700">Profit Calculation</label>
-                                                <select
-                                                    name="profit_calculation"
-                                                    value={formData.profit_calculation}
-                                                    onChange={handleInputChange}
-                                                    className="px-3 py-2 w-full rounded-md border border-gray-300"
-                                                >
-                                                    <option value="daily">Daily</option>
-                                                    <option value="monthly">Monthly</option>
-                                                    <option value="yearly">Yearly</option>
-                                                    <option value="maturity">Maturity</option>
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <label className="block mb-1 text-sm font-medium text-gray-700">Profit Posting</label>
-                                                <select
-                                                    name="profit_posting"
-                                                    value={formData.profit_posting}
-                                                    onChange={handleInputChange}
-                                                    className="px-3 py-2 w-full rounded-md border border-gray-300"
-                                                >
-                                                    <option value="monthly">Monthly</option>
-                                                    <option value="quarterly">Quarterly</option>
-                                                    <option value="maturity">Maturity</option>
-                                                </select>
-                                            </div>
-                                        </>
-                                    )}
-
-                                    {/* Installment Rules */}
-                                    <div className="col-span-2">
-                                        <label className="flex items-center space-x-2">
-                                            <input
-                                                type="checkbox"
-                                                name="installment_required"
-                                                checked={formData.installment_required}
-                                                onChange={handleInputChange}
-                                                className="text-blue-600 rounded focus:ring-blue-500"
-                                            />
-                                            <span className="text-sm font-medium text-gray-700">Installment Required</span>
-                                        </label>
-                                    </div>
-                                    {formData.installment_required && (
-                                        <>
-                                            <div>
-                                                <label className="block mb-1 text-sm font-medium text-gray-700">Installment Type</label>
-                                                <select
-                                                    name="installment_type"
-                                                    value={formData.installment_type}
-                                                    onChange={handleInputChange}
-                                                    className="px-3 py-2 w-full rounded-md border border-gray-300"
-                                                >
-                                                    <option value="monthly">Monthly</option>
-                                                    <option value="weekly">Weekly</option>
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <label className="block mb-1 text-sm font-medium text-gray-700">Installment Amount</label>
-                                                <input
-                                                    type="number"
-                                                    name="installment_amount"
-                                                    value={formData.installment_amount}
-                                                    onChange={handleInputChange}
-                                                    className="px-3 py-2 w-full rounded-md border border-gray-300"
-                                                />
-                                            </div>
-                                        </>
-                                    )}
-                                    
-                                    {/* Penalty Rules */}
-                                    <div className="col-span-2">
-                                        <label className="flex items-center space-x-2">
-                                            <input
-                                                type="checkbox"
-                                                name="penalty_applicable"
-                                                checked={formData.penalty_applicable}
-                                                onChange={handleInputChange}
-                                                className="text-blue-600 rounded focus:ring-blue-500"
-                                            />
-                                            <span className="text-sm font-medium text-gray-700">Penalty Applicable</span>
-                                        </label>
-                                    </div>
-                                    {formData.penalty_applicable && (
+                            <div className="bg-white p-4 rounded-xl border border-gray-200">
+                                <h3 className="mb-4 text-sm font-bold text-blue-600 uppercase tracking-wider">Rules & Configuration</h3>
+                                
+                                {formData.product_type === 'saving' && (
+                                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                                         <div>
-                                            <label className="block mb-1 text-sm font-medium text-gray-700">Penalty Rate (%)</label>
-                                            <input
-                                                type="number"
-                                                step="0.01"
-                                                name="penalty_rate"
-                                                value={formData.penalty_rate}
-                                                onChange={handleInputChange}
-                                                className="px-3 py-2 w-full rounded-md border border-gray-300"
-                                            />
+                                            <label className="block mb-1 text-sm font-semibold text-gray-700">Minimum Balance</label>
+                                            <input type="number" name="min_amount" value={formData.min_amount} onChange={handleInputChange} className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none" />
                                         </div>
-                                    )}
+                                        <div>
+                                            <label className="block mb-1 text-sm font-semibold text-gray-700">Maximum Balance</label>
+                                            <input type="number" name="max_amount" value={formData.max_amount} onChange={handleInputChange} className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none" />
+                                        </div>
+                                        <div className="col-span-2 p-3 bg-blue-50 rounded-lg">
+                                            <label className="flex items-center space-x-2">
+                                                <input type="checkbox" name="profit_applicable" checked={formData.profit_applicable} onChange={handleInputChange} className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500" />
+                                                <span className="text-sm font-bold text-blue-800">Enable Profit Calculation</span>
+                                            </label>
+                                        </div>
+                                        {formData.profit_applicable && (
+                                            <>
+                                                <div>
+                                                    <label className="block mb-1 text-sm font-semibold text-gray-700">Profit Rate (%)</label>
+                                                    <input type="number" step="0.01" name="profit_rate" value={formData.profit_rate} onChange={handleInputChange} className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="e.g. 5.5" />
+                                                </div>
+                                                <div>
+                                                    <label className="block mb-1 text-sm font-semibold text-gray-700">Profit Posting Frequency</label>
+                                                    <select name="profit_posting" value={formData.profit_posting} onChange={handleInputChange} className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none">
+                                                        <option value="monthly">Monthly</option>
+                                                        <option value="quarterly">Quarterly</option>
+                                                        <option value="half_yearly">Half Yearly</option>
+                                                        <option value="yearly">Yearly</option>
+                                                    </select>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                )}
 
-                                </div>
+                                {formData.product_type === 'dps' && (
+                                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                        <div>
+                                            <label className="block mb-1 text-sm font-semibold text-gray-700">Installment Amount</label>
+                                            <input type="number" name="installment_amount" value={formData.installment_amount} onChange={handleInputChange} className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none font-bold text-blue-600" required />
+                                        </div>
+                                        <div>
+                                            <label className="block mb-1 text-sm font-semibold text-gray-700">Installment Frequency</label>
+                                            <select name="installment_type" value={formData.installment_type} onChange={handleInputChange} className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none">
+                                                <option value="weekly">Weekly</option>
+                                                <option value="monthly">Monthly</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block mb-1 text-sm font-semibold text-gray-700">Duration (Months)</label>
+                                            <input type="number" name="max_tenure_month" value={formData.max_tenure_month} onChange={handleInputChange} className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none" required />
+                                        </div>
+                                        <div>
+                                            <label className="block mb-1 text-sm font-semibold text-gray-700">Profit Rate at Maturity (%)</label>
+                                            <input type="number" step="0.01" name="profit_rate" value={formData.profit_rate} onChange={handleInputChange} className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none" />
+                                        </div>
+                                        <div className="col-span-2 p-3 bg-red-50 rounded-lg">
+                                            <label className="flex items-center space-x-2">
+                                                <input type="checkbox" name="penalty_applicable" checked={formData.penalty_applicable} onChange={handleInputChange} className="w-4 h-4 text-red-600 rounded focus:ring-red-500" />
+                                                <span className="text-sm font-bold text-red-800">Enable Late Fee Penalty</span>
+                                            </label>
+                                        </div>
+                                        {formData.penalty_applicable && (
+                                            <div>
+                                                <label className="block mb-1 text-sm font-semibold text-gray-700">Late Fee Rate (%)</label>
+                                                <input type="number" step="0.01" name="penalty_rate" value={formData.penalty_rate} onChange={handleInputChange} className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none" />
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {formData.product_type === 'fdr' && (
+                                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                        <div>
+                                            <label className="block mb-1 text-sm font-semibold text-gray-700">Minimum Deposit</label>
+                                            <input type="number" name="min_amount" value={formData.min_amount} onChange={handleInputChange} className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none" />
+                                        </div>
+                                        <div>
+                                            <label className="block mb-1 text-sm font-semibold text-gray-700">Tenure (Months)</label>
+                                            <input type="number" name="max_tenure_month" value={formData.max_tenure_month} onChange={handleInputChange} className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none" required />
+                                        </div>
+                                        <div>
+                                            <label className="block mb-1 text-sm font-semibold text-gray-700">Profit Rate (%)</label>
+                                            <input type="number" step="0.01" name="profit_rate" value={formData.profit_rate} onChange={handleInputChange} className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none" />
+                                        </div>
+                                        <div>
+                                            <label className="block mb-1 text-sm font-semibold text-gray-700">Profit Posting</label>
+                                            <select name="profit_posting" value={formData.profit_posting} onChange={handleInputChange} className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none">
+                                                <option value="monthly">Monthly</option>
+                                                <option value="quarterly">Quarterly</option>
+                                                <option value="maturity">At Maturity</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {formData.product_type === 'loan' && (
+                                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                        <div>
+                                            <label className="block mb-1 text-sm font-semibold text-gray-700">Min Loan Amount</label>
+                                            <input type="number" name="min_amount" value={formData.min_amount} onChange={handleInputChange} className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none" />
+                                        </div>
+                                        <div>
+                                            <label className="block mb-1 text-sm font-semibold text-gray-700">Max Loan Amount</label>
+                                            <input type="number" name="max_amount" value={formData.max_amount} onChange={handleInputChange} className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none" />
+                                        </div>
+                                        <div>
+                                            <label className="block mb-1 text-sm font-semibold text-gray-700">Interest Rate (%)</label>
+                                            <input type="number" step="0.01" name="profit_rate" value={formData.profit_rate} onChange={handleInputChange} className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none font-bold text-blue-600" required />
+                                        </div>
+                                        <div>
+                                            <label className="block mb-1 text-sm font-semibold text-gray-700">Loan Tenure (Months)</label>
+                                            <input type="number" name="max_tenure_month" value={formData.max_tenure_month} onChange={handleInputChange} className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none" required />
+                                        </div>
+                                        <div>
+                                            <label className="block mb-1 text-sm font-semibold text-gray-700">Rate Type</label>
+                                            <select name="rate_type" value={formData.rate_type || ''} onChange={handleInputChange} className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none">
+                                                <option value="flat">Flat Rate</option>
+                                                <option value="reducing">Reducing Balance</option>
+                                                <option value="fixed">Fixed Amount</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block mb-1 text-sm font-semibold text-gray-700">Installment Frequency</label>
+                                            <select name="installment_type" value={formData.installment_type} onChange={handleInputChange} className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none">
+                                                <option value="daily">Daily</option>
+                                                <option value="weekly">Weekly</option>
+                                                <option value="monthly">Monthly</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block mb-1 text-sm font-semibold text-gray-700">Grace Period (Months)</label>
+                                            <input type="number" name="grace_period_month" value={formData.grace_period_month} onChange={handleInputChange} className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none" />
+                                        </div>
+                                        <div className="col-span-2 p-3 bg-red-50 rounded-lg">
+                                            <label className="flex items-center space-x-2">
+                                                <input type="checkbox" name="penalty_applicable" checked={formData.penalty_applicable} onChange={handleInputChange} className="w-4 h-4 text-red-600 rounded focus:ring-red-500" />
+                                                <span className="text-sm font-bold text-red-800">Enable Late Payment Penalty</span>
+                                            </label>
+                                        </div>
+                                        {formData.penalty_applicable && (
+                                            <div>
+                                                <label className="block mb-1 text-sm font-semibold text-gray-700">Penalty Rate (%)</label>
+                                                <input type="number" step="0.01" name="penalty_rate" value={formData.penalty_rate} onChange={handleInputChange} className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none" />
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {formData.product_type === 'share' && (
+                                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                        <div>
+                                            <label className="block mb-1 text-sm font-semibold text-gray-700">Face Value (Price per Share)</label>
+                                            <input type="number" name="face_value" value={formData.face_value} onChange={handleInputChange} className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none font-bold text-blue-600" required />
+                                        </div>
+                                        <div>
+                                            <label className="block mb-1 text-sm font-semibold text-gray-700">Min Shares per Member</label>
+                                            <input type="number" name="min_amount" value={formData.min_amount} onChange={handleInputChange} className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none" />
+                                        </div>
+                                        <div>
+                                            <label className="block mb-1 text-sm font-semibold text-gray-700">Max Shares per Member</label>
+                                            <input type="number" name="max_amount" value={formData.max_amount} onChange={handleInputChange} className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none" />
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Accounting Mapping */}
