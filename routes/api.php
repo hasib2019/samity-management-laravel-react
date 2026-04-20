@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\DepositRequestController;
 use App\Http\Controllers\Api\WithdrawRequestController;
 use App\Http\Controllers\Api\GlMappingTypeController;
 use App\Http\Controllers\Api\LoanApplicationController;
+use App\Http\Controllers\Api\ShareManagementController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login']);
@@ -186,10 +187,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('fdr-closings/{id}', [App\Http\Controllers\Api\FdrClosingController::class, 'destroy'])->middleware('permission:fdr.closing.delete');
 
     // Share Management
-    Route::get('share-accounts', [App\Http\Controllers\Api\ShareManagementController::class, 'index'])->middleware('permission:share.list.view');
-    Route::get('share-accounts/search', [App\Http\Controllers\Api\ShareManagementController::class, 'search'])->middleware('permission:share.list.view');
-    Route::post('share-purchase', [App\Http\Controllers\Api\ShareManagementController::class, 'purchase'])->middleware('permission:share.purchase.create');
-    Route::post('share-sale', [App\Http\Controllers\Api\ShareManagementController::class, 'sale'])->middleware('permission:share.sale.create');
+    Route::get('share-accounts', [ShareManagementController::class, 'index'])->middleware('permission:share.list.view');
+    Route::get('share-accounts/search', [ShareManagementController::class, 'search'])->middleware('permission:share.list.view');
+    Route::post('share-purchase', [ShareManagementController::class, 'purchase'])->middleware('permission:share.purchase.create');
+    Route::post('share-sale', [ShareManagementController::class, 'sale'])->middleware('permission:share.sale.create');
+    Route::post('share-transfer', [ShareManagementController::class, 'transfer'])->middleware('permission:share.transfer.create');
 
     // Committee Management
     Route::apiResource('committee-types', App\Http\Controllers\Api\CommitteeTypeController::class);

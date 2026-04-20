@@ -89,20 +89,29 @@ class ShareManagementController extends Controller
             // Cr. Share Capital (Liability/Equity Increase)
             
             $product = Product::findOrFail($request->product_id);
+
+            // Generate Batch
+            $batch = 'SHP' . str_pad(mt_rand(1, 99999), 5, '0', STR_PAD_LEFT);
+
             $commonData = [
-                'branch_id' => 1,
                 'samity_id' => $request->samity_id,
                 'customer_id' => $request->member_id,
                 'product_id' => $request->product_id,
+                'payment_mode' => 'cash',
+                'batch_num' => $batch,
+                'tran_code' => 'PUR',
                 'tran_date' => $request->tran_date,
                 'tran_type' => 'SHARE_PURCHASE',
                 'naration' => $request->remarks ?? "Share Purchase for " . $shareAccount->account_no,
                 'status' => 'posted',
+                'authorize_status' => 'approved',
+                'authorized_by' => Auth::id(),
+                'authorized_at' => now(),
                 'created_by' => Auth::id(),
             ];
 
             // Dr. Cash
-            $cashGlMap = GlMstMapping::where('gl_code_type', 'CASH_IN_HAND')->first();
+            $cashGlMap = GlMstMapping::where('gl_code_type', 'CASH')->where('status', true)->first();
             $cashGlId = $cashGlMap ? $cashGlMap->gl_mst_id : null;
             if (!$cashGlId) throw new \Exception("Cash GL Mapping not found");
 
@@ -180,15 +189,24 @@ class ShareManagementController extends Controller
             // Dr. Share Capital
             // Cr. Cash/Bank
             $product = $shareAccount->product;
+
+            // Generate Batch
+            $batch = 'SHS' . str_pad(mt_rand(1, 99999), 5, '0', STR_PAD_LEFT);
+
             $commonData = [
-                'branch_id' => 1,
                 'samity_id' => $shareAccount->member->samity_id,
                 'customer_id' => $shareAccount->member_id,
                 'product_id' => $shareAccount->product_id,
+                'payment_mode' => 'cash',
+                'batch_num' => $batch,
+                'tran_code' => 'SAL',
                 'tran_date' => $request->tran_date,
                 'tran_type' => 'SHARE_SALE',
                 'naration' => $request->remarks ?? "Share Sale from " . $shareAccount->account_no,
                 'status' => 'posted',
+                'authorize_status' => 'approved',
+                'authorized_by' => Auth::id(),
+                'authorized_at' => now(),
                 'created_by' => Auth::id(),
             ];
 
@@ -202,8 +220,10 @@ class ShareManagementController extends Controller
             ]));
 
             // Cr. Cash
-            $cashGlMap = GlMstMapping::where('gl_code_type', 'CASH_IN_HAND')->first();
+            $cashGlMap = GlMstMapping::where('gl_code_type', 'CASH')->where('status', true)->first();
             $cashGlId = $cashGlMap ? $cashGlMap->gl_mst_id : null;
+            if (!$cashGlId) throw new \Exception("Cash GL Mapping not found");
+
             Transaction::create(array_merge($commonData, [
                 'tran_num' => date('YmdHis') . rand(10, 99),
                 'glac_id' => $cashGlId,
@@ -217,6 +237,119 @@ class ShareManagementController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['message' => 'Failed to record sale', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Share Transfer
+     */
+    public function transfer(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'from_account_id' => 'required|exists:share_accounts,id',
+            'to_account_id' => 'required|exists:share_accounts,id|different:from_account_id',
+            'tran_date' => 'required|date',
+            'quantity' => 'required|numeric|min:1',
+            'remarks' => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $fromAccount = ShareAccount::with(['member', 'product'])->findOrFail($request->from_account_id);
+            $toAccount = ShareAccount::with(['member', 'product'])->findOrFail($request->to_account_id);
+
+            if ($fromAccount->total_shares < $request->quantity) {
+                throw new \Exception("Insufficient shares in source account. Available: " . $fromAccount->total_shares);
+            }
+
+            $totalAmount = $request->quantity * $fromAccount->face_value;
+
+            // 1. Record Outgoing Transaction
+            ShareTransaction::create([
+                'share_account_id' => $fromAccount->id,
+                'tran_date' => $request->tran_date,
+                'tran_type' => 'transfer_out',
+                'quantity' => $request->quantity,
+                'face_value' => $fromAccount->face_value,
+                'amount' => $totalAmount,
+                'related_account_id' => $toAccount->id,
+                'remarks' => $request->remarks ?? "Transfer to " . $toAccount->account_no,
+                'created_by' => Auth::id(),
+            ]);
+
+            // 2. Record Incoming Transaction
+            ShareTransaction::create([
+                'share_account_id' => $toAccount->id,
+                'tran_date' => $request->tran_date,
+                'tran_type' => 'transfer_in',
+                'quantity' => $request->quantity,
+                'face_value' => $fromAccount->face_value, // Use source face value
+                'amount' => $totalAmount,
+                'related_account_id' => $fromAccount->id,
+                'remarks' => $request->remarks ?? "Transfer from " . $fromAccount->account_no,
+                'created_by' => Auth::id(),
+            ]);
+
+            // 3. Update Balances
+            $fromAccount->decrement('total_shares', $request->quantity);
+            $fromAccount->decrement('current_balance', $totalAmount);
+
+            $toAccount->increment('total_shares', $request->quantity);
+            $toAccount->increment('current_balance', $totalAmount);
+
+            // 4. Accounting Transactions (Optional if same GL, but good for tracking)
+            // Typically Share Transfer doesn't affect Cash, just shifts liability between customers.
+            // If they have different Products with different GLs, we need a move.
+            
+            if ($fromAccount->product->gl_principal_id != $toAccount->product->gl_principal_id) {
+                $batch = 'SHT' . str_pad(mt_rand(1, 99999), 5, '0', STR_PAD_LEFT);
+                $commonData = [
+                    'tran_date' => $request->tran_date,
+                    'tran_type' => 'SHARE_TRANSFER',
+                    'batch_num' => $batch,
+                    'status' => 'posted',
+                    'authorize_status' => 'approved',
+                    'authorized_by' => Auth::id(),
+                    'authorized_at' => now(),
+                    'created_by' => Auth::id(),
+                ];
+
+                // Dr. Source Share Capital (Decrease)
+                Transaction::create(array_merge($commonData, [
+                    'samity_id' => $fromAccount->member->samity_id,
+                    'customer_id' => $fromAccount->member_id,
+                    'product_id' => $fromAccount->product_id,
+                    'tran_num' => date('YmdHis') . rand(10, 99),
+                    'glac_id' => $fromAccount->product->gl_principal_id,
+                    'dr_amt' => $totalAmount,
+                    'cr_amt' => 0,
+                    'naration' => "Share Transfer Out to " . $toAccount->account_no,
+                ]));
+
+                // Cr. Destination Share Capital (Increase)
+                Transaction::create(array_merge($commonData, [
+                    'samity_id' => $toAccount->member->samity_id,
+                    'customer_id' => $toAccount->member_id,
+                    'product_id' => $toAccount->product_id,
+                    'tran_num' => date('YmdHis') . rand(10, 99),
+                    'glac_id' => $toAccount->product->gl_principal_id,
+                    'dr_amt' => 0,
+                    'cr_amt' => $totalAmount,
+                    'naration' => "Share Transfer In from " . $fromAccount->account_no,
+                ]));
+            }
+
+            DB::commit();
+            return response()->json(['message' => 'Share transfer recorded successfully']);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Failed to record transfer', 'error' => $e->getMessage()], 500);
         }
     }
 

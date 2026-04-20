@@ -43,6 +43,7 @@ import FdrClosing from './pages/FDR/FdrClosing';
 import SharePurchase from './pages/Share/SharePurchase';
 import ShareSale from './pages/Share/ShareSale';
 import ShareList from './pages/Share/ShareList';
+import ShareTransfer from './pages/Share/ShareTransfer';
 import CommitteeType from './pages/Committee/CommitteeType';
 import CommitteeList from './pages/Committee/CommitteeList';
 import CommitteeReport from './pages/Committee/CommitteeReport';
@@ -365,6 +366,14 @@ const App = () => {
                         element={
                             <ProtectedRoute>
                                 <ShareSale />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/share-transfer" 
+                        element={
+                            <ProtectedRoute>
+                                <ShareTransfer />
                             </ProtectedRoute>
                         } 
                     />

@@ -351,7 +351,7 @@ class FdrClosingController extends Controller
         // 4. Credit Cash/Bank GL (Asset)
         $totalPayment = $principal + $interest - $penalty;
         
-        $cashGlMap = GlMstMapping::where('gl_code_type', 'CASH_IN_HAND')->first();
+        $cashGlMap = GlMstMapping::where('gl_code_type', 'CASH')->where('status', true)->first();
         $cashGlId = $cashGlMap ? $cashGlMap->gl_mst_id : null;
 
         if ($cashGlId) {
