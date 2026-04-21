@@ -12,6 +12,11 @@ use App\Http\Controllers\Api\DepositRequestController;
 use App\Http\Controllers\Api\WithdrawRequestController;
 use App\Http\Controllers\Api\GlMappingTypeController;
 use App\Http\Controllers\Api\LoanApplicationController;
+use App\Http\Controllers\Api\MemberLoanAccountController;
+use App\Http\Controllers\Api\MemberLoanApplicationController;
+use App\Http\Controllers\Api\MemberLoanClosingController;
+use App\Http\Controllers\Api\MemberLoanDisbursementController;
+use App\Http\Controllers\Api\MemberLoanRepaymentController;
 use App\Http\Controllers\Api\ProjectClosingController;
 use App\Http\Controllers\Api\ProjectDeclarationController;
 use App\Http\Controllers\Api\ProjectShareSaleController;
@@ -41,6 +46,29 @@ Route::middleware('auth:sanctum')->group(function () {
     // Loan Closing
     Route::get('loan-closings/search', [App\Http\Controllers\Api\LoanClosingController::class, 'search'])->middleware('permission:loan.closing.view');
     Route::post('loan-closings', [App\Http\Controllers\Api\LoanClosingController::class, 'store'])->middleware('permission:loan.closing.create');
+
+    // Member Loan Module
+    Route::get('member-loan-applications', [MemberLoanApplicationController::class, 'index'])->middleware('permission:member.loan.application.view');
+    Route::post('member-loan-applications', [MemberLoanApplicationController::class, 'store'])->middleware('permission:member.loan.application.create');
+    Route::get('member-loan-applications/{id}', [MemberLoanApplicationController::class, 'show'])->middleware('permission:member.loan.application.view');
+    Route::post('member-loan-applications/{id}/approve', [MemberLoanApplicationController::class, 'approve'])->middleware('permission:member.loan.application.approve');
+    Route::post('member-loan-applications/{id}/reject', [MemberLoanApplicationController::class, 'reject'])->middleware('permission:member.loan.application.reject');
+
+    Route::get('member-loan-disbursements', [MemberLoanDisbursementController::class, 'index'])->middleware('permission:member.loan.disbursement.view');
+    Route::post('member-loan-disbursements', [MemberLoanDisbursementController::class, 'store'])->middleware('permission:member.loan.disbursement.create');
+
+    Route::get('member-loan-repayments', [MemberLoanRepaymentController::class, 'index'])->middleware('permission:member.loan.repayment.view');
+    Route::post('member-loan-repayments', [MemberLoanRepaymentController::class, 'store'])->middleware('permission:member.loan.repayment.create');
+
+    Route::get('member-loan-closings', [MemberLoanClosingController::class, 'index'])->middleware('permission:member.loan.closing.view');
+    Route::post('member-loan-closings', [MemberLoanClosingController::class, 'store'])->middleware('permission:member.loan.closing.create');
+
+    Route::get('member-loan-accounts', [MemberLoanAccountController::class, 'index'])->middleware('permission:member.loan.account.view');
+    Route::get('member-loan-accounts/{id}', [MemberLoanAccountController::class, 'show'])->middleware('permission:member.loan.account.view');
+    Route::get('member-loan-accounts/{id}/balance', [MemberLoanAccountController::class, 'balance'])->middleware('permission:member.loan.balance.view');
+    Route::get('member-loan-accounts/{id}/history', [MemberLoanAccountController::class, 'history'])->middleware('permission:member.loan.transaction.view');
+    Route::get('member-loan-accounts/{id}/statement', [MemberLoanAccountController::class, 'statement'])->middleware('permission:member.loan.statement.view');
+    Route::post('member-loan-accounts/{id}/accrue', [MemberLoanAccountController::class, 'accrue'])->middleware('permission:member.loan.accrual.run');
 
     // Global Routes (No specific permission required, just valid token)
     Route::get('/dashboard/user', [GlobalController::class, 'userDashboard']);

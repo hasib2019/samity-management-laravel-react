@@ -48,6 +48,11 @@ import ProjectDeclaration from './pages/Project/ProjectDeclaration';
 import ProjectShareSale from './pages/Project/ProjectShareSale';
 import ProjectClosing from './pages/Project/ProjectClosing';
 import ProjectInvestors from './pages/Project/ProjectInvestors';
+import MemberLoanApplication from './pages/MemberLoan/MemberLoanApplication';
+import MemberLoanDisbursement from './pages/MemberLoan/MemberLoanDisbursement';
+import MemberLoanRepayment from './pages/MemberLoan/MemberLoanRepayment';
+import MemberLoanClosing from './pages/MemberLoan/MemberLoanClosing';
+import MemberLoanAccounts from './pages/MemberLoan/MemberLoanAccounts';
 import CommitteeType from './pages/Committee/CommitteeType';
 import CommitteeList from './pages/Committee/CommitteeList';
 import CommitteeReport from './pages/Committee/CommitteeReport';
@@ -420,6 +425,48 @@ const App = () => {
                         element={
                             <ProtectedRoute>
                                 <ProjectInvestors />
+                            </ProtectedRoute>
+                        } 
+                    />
+
+                    {/* Member Loan Management */}
+                    <Route 
+                        path="/member-loan-application" 
+                        element={
+                            <ProtectedRoute>
+                                <MemberLoanApplication />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/member-loan-disbursement" 
+                        element={
+                            <ProtectedRoute>
+                                <MemberLoanDisbursement />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/member-loan-repayment" 
+                        element={
+                            <ProtectedRoute>
+                                <MemberLoanRepayment />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/member-loan-closing" 
+                        element={
+                            <ProtectedRoute>
+                                <MemberLoanClosing />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/member-loan-accounts" 
+                        element={
+                            <ProtectedRoute>
+                                <MemberLoanAccounts />
                             </ProtectedRoute>
                         } 
                     />

@@ -423,6 +423,7 @@ const ProductSetup = () => {
                                             <option value="fdr">FDR</option>
                                             <option value="dps">DPS</option>
                                             <option value="loan">Loan</option>
+                                            <option value="member_loan">Member Loan</option>
                                         </select>
                                     </div>
                                     <div>
@@ -554,7 +555,7 @@ const ProductSetup = () => {
                                     </div>
                                 )}
 
-                                {formData.product_type === 'loan' && (
+                                {(formData.product_type === 'loan' || formData.product_type === 'member_loan') && (
                                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                                         <div>
                                             <label className="block mb-1 text-sm font-semibold text-gray-700">Min Loan Amount</label>
@@ -633,7 +634,7 @@ const ProductSetup = () => {
                                     <div>
                                         <GlCombobox
                                             label={
-                                                formData.product_type === 'loan' ? "Principal GL (Loan Portfolio - Asset)" :
+                                                (formData.product_type === 'loan' || formData.product_type === 'member_loan') ? "Principal GL (Loan Portfolio - Asset)" :
                                                 formData.product_type === 'share' ? "Share Capital GL (Liability/Equity)" :
                                                 "Deposit Liability GL (Liability)"
                                             }
@@ -644,7 +645,7 @@ const ProductSetup = () => {
                                     </div>
 
                                     {/* Product-Specific GLs */}
-                                    {formData.product_type === 'loan' && (
+                                    {(formData.product_type === 'loan' || formData.product_type === 'member_loan') && (
                                         <>
                                             <div>
                                                 <GlCombobox
@@ -722,7 +723,7 @@ const ProductSetup = () => {
                                     <div>
                                         <GlCombobox
                                             label={
-                                                formData.product_type === 'loan' ? "Incidental Income Cr-GL" :
+                                                (formData.product_type === 'loan' || formData.product_type === 'member_loan') ? "Incidental Income Cr-GL" :
                                                 formData.product_type === 'share' ? "Share Fee Income GL" :
                                                 "Incidental Income GL"
                                             }
@@ -734,7 +735,7 @@ const ProductSetup = () => {
                                     <div>
                                         <GlCombobox
                                             label={
-                                                formData.product_type === 'loan' ? "Asset/Expense Dr-GL" :
+                                                (formData.product_type === 'loan' || formData.product_type === 'member_loan') ? "Asset/Expense Dr-GL" :
                                                 "Related Expense GL"
                                             }
                                             value={formData.gl_expense_id}

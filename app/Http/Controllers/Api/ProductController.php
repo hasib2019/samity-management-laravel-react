@@ -35,7 +35,7 @@ class ProductController extends Controller
         $validator = Validator::make($request->all(), [
             'product_code' => 'required|string|unique:product_mst,product_code',
             'product_name' => 'required|string',
-            'product_type' => 'required|in:saving,share,fdr,dps,loan',
+            'product_type' => 'required|in:saving,share,fdr,dps,loan,member_loan',
             'product_category' => 'required|in:deposit,investment,credit',
             'rate_type' => 'nullable|string',
             'min_amount' => 'nullable|numeric',
@@ -90,7 +90,7 @@ class ProductController extends Controller
         $validator = Validator::make($request->all(), [
             'product_code' => 'required|string|unique:product_mst,product_code,' . $id,
             'product_name' => 'required|string',
-            'product_type' => 'required|in:saving,share,fdr,dps,loan',
+            'product_type' => 'required|in:saving,share,fdr,dps,loan,member_loan',
             'product_category' => 'required|in:deposit,investment,credit',
             'rate_type' => 'nullable|string',
             'min_amount' => 'nullable|numeric',
