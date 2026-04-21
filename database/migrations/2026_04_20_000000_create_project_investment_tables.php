@@ -38,7 +38,7 @@ return new class extends Migration
                 $table->unsignedBigInteger('closed_by')->nullable();
                 $table->timestamps();
 
-                $table->index(['status', 'declaration_date']);
+                $table->index(['status', 'declaration_date'], 'proj_decl_status_dt_idx');
             });
         }
 
@@ -59,7 +59,7 @@ return new class extends Migration
 
                 $table->foreign('project_declaration_id')->references('id')->on('project_declarations')->onDelete('cascade');
                 $table->foreign('member_id')->references('id')->on('member_infos')->onDelete('cascade');
-                $table->unique(['project_declaration_id', 'member_id']);
+                $table->unique(['project_declaration_id', 'member_id'], 'proj_inv_proj_member_unq');
             });
         }
 
@@ -83,7 +83,7 @@ return new class extends Migration
                 $table->foreign('project_declaration_id')->references('id')->on('project_declarations')->onDelete('cascade');
                 $table->foreign('project_investor_id')->references('id')->on('project_investors')->onDelete('set null');
                 $table->foreign('member_id')->references('id')->on('member_infos')->onDelete('set null');
-                $table->index(['project_declaration_id', 'tran_type']);
+                $table->index(['project_declaration_id', 'tran_type'], 'proj_share_proj_type_idx');
             });
         }
 
