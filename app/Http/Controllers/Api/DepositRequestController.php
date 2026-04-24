@@ -152,8 +152,8 @@ class DepositRequestController extends Controller
         // Get Member to fetch samity_id
         $member = MemberInfo::find($depositRequest->member_id);
 
-        if (!$product || !$product->gl_income_id || !$product->gl_expense_id) {
-            throw new \Exception('Product GL Mapping (Income/Expense) is missing.');
+        if (!$product || !$product->sav_dep_lib_cr_gl_id || !$product->sav_cash_bank_dr_gl_id) {
+            throw new \Exception('Savings product GL Mapping (Deposit Liability Cr / Cash Bank Dr) is missing.');
         }
 
         // Transaction Creation
@@ -179,20 +179,20 @@ class DepositRequestController extends Controller
             'status' => 'posted',
         ];
 
-        // Debit Transaction (Using gl_expense_id)
+        // Debit Transaction (Using savings cash/bank dr GL)
         $tranNumDr = date('YmdHis') . rand(10, 99);
         Transaction::create(array_merge($commonData, [
             'tran_num' => $tranNumDr,
-            'glac_id' => $product->gl_expense_id,
+            'glac_id' => $product->sav_cash_bank_dr_gl_id,
             'dr_amt' => $depositRequest->amount,
             'cr_amt' => 0,
         ]));
 
-        // Credit Transaction (Using gl_income_id)
+        // Credit Transaction (Using savings deposit liability cr GL)
         $tranNumCr = date('YmdHis') . rand(10, 99);
         $creditTransaction = Transaction::create(array_merge($commonData, [
             'tran_num' => $tranNumCr,
-            'glac_id' => $product->gl_income_id,
+            'glac_id' => $product->sav_dep_lib_cr_gl_id,
             'dr_amt' => 0,
             'cr_amt' => $depositRequest->amount,
         ]));

@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\MemberInfo;
 use App\Models\SavingsAccount;
 use App\Models\User;
+use App\Services\ShareManagementService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Hash;
@@ -46,7 +47,7 @@ class MemberInfoController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request, ShareManagementService $shareManagementService)
     {
         if (!Auth::user()->can('member.create')) {
             return response()->json(['message' => 'Unauthorized'], 403);
@@ -71,10 +72,7 @@ class MemberInfoController extends Controller
             'occupation_id' => 'nullable|integer',
             'religion_id' => 'nullable|integer',
             'brn' => 'nullable|string|max:50',
-            'doptor_id' => 'nullable|integer',
-            'ref_samity_id' => 'nullable|integer',
-            'no_of_share' => 'nullable|integer',
-            'share_price' => 'nullable|numeric',
+            'no_of_share' => 'nullable|integer|min:0',
             'committee_organizer' => 'nullable|in:Y,N',
             'committee_contact_person' => 'nullable|in:Y,N',
             'committee_signatory_person' => 'nullable|in:Y,N',
@@ -89,6 +87,7 @@ class MemberInfoController extends Controller
 
         try {
             DB::beginTransaction();
+            $requestedShareQty = (int) $request->input('no_of_share', 0);
 
             // 1. Create User
             $email = $request->email;
@@ -105,6 +104,7 @@ class MemberInfoController extends Controller
                  if (empty($request->email)) {
                     $email = uniqid() . $email;
                  } else {
+                     DB::rollBack();
                      return response()->json(['errors' => ['email' => ['The email has already been taken.']]], 422);
                  }
             }
@@ -116,7 +116,15 @@ class MemberInfoController extends Controller
             ]);
 
             // 2. Handle File Uploads
-            $data = $request->except(['member_photo', 'member_sign', 'nid_photo']);
+            $data = $request->except([
+                'member_photo',
+                'member_sign',
+                'nid_photo',
+                'no_of_share',
+                'share_price',
+                'doptor_id',
+                'ref_samity_id',
+            ]);
             
             if ($request->hasFile('member_photo')) {
                 $path = $request->file('member_photo')->store('member_photos', 'public');
@@ -140,8 +148,25 @@ class MemberInfoController extends Controller
             if (!isset($data['is_samity_member'])) {
                 $data['is_samity_member'] = true;
             }
+            $data['no_of_share'] = 0;
+            $data['share_price'] = 0;
 
             $member = MemberInfo::create($data);
+
+            if ($requestedShareQty > 0) {
+                $shareProduct = $shareManagementService->getActiveShareProduct();
+                $shareManagementService->recordPurchase(
+                    $member,
+                    $shareProduct->id,
+                    $request->member_admission_date ?: now()->toDateString(),
+                    $requestedShareQty,
+                    'Initial share purchase from member profile'
+                );
+                $member->refresh();
+            } else {
+                $shareManagementService->syncMemberShareSnapshot($member->id);
+                $member->refresh();
+            }
 
             // 3. Handle Savings Account Creation
             if ($request->boolean('account_details')) {
@@ -158,8 +183,8 @@ class MemberInfoController extends Controller
 
                 // Retrieve Product and GL Info
                 $product = \App\Models\Product::find($request->product_id);
-                if (!$product->gl_income_id || !$product->gl_expense_id) {
-                    throw new \Exception('Product GL Mapping (Income/Expense) is missing. Cannot create account.');
+                if (!$product->sav_dep_lib_cr_gl_id || !$product->sav_cash_bank_dr_gl_id) {
+                    throw new \Exception('Savings product GL Mapping (Deposit Liability Cr / Cash Bank Dr) is missing. Cannot create account.');
                 }
 
                 // Generate Account Number: YYYYMMDD + 4 digit serial
@@ -213,24 +238,24 @@ class MemberInfoController extends Controller
                     'status' => 'posted',
                 ];
 
-                // Debit Transaction (Using gl_expense_id)
+                // Debit Transaction (Using savings cash/bank dr GL)
                 // Generate Unique tran_num for Debit (Time based)
                 $tranNumDr = date('YmdHis') . rand(10, 99);
 
                 \App\Models\Transaction::create(array_merge($commonData, [
                     'tran_num' => $tranNumDr,
-                    'glac_id' => $product->gl_expense_id,
+                    'glac_id' => $product->sav_cash_bank_dr_gl_id,
                     'dr_amt' => $request->principal_amount,
                     'cr_amt' => 0,
                 ]));
 
-                // Credit Transaction (Using gl_income_id)
+                // Credit Transaction (Using savings deposit liability cr GL)
                 // Generate Unique tran_num for Credit (Time based)
                 $tranNumCr = date('YmdHis') . rand(10, 99);
 
                 $creditTransaction = \App\Models\Transaction::create(array_merge($commonData, [
                     'tran_num' => $tranNumCr,
-                    'glac_id' => $product->gl_income_id,
+                    'glac_id' => $product->sav_dep_lib_cr_gl_id,
                     'dr_amt' => 0,
                     'cr_amt' => $request->principal_amount,
                 ]));
@@ -280,7 +305,7 @@ class MemberInfoController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $id, ShareManagementService $shareManagementService)
     {
         if (!Auth::user()->can('member.edit')) {
             return response()->json(['message' => 'Unauthorized'], 403);
@@ -311,10 +336,7 @@ class MemberInfoController extends Controller
             'occupation_id' => 'nullable|integer',
             'religion_id' => 'nullable|integer',
             'brn' => 'nullable|string|max:50',
-            'doptor_id' => 'nullable|integer',
-            'ref_samity_id' => 'nullable|integer',
-            'no_of_share' => 'nullable|integer',
-            'share_price' => 'nullable|numeric',
+            'no_of_share' => 'nullable|integer|min:0',
             'committee_organizer' => 'nullable|in:Y,N',
             'committee_contact_person' => 'nullable|in:Y,N',
             'committee_signatory_person' => 'nullable|in:Y,N',
@@ -327,37 +349,81 @@ class MemberInfoController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $data = $request->except(['member_photo', 'member_sign', 'nid_photo']);
-        
-        if ($request->hasFile('member_photo')) {
-            if ($member->member_photo) {
-                Storage::disk('public')->delete($member->member_photo);
+        try {
+            DB::beginTransaction();
+
+            $currentShareQty = $shareManagementService->getMemberCurrentShares($member->id);
+            $requestedShareQty = $request->filled('no_of_share')
+                ? (int) $request->input('no_of_share')
+                : $currentShareQty;
+            $samityChanged = (int) $member->samity_id !== (int) $request->samity_id;
+
+            if ($samityChanged && $currentShareQty > 0) {
+                throw new \Exception('This member already owns shares. Use Share Management before changing the samity.');
             }
-            $path = $request->file('member_photo')->store('member_photos', 'public');
-            $data['member_photo'] = $path;
-        }
-        
-        if ($request->hasFile('member_sign')) {
-            if ($member->member_sign) {
-                Storage::disk('public')->delete($member->member_sign);
+
+            if ($requestedShareQty < $currentShareQty) {
+                throw new \Exception('Share quantity cannot be reduced from member profile. Please use Share Sale from Share Management.');
             }
-            $path = $request->file('member_sign')->store('member_signs', 'public');
-            $data['member_sign'] = $path;
-        }
 
-        if ($request->hasFile('nid_photo')) {
-            if ($member->nid_photo) {
-                Storage::disk('public')->delete($member->nid_photo);
+            $data = $request->except([
+                'member_photo',
+                'member_sign',
+                'nid_photo',
+                'no_of_share',
+                'share_price',
+                'doptor_id',
+                'ref_samity_id',
+            ]);
+
+            if ($request->hasFile('member_photo')) {
+                if ($member->member_photo) {
+                    Storage::disk('public')->delete($member->member_photo);
+                }
+                $path = $request->file('member_photo')->store('member_photos', 'public');
+                $data['member_photo'] = $path;
             }
-            $path = $request->file('nid_photo')->store('nid_photos', 'public');
-            $data['nid_photo'] = $path;
+
+            if ($request->hasFile('member_sign')) {
+                if ($member->member_sign) {
+                    Storage::disk('public')->delete($member->member_sign);
+                }
+                $path = $request->file('member_sign')->store('member_signs', 'public');
+                $data['member_sign'] = $path;
+            }
+
+            if ($request->hasFile('nid_photo')) {
+                if ($member->nid_photo) {
+                    Storage::disk('public')->delete($member->nid_photo);
+                }
+                $path = $request->file('nid_photo')->store('nid_photos', 'public');
+                $data['nid_photo'] = $path;
+            }
+
+            $data['updated_by'] = Auth::id();
+            $member->update($data);
+
+            $additionalShareQty = $requestedShareQty - $currentShareQty;
+            if ($additionalShareQty > 0) {
+                $shareProduct = $shareManagementService->getActiveShareProduct();
+                $shareManagementService->recordPurchase(
+                    $member->fresh(),
+                    $shareProduct->id,
+                    now()->toDateString(),
+                    $additionalShareQty,
+                    'Additional share purchase from member profile'
+                );
+            } else {
+                $shareManagementService->syncMemberShareSnapshot($member->id);
+            }
+
+            DB::commit();
+
+            return response()->json(['message' => 'Member updated successfully', 'data' => $member->fresh(['creator', 'updator', 'samity', 'user', 'savingsAccounts.product'])]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Failed to update member: ' . $e->getMessage()], 500);
         }
-
-        $data['updated_by'] = Auth::id();
-
-        $member->update($data);
-
-        return response()->json(['message' => 'Member updated successfully', 'data' => $member]);
     }
 
     /**
@@ -403,8 +469,8 @@ class MemberInfoController extends Controller
 
             // Retrieve Product and GL Info
             $product = \App\Models\Product::find($request->product_id);
-            if (!$product->gl_income_id || !$product->gl_expense_id) {
-                throw new \Exception('Product GL Mapping (Income/Expense) is missing. Cannot create account.');
+            if (!$product->sav_dep_lib_cr_gl_id || !$product->sav_cash_bank_dr_gl_id) {
+                throw new \Exception('Savings product GL Mapping (Deposit Liability Cr / Cash Bank Dr) is missing. Cannot create account.');
             }
 
             // Generate Account Number: YYYYMMDD + 4 digit serial
@@ -457,22 +523,22 @@ class MemberInfoController extends Controller
                 'status' => 'posted',
             ];
 
-            // Debit Transaction (Using gl_expense_id)
+            // Debit Transaction (Using savings cash/bank dr GL)
             $tranNumDr = date('YmdHis') . rand(10, 99);
 
             \App\Models\Transaction::create(array_merge($commonData, [
                 'tran_num' => $tranNumDr,
-                'glac_id' => $product->gl_expense_id,
+                'glac_id' => $product->sav_cash_bank_dr_gl_id,
                 'dr_amt' => $request->principal_amount,
                 'cr_amt' => 0,
             ]));
 
-            // Credit Transaction (Using gl_income_id)
+            // Credit Transaction (Using savings deposit liability cr GL)
             $tranNumCr = date('YmdHis') . rand(10, 99);
 
             $creditTransaction = \App\Models\Transaction::create(array_merge($commonData, [
                 'tran_num' => $tranNumCr,
-                'glac_id' => $product->gl_income_id,
+                'glac_id' => $product->sav_dep_lib_cr_gl_id,
                 'dr_amt' => 0,
                 'cr_amt' => $request->principal_amount,
             ]));

@@ -101,9 +101,13 @@ class DpsClosingController extends Controller
             $dpsApplication->save();
 
             // GL Transactions
-            $cashMap = GlMstMapping::where('gl_code_type', 'CASH')->where('status', true)->first();
-            if (!$cashMap) {
-                throw new \Exception("Cash GL Mapping not found");
+            $cashGlId = $dpsApplication->product->dps_cash_bank_dr_gl_id;
+            if (!$cashGlId) {
+                $cashMap = GlMstMapping::where('gl_code_type', 'CASH')->where('status', true)->first();
+                $cashGlId = $cashMap ? $cashMap->gl_mst_id : null;
+            }
+            if (!$cashGlId) {
+                throw new \Exception("DPS Cash / Bank Dr GL not found");
             }
 
             $batch = 'DCL' . str_pad(mt_rand(1, 99999), 5, '0', STR_PAD_LEFT);
@@ -129,15 +133,15 @@ class DpsClosingController extends Controller
             // The liability balance in GL should match $dpsApplication->balance.
             // So we Debit the Principal GL with $dpsApplication->balance.
             
-            if ($dpsApplication->product->gl_principal_id) {
+            if ($dpsApplication->product->dps_dep_lib_cr_gl_id) {
                 Transaction::create(array_merge($commonData, [
                     'tran_num' => date('YmdHis') . rand(10, 99),
-                    'glac_id' => $dpsApplication->product->gl_principal_id,
+                    'glac_id' => $dpsApplication->product->dps_dep_lib_cr_gl_id,
                     'dr_amt' => $dpsApplication->balance,
                     'cr_amt' => 0,
                 ]));
             } else {
-                 throw new \Exception("Product Principal GL not defined");
+                 throw new \Exception("DPS Deposit Liability Cr GL not defined");
             }
 
             // 2. Debit Interest Expense (if any interest paid)
@@ -147,7 +151,7 @@ class DpsClosingController extends Controller
                 // If not, we might need to fetch it or use a default.
                 // Let's check Product model fields. Assuming gl_interest_id exists.
                 
-                $interestGlId = $dpsApplication->product->gl_interest_id; 
+                $interestGlId = $dpsApplication->product->dps_interest_exp_dr_gl_id; 
                 // If the product table doesn't have it, we might have an issue.
                 // I'll assume it exists or fallback?
                 // For now, let's assume it exists. If not, it will fail, which is better than wrong posting.
@@ -166,9 +170,9 @@ class DpsClosingController extends Controller
             $penalty = $request->penalty_amount ?? 0;
             if ($penalty > 0) {
                 // We need a Penalty Income GL.
-                // Assuming product has gl_penalty_id or we use a global mapping.
+                // Use product-level DPS penalty income GL first, then fallback global mapping if needed.
                 // Let's try product specific first, then global.
-                $penaltyGlId = $dpsApplication->product->gl_penalty_id;
+                $penaltyGlId = $dpsApplication->product->dps_penalty_income_cr_gl_id;
                 
                 if (!$penaltyGlId) {
                     // Try global mapping
@@ -198,7 +202,7 @@ class DpsClosingController extends Controller
             if ($totalCashOut > 0) {
                 Transaction::create(array_merge($commonData, [
                     'tran_num' => date('YmdHis') . rand(13, 99),
-                    'glac_id' => $cashMap->gl_mst_id,
+                    'glac_id' => $cashGlId,
                     'dr_amt' => 0,
                     'cr_amt' => $totalCashOut,
                 ]));

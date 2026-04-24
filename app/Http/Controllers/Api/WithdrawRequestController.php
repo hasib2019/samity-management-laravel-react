@@ -155,8 +155,8 @@ class WithdrawRequestController extends Controller
         // Get Member to fetch samity_id
         $member = MemberInfo::find($withdrawRequest->member_id);
 
-        if (!$product || !$product->gl_income_id || !$product->gl_expense_id) {
-            throw new \Exception('Product GL Mapping (Income/Expense) is missing.');
+        if (!$product || !$product->sav_dep_lib_cr_gl_id || !$product->sav_cash_bank_dr_gl_id) {
+            throw new \Exception('Savings product GL Mapping (Deposit Liability Cr / Cash Bank Dr) is missing.');
         }
 
         $minBalance = $product->min_amount ?? 0;
@@ -190,7 +190,7 @@ class WithdrawRequestController extends Controller
         $tranNumDr = date('YmdHis') . rand(10, 99);
         Transaction::create(array_merge($commonData, [
             'tran_num' => $tranNumDr,
-            'glac_id' => $product->gl_income_id,
+            'glac_id' => $product->sav_dep_lib_cr_gl_id,
             'dr_amt' => $withdrawRequest->amount,
             'cr_amt' => 0,
         ]));
@@ -198,7 +198,7 @@ class WithdrawRequestController extends Controller
         $tranNumCr = date('YmdHis') . rand(10, 99);
         $creditTransaction = Transaction::create(array_merge($commonData, [
             'tran_num' => $tranNumCr,
-            'glac_id' => $product->gl_expense_id,
+            'glac_id' => $product->sav_cash_bank_dr_gl_id,
             'dr_amt' => 0,
             'cr_amt' => $withdrawRequest->amount,
         ]));

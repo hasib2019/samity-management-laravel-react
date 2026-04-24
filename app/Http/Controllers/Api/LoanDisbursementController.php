@@ -50,12 +50,12 @@ class LoanDisbursementController extends Controller
         }
 
         // Validate Product GL Configuration
-        if (!$loan->product->gl_loan_outstanding_id || !$loan->product->gl_loan_disbursement_id) {
+        if (!$loan->product->loan_portfolio_dr_gl_id || !$loan->product->loan_cash_bank_cr_gl_id) {
             return response()->json(['message' => 'Product GL configuration incomplete. Please set Loan Outstanding (Dr) and Disbursement (Cr) GLs.'], 400);
         }
 
         // Check Balance for Disbursement Source (Cr GL) - Only for Asset Accounts (Type 1)
-        $sourceGlId = $loan->product->gl_loan_disbursement_id;
+        $sourceGlId = $loan->product->loan_cash_bank_cr_gl_id;
         $sourceGl = GlAccount::find($sourceGlId);
         
         // If Source is Asset (1), we need to ensure enough balance (Dr - Cr) exists before Crediting (reducing) it.
@@ -136,7 +136,7 @@ class LoanDisbursementController extends Controller
             // Use Product's Loan Outstanding GL (Dr GL)
             Transaction::create(array_merge($commonData, [
                 'tran_num' => date('YmdHis') . rand(10, 99),
-                'glac_id' => $loan->product->gl_loan_outstanding_id,
+                'glac_id' => $loan->product->loan_portfolio_dr_gl_id,
                 'dr_amt' => $loan->amount,
                 'cr_amt' => 0,
                 'naration' => ($request->naration ?? 'Loan Disbursement') . ' (Loan Outstanding)',
@@ -146,7 +146,7 @@ class LoanDisbursementController extends Controller
             // Use Product's Loan Disbursement GL (Cr GL)
             Transaction::create(array_merge($commonData, [
                 'tran_num' => date('YmdHis') . rand(10, 99),
-                'glac_id' => $loan->product->gl_loan_disbursement_id,
+                'glac_id' => $loan->product->loan_cash_bank_cr_gl_id,
                 'dr_amt' => 0,
                 'cr_amt' => $loan->amount,
                 'naration' => ($request->naration ?? 'Loan Disbursement') . ' (Disbursement Source)',

@@ -20,8 +20,6 @@ return new class extends Migration
                 $table->decimal('approved_amount', 15, 2)->nullable();
                 $table->unsignedInteger('tenure_months');
                 $table->decimal('monthly_interest_rate', 8, 4)->default(1.0000);
-                $table->decimal('scheduled_emi', 15, 2)->default(0);
-                $table->unsignedTinyInteger('installment_day')->default(1);
                 $table->date('approved_date')->nullable();
                 $table->date('disbursed_date')->nullable();
                 $table->text('purpose')->nullable();
@@ -51,7 +49,6 @@ return new class extends Migration
                 $table->decimal('accrued_interest_balance', 15, 2)->default(0);
                 $table->decimal('overdue_interest_balance', 15, 2)->default(0);
                 $table->decimal('total_outstanding', 15, 2)->default(0);
-                $table->decimal('scheduled_emi', 15, 2)->default(0);
                 $table->decimal('monthly_interest_rate', 8, 4)->default(1.0000);
                 $table->date('last_accrual_date')->nullable();
                 $table->date('next_accrual_date')->nullable();
@@ -72,37 +69,11 @@ return new class extends Migration
             });
         }
 
-        if (!Schema::hasTable('member_loan_schedules')) {
-            Schema::create('member_loan_schedules', function (Blueprint $table) {
-                $table->id();
-                $table->foreignId('member_loan_account_id')->constrained('member_loan_accounts')->cascadeOnDelete();
-                $table->unsignedInteger('schedule_no');
-                $table->date('due_date');
-                $table->decimal('opening_principal', 15, 2)->default(0);
-                $table->decimal('scheduled_emi', 15, 2)->default(0);
-                $table->decimal('scheduled_interest', 15, 2)->default(0);
-                $table->decimal('scheduled_principal', 15, 2)->default(0);
-                $table->decimal('accrued_interest', 15, 2)->default(0);
-                $table->decimal('overdue_interest', 15, 2)->default(0);
-                $table->decimal('paid_interest', 15, 2)->default(0);
-                $table->decimal('paid_principal', 15, 2)->default(0);
-                $table->decimal('paid_overdue_interest', 15, 2)->default(0);
-                $table->decimal('closing_principal', 15, 2)->default(0);
-                $table->date('last_payment_date')->nullable();
-                $table->enum('status', ['pending', 'partial', 'paid', 'overdue'])->default('pending');
-                $table->timestamps();
-
-                $table->unique(['member_loan_account_id', 'schedule_no'], 'mlsch_acc_sched_unq');
-                $table->index(['member_loan_account_id', 'due_date'], 'mlsch_acc_due_idx');
-            });
-        }
-
         if (!Schema::hasTable('member_loan_transactions')) {
             Schema::create('member_loan_transactions', function (Blueprint $table) {
                 $table->id();
                 $table->foreignId('member_loan_account_id')->constrained('member_loan_accounts')->cascadeOnDelete();
                 $table->foreignId('member_loan_application_id')->nullable()->constrained('member_loan_applications')->nullOnDelete();
-                $table->foreignId('member_loan_schedule_id')->nullable()->constrained('member_loan_schedules')->nullOnDelete();
                 $table->foreignId('samity_id')->nullable()->constrained('samity_profiles')->nullOnDelete();
                 $table->foreignId('member_id')->nullable()->constrained('member_infos')->nullOnDelete();
                 $table->foreignId('product_id')->nullable()->constrained('product_mst')->nullOnDelete();
@@ -135,7 +106,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('member_loan_transactions');
-        Schema::dropIfExists('member_loan_schedules');
         Schema::dropIfExists('member_loan_accounts');
         Schema::dropIfExists('member_loan_applications');
     }

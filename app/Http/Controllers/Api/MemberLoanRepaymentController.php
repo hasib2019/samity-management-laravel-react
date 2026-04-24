@@ -43,6 +43,7 @@ class MemberLoanRepaymentController extends Controller
         $validator = Validator::make($request->all(), [
             'account_id' => 'required|exists:member_loan_accounts,id',
             'payment_date' => 'required|date',
+            'payment_amount' => 'nullable|numeric|min:0',
             'emi_amount' => 'nullable|numeric|min:0',
             'interest_amount' => 'nullable|numeric|min:0',
             'remarks' => 'nullable|string',

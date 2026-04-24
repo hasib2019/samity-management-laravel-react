@@ -168,13 +168,17 @@ class LoanClosingController extends Controller
             ];
 
             // 1. Debit Cash (Collected Amount)
-            $cashMap = GlMstMapping::where('gl_code_type', 'CASH')->where('status', true)->first();
-            if (!$cashMap) throw new \Exception("Cash GL Mapping not found");
+            $cashGlId = $loan->product->loan_cash_bank_cr_gl_id;
+            if (!$cashGlId) {
+                $cashMap = GlMstMapping::where('gl_code_type', 'CASH')->where('status', true)->first();
+                $cashGlId = $cashMap ? $cashMap->gl_mst_id : null;
+            }
+            if (!$cashGlId) throw new \Exception("Loan Cash/Bank Cr GL not found");
 
             if ($collected > 0) {
                 Transaction::create(array_merge($commonData, [
                     'tran_num' => date('YmdHis') . rand(10, 99),
-                    'glac_id' => $cashMap->gl_mst_id,
+                    'glac_id' => $cashGlId,
                     'dr_amt' => $collected,
                     'cr_amt' => 0,
                 ]));
@@ -185,30 +189,30 @@ class LoanClosingController extends Controller
             // We need to split the Credit.
             // BUT, usually in simplified systems, "Portfolio" tracks Principal only?
             // OR "Portfolio" tracks P+I?
-            // In our LoanRepaymentController, we Credited 'gl_principal_id' for the full repayment amount?
+            // In our repayment flow, we credit the product's loan portfolio GL for the reduction amount.
             // Let's check LoanRepaymentController...
-            // It credits product->gl_principal_id with the full repayment amount.
+            // It credits the product's configured loan portfolio GL with the repayment reduction amount.
             // This implies the Asset GL tracks the full outstanding balance.
             // So we Credit Asset GL with (Collected + Waiver).
             // Wait, if we waive, we are reducing asset but not getting cash.
             // Waiver is an Expense (Loss).
             
             // Credit Asset (Total Due)
-            if ($loan->product->gl_principal_id) {
+            if ($loan->product->loan_portfolio_dr_gl_id) {
                 Transaction::create(array_merge($commonData, [
                     'tran_num' => date('YmdHis') . rand(11, 99),
-                    'glac_id' => $loan->product->gl_principal_id,
+                    'glac_id' => $loan->product->loan_portfolio_dr_gl_id,
                     'dr_amt' => 0,
                     'cr_amt' => $totalDue, // Reducing the full asset balance
                 ]));
             } else {
-                 throw new \Exception("Product Principal GL not defined");
+                 throw new \Exception("Loan Portfolio Dr GL not defined");
             }
 
             // 3. Debit Waiver Expense (if any)
             if ($waiver > 0) {
                 // Priority 1: Product specific Waiver GL
-                $waiverGlId = $loan->product->gl_waiver_id;
+                $waiverGlId = $loan->product->loan_waiver_exp_dr_gl_id;
 
                 // Priority 2: Global Waiver Mapping
                 if (!$waiverGlId) {
@@ -225,10 +229,10 @@ class LoanClosingController extends Controller
                     ]));
                 } else {
                     // Priority 3: Debit Interest Income (Revenue Reversal) as fallback
-                    if ($loan->product->gl_profit_id) {
+                    if ($loan->product->loan_interest_income_cr_gl_id) {
                          Transaction::create(array_merge($commonData, [
                             'tran_num' => date('YmdHis') . rand(12, 99),
-                            'glac_id' => $loan->product->gl_profit_id,
+                            'glac_id' => $loan->product->loan_interest_income_cr_gl_id,
                             'dr_amt' => $waiver, // Debit Income = Reduce Income
                             'cr_amt' => 0,
                         ]));

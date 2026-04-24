@@ -112,9 +112,13 @@ class DpsCollectionController extends Controller
 
 
             // GL Transactions
-            $cashMap = GlMstMapping::where('gl_code_type', 'CASH')->where('status', true)->first();
-            if (!$cashMap) {
-                 throw new \Exception("Cash GL Mapping not found");
+            $cashGlId = $dpsApplication->product->dps_cash_bank_dr_gl_id;
+            if (!$cashGlId) {
+                $cashMap = GlMstMapping::where('gl_code_type', 'CASH')->where('status', true)->first();
+                $cashGlId = $cashMap ? $cashMap->gl_mst_id : null;
+            }
+            if (!$cashGlId) {
+                 throw new \Exception("DPS Cash / Bank Dr GL not found");
             }
 
             $batch = 'DPS' . str_pad(mt_rand(1, 99999), 5, '0', STR_PAD_LEFT);
@@ -138,21 +142,21 @@ class DpsCollectionController extends Controller
             // Debit Cash
             Transaction::create(array_merge($commonData, [
                 'tran_num' => date('YmdHis') . rand(10, 99),
-                'glac_id' => $cashMap->gl_mst_id,
+                'glac_id' => $cashGlId,
                 'dr_amt' => $amount,
                 'cr_amt' => 0,
             ]));
 
             // Credit DPS Principal (Liability)
-            if ($dpsApplication->product->gl_principal_id) {
+            if ($dpsApplication->product->dps_dep_lib_cr_gl_id) {
                 Transaction::create(array_merge($commonData, [
                     'tran_num' => date('YmdHis') . rand(10, 99),
-                    'glac_id' => $dpsApplication->product->gl_principal_id,
+                    'glac_id' => $dpsApplication->product->dps_dep_lib_cr_gl_id,
                     'dr_amt' => 0,
                     'cr_amt' => $amount, // Full amount credited to DPS account
                 ]));
             } else {
-                 throw new \Exception("Product Principal GL not defined");
+                 throw new \Exception("DPS Deposit Liability Cr GL not defined");
             }
 
             DB::commit();

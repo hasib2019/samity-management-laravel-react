@@ -28,10 +28,8 @@ class MemberInfo extends Model
         'committee_contact_person',
         'committee_signatory_person',
         'others_docs',
-        'ref_samity_id',
         'member_admission_date',
         'brn',
-        'doptor_id',
         'is_active',
         'is_samity_member',
         'documents',
@@ -79,5 +77,10 @@ class MemberInfo extends Model
     public function savingsAccounts()
     {
         return $this->hasMany(SavingsAccount::class, 'member_id');
+    }
+
+    public function shareAccounts()
+    {
+        return $this->hasMany(ShareAccount::class, 'member_id');
     }
 }

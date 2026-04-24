@@ -307,7 +307,7 @@ class FdrClosingController extends Controller
         ];
 
         // 1. Debit Principal GL (Liability)
-        $principalGlId = $fdrApplication->product->gl_principal_id;
+        $principalGlId = $fdrApplication->product->fdr_dep_lib_cr_gl_id;
         if ($principalGlId) {
             Transaction::create(array_merge($commonData, [
                 'tran_num' => date('YmdHis') . rand(10, 99),
@@ -319,7 +319,7 @@ class FdrClosingController extends Controller
 
         // 2. Debit Interest Expense GL
         if ($interest > 0) {
-            $profitGlId = $fdrApplication->product->gl_profit_id;
+            $profitGlId = $fdrApplication->product->fdr_interest_exp_dr_gl_id;
             if ($profitGlId) {
                 Transaction::create(array_merge($commonData, [
                     'tran_num' => date('YmdHis') . rand(10, 99),
@@ -332,7 +332,7 @@ class FdrClosingController extends Controller
 
         // 3. Credit Penalty GL (if applicable)
         if ($penalty > 0) {
-            $penaltyGlId = $fdrApplication->product->gl_penalty_id;
+            $penaltyGlId = $fdrApplication->product->fdr_penalty_income_cr_gl_id;
             if (!$penaltyGlId) {
                 $penaltyMap = GlMstMapping::where('gl_code_type', 'PENALTY')->first();
                 $penaltyGlId = $penaltyMap ? $penaltyMap->gl_mst_id : null;
@@ -351,8 +351,11 @@ class FdrClosingController extends Controller
         // 4. Credit Cash/Bank GL (Asset)
         $totalPayment = $principal + $interest - $penalty;
         
-        $cashGlMap = GlMstMapping::where('gl_code_type', 'CASH')->where('status', true)->first();
-        $cashGlId = $cashGlMap ? $cashGlMap->gl_mst_id : null;
+        $cashGlId = $fdrApplication->product->fdr_cash_bank_dr_gl_id;
+        if (!$cashGlId) {
+            $cashGlMap = GlMstMapping::where('gl_code_type', 'CASH')->where('status', true)->first();
+            $cashGlId = $cashGlMap ? $cashGlMap->gl_mst_id : null;
+        }
 
         if ($cashGlId) {
             Transaction::create(array_merge($commonData, [
@@ -362,8 +365,7 @@ class FdrClosingController extends Controller
                 'cr_amt' => $totalPayment,
             ]));
         } else {
-            throw new \Exception("Cash GL Mapping not found");
+            throw new \Exception("FDR Cash / Bank Dr GL not found");
         }
     }
 }
-

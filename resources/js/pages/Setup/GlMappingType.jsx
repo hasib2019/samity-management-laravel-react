@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import api from '../../api/axios';
 import Swal from 'sweetalert2';
 import { useAuth } from '../../context/AuthContext';
+import LoadingButton from '../../components/LoadingButton';
 
 const normalizeCode = (val) => {
   const up = String(val || '').toUpperCase();
@@ -31,6 +32,7 @@ const GlMappingType = () => {
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
     name: '',
     type_code: '',
@@ -100,6 +102,7 @@ const GlMappingType = () => {
 
   const submit = async (e) => {
     e.preventDefault();
+    setSubmitting(true);
     try {
       if (editing) {
         await api.put(`/gl-mapping-types/${editing.id}`, form);
@@ -117,6 +120,8 @@ const GlMappingType = () => {
       } else {
         Swal.fire({ position: 'top-end', icon: 'error', title: err.response?.data?.message || 'Operation failed', showConfirmButton: false, timer: 2000, toast: true });
       }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -262,7 +267,14 @@ const GlMappingType = () => {
                 </div>
               </div>
               <div className="flex justify-end px-6 py-3 bg-gray-50">
-                <button type="submit" className="px-4 py-2 text-white bg-blue-600 rounded-md">{editing ? 'Update' : 'Create'}</button>
+                <LoadingButton
+                  type="submit"
+                  isLoading={submitting}
+                  loadingText={editing ? 'Updating...' : 'Creating...'}
+                  className="px-4 py-2 text-white bg-blue-600 rounded-md"
+                >
+                  {editing ? 'Update' : 'Create'}
+                </LoadingButton>
               </div>
             </form>
           </div>

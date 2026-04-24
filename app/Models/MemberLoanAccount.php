@@ -22,7 +22,6 @@ class MemberLoanAccount extends Model
         'accrued_interest_balance',
         'overdue_interest_balance',
         'total_outstanding',
-        'scheduled_emi',
         'monthly_interest_rate',
         'last_accrual_date',
         'next_accrual_date',
@@ -50,7 +49,6 @@ class MemberLoanAccount extends Model
         'accrued_interest_balance' => 'decimal:2',
         'overdue_interest_balance' => 'decimal:2',
         'total_outstanding' => 'decimal:2',
-        'scheduled_emi' => 'decimal:2',
         'monthly_interest_rate' => 'decimal:4',
         'total_interest_accrued' => 'decimal:2',
         'total_overdue_interest_accrued' => 'decimal:2',
@@ -78,11 +76,6 @@ class MemberLoanAccount extends Model
     public function product()
     {
         return $this->belongsTo(Product::class, 'product_id');
-    }
-
-    public function schedules()
-    {
-        return $this->hasMany(MemberLoanSchedule::class, 'member_loan_account_id');
     }
 
     public function transactions()

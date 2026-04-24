@@ -20,8 +20,6 @@ class MemberLoanApplication extends Model
         'approved_amount',
         'tenure_months',
         'monthly_interest_rate',
-        'scheduled_emi',
-        'installment_day',
         'approved_date',
         'disbursed_date',
         'purpose',
@@ -40,7 +38,6 @@ class MemberLoanApplication extends Model
         'requested_amount' => 'decimal:2',
         'approved_amount' => 'decimal:2',
         'monthly_interest_rate' => 'decimal:4',
-        'scheduled_emi' => 'decimal:2',
     ];
 
     public function samity()

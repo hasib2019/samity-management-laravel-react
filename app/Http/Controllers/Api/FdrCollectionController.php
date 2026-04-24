@@ -126,7 +126,7 @@ class FdrCollectionController extends Controller
             ];
 
             // 1. Debit Interest Expense GL (Expense)
-            $profitGlId = $fdrApplication->product->gl_profit_id; // "Interest on FDR" (Expense)
+            $profitGlId = $fdrApplication->product->fdr_interest_exp_dr_gl_id;
             
             if (!$profitGlId) {
                 // Try to get from mapping
@@ -146,11 +146,14 @@ class FdrCollectionController extends Controller
             }
 
             // 2. Credit Cash/Bank (Asset)
-            $cashGlMap = GlMstMapping::where('gl_code_type', 'CASH')->where('status', true)->first();
-            $cashGlId = $cashGlMap ? $cashGlMap->gl_mst_id : null;
+            $cashGlId = $fdrApplication->product->fdr_cash_bank_dr_gl_id;
+            if (!$cashGlId) {
+                $cashGlMap = GlMstMapping::where('gl_code_type', 'CASH')->where('status', true)->first();
+                $cashGlId = $cashGlMap ? $cashGlMap->gl_mst_id : null;
+            }
 
             if (!$cashGlId) {
-                throw new \Exception("Cash GL Mapping not found");
+                throw new \Exception("FDR Cash / Bank Dr GL not found");
             }
 
             Transaction::create(array_merge($commonData, [

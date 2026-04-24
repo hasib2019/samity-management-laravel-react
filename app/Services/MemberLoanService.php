@@ -2,9 +2,9 @@
 
 namespace App\Services;
 
+use App\Helpers\BalanceHelper;
 use App\Models\MemberLoanAccount;
 use App\Models\MemberLoanApplication;
-use App\Models\MemberLoanSchedule;
 use App\Models\MemberLoanTransaction;
 use App\Models\Product;
 use App\Models\Transaction;
@@ -14,26 +14,9 @@ use Illuminate\Support\Facades\DB;
 
 class MemberLoanService
 {
-    public function calculateEmi(float $principal, float $monthlyInterestRate, int $tenureMonths): float
-    {
-        if ($tenureMonths <= 0) {
-            return 0;
-        }
-
-        $rate = $monthlyInterestRate / 100;
-        if ($rate <= 0) {
-            return round($principal / $tenureMonths, 2);
-        }
-
-        $factor = pow(1 + $rate, $tenureMonths);
-        $emi = $principal * $rate * $factor / ($factor - 1);
-
-        return round($emi, 2);
-    }
-
     public function nextAccrualDate(string $disbursedDate): string
     {
-        return Carbon::parse($disbursedDate)->startOfMonth()->addMonth()->toDateString();
+        return Carbon::parse($disbursedDate)->addDays(30)->toDateString();
     }
 
     public function approveApplication(MemberLoanApplication $application, array $data): MemberLoanApplication
@@ -46,7 +29,6 @@ class MemberLoanService
             'approved_amount' => $approvedAmount,
             'monthly_interest_rate' => $monthlyRate,
             'tenure_months' => $tenure,
-            'scheduled_emi' => $this->calculateEmi($approvedAmount, $monthlyRate, $tenure),
             'approved_date' => $data['approved_date'],
             'remarks' => $data['remarks'] ?? $application->remarks,
             'status' => 'approved',
@@ -86,8 +68,7 @@ class MemberLoanService
 
             $principal = (float) $application->approved_amount;
             $rate = (float) $application->monthly_interest_rate;
-            $tenure = (int) $application->tenure_months;
-            $scheduledEmi = (float) ($application->scheduled_emi ?: $this->calculateEmi($principal, $rate, $tenure));
+            $this->assertCashAvailability($application->samity_id, $product, $principal);
 
             $account = MemberLoanAccount::create([
                 'member_loan_application_id' => $application->id,
@@ -99,16 +80,12 @@ class MemberLoanService
                 'original_principal' => $principal,
                 'outstanding_principal' => $principal,
                 'total_outstanding' => $principal,
-                'scheduled_emi' => $scheduledEmi,
                 'monthly_interest_rate' => $rate,
                 'next_accrual_date' => $this->nextAccrualDate($disbursedDate),
                 'created_by' => Auth::id(),
             ]);
 
-            $this->generateSchedules($account, $tenure);
-
             $application->update([
-                'scheduled_emi' => $scheduledEmi,
                 'disbursed_date' => $disbursedDate,
                 'disbursed_by' => Auth::id(),
                 'status' => 'disbursed',
@@ -148,7 +125,7 @@ class MemberLoanService
     public function accrueUntil(MemberLoanAccount $account, string $asOfDate, ?string $remarks = null): MemberLoanAccount
     {
         return DB::transaction(function () use ($account, $asOfDate, $remarks) {
-            $account = $account->fresh(['application', 'product', 'schedules']);
+            $account = $account->fresh(['application', 'product']);
             $product = $account->product;
             $this->assertProductGlSetup($product);
 
@@ -157,37 +134,14 @@ class MemberLoanService
 
             while ($nextAccrualDate && $nextAccrualDate->lessThanOrEqualTo($asOf) && $account->status !== 'closed') {
                 $interestAmount = round((float) $account->outstanding_principal * ((float) $account->monthly_interest_rate / 100), 2);
-                $overdueBase = $this->calculateOverdueBase($account, $nextAccrualDate->toDateString());
-                $overdueInterest = $overdueBase > 0
-                    ? round($overdueBase * ((float) $account->monthly_interest_rate / 100), 2)
-                    : 0.0;
-
-                $schedule = $account->schedules->firstWhere('due_date', $nextAccrualDate->toDateString());
-                if ($schedule) {
-                    $schedule->update([
-                        'accrued_interest' => round((float) $schedule->accrued_interest + $interestAmount, 2),
-                        'overdue_interest' => round((float) $schedule->overdue_interest + $overdueInterest, 2),
-                        'status' => $this->computeScheduleStatus($schedule, $nextAccrualDate->toDateString(), true),
-                    ]);
-                }
-
-                foreach ($account->schedules as $loopSchedule) {
-                    if (Carbon::parse($loopSchedule->due_date)->lt($nextAccrualDate)) {
-                        $loopSchedule->update([
-                            'status' => $this->computeScheduleStatus($loopSchedule->fresh(), $nextAccrualDate->toDateString(), true),
-                        ]);
-                    }
-                }
 
                 $batchNum = $this->generateBatchNum('MLA');
 
                 $account->update([
                     'accrued_interest_balance' => round((float) $account->accrued_interest_balance + $interestAmount, 2),
-                    'overdue_interest_balance' => round((float) $account->overdue_interest_balance + $overdueInterest, 2),
                     'total_interest_accrued' => round((float) $account->total_interest_accrued + $interestAmount, 2),
-                    'total_overdue_interest_accrued' => round((float) $account->total_overdue_interest_accrued + $overdueInterest, 2),
                     'last_accrual_date' => $nextAccrualDate->toDateString(),
-                    'next_accrual_date' => $nextAccrualDate->copy()->addMonth()->startOfMonth()->toDateString(),
+                    'next_accrual_date' => $nextAccrualDate->copy()->addDays(30)->toDateString(),
                     'updated_by' => Auth::id(),
                 ]);
 
@@ -199,7 +153,6 @@ class MemberLoanService
                 MemberLoanTransaction::create([
                     'member_loan_account_id' => $account->id,
                     'member_loan_application_id' => $account->member_loan_application_id,
-                    'member_loan_schedule_id' => $schedule?->id,
                     'samity_id' => $account->samity_id,
                     'member_id' => $account->member_id,
                     'product_id' => $account->product_id,
@@ -208,22 +161,21 @@ class MemberLoanService
                     'reference_no' => $account->account_no,
                     'transaction_type' => 'monthly_accrual',
                     'accrued_interest_amount' => $interestAmount,
-                    'overdue_interest_amount' => $overdueInterest,
                     'principal_balance_after' => $account->outstanding_principal,
                     'interest_balance_after' => $account->accrued_interest_balance,
-                    'overdue_balance_after' => $account->overdue_interest_balance,
+                    'overdue_balance_after' => 0,
                     'total_outstanding_after' => $account->total_outstanding,
-                    'remarks' => $remarks ?: 'Monthly interest accrual',
+                    'remarks' => $remarks ?: '30 day member loan interest accrual',
                     'created_by' => Auth::id(),
                 ]);
 
-                $this->postAccrualAccounting($account, $product, $interestAmount, $overdueInterest, $nextAccrualDate->toDateString(), $batchNum);
+                $this->postAccrualAccounting($account, $product, $interestAmount, 0, $nextAccrualDate->toDateString(), $batchNum);
 
-                $account = $account->fresh(['application', 'product', 'schedules']);
+                $account = $account->fresh(['application', 'product']);
                 $nextAccrualDate = $account->next_accrual_date ? Carbon::parse($account->next_accrual_date)->startOfDay() : null;
             }
 
-            return $account->fresh(['application', 'product', 'member', 'schedules']);
+            return $account->fresh(['application', 'product', 'member']);
         });
     }
 
@@ -232,7 +184,7 @@ class MemberLoanService
         return DB::transaction(function () use ($account, $data, $transactionType) {
             $paymentDate = $data['payment_date'];
             $account = $this->accrueUntil($account, $paymentDate);
-            $account->loadMissing('product', 'schedules');
+            $account->loadMissing('product');
 
             if ($account->status === 'closed') {
                 throw new \RuntimeException('Closed account cannot receive payment.');
@@ -240,25 +192,31 @@ class MemberLoanService
 
             $emiInput = round((float) ($data['emi_amount'] ?? 0), 2);
             $interestInput = round((float) ($data['interest_amount'] ?? 0), 2);
+
+            if ($emiInput <= 0 && $interestInput <= 0) {
+                $paymentAmount = round((float) ($data['payment_amount'] ?? 0), 2);
+                $emiInput = min($paymentAmount, (float) $account->outstanding_principal);
+                $interestInput = round($paymentAmount - $emiInput, 2);
+            }
+
             $totalInput = round($emiInput + $interestInput, 2);
 
             if ($totalInput <= 0) {
                 throw new \RuntimeException('At least one payment amount is required.');
             }
 
-            $remaining = $totalInput;
-            $appliedOverdue = min($remaining, (float) $account->overdue_interest_balance);
-            $remaining = round($remaining - $appliedOverdue, 2);
-
-            $appliedInterest = min($remaining, (float) $account->accrued_interest_balance);
-            $remaining = round($remaining - $appliedInterest, 2);
-
-            $appliedPrincipal = min($remaining, (float) $account->outstanding_principal);
-            $remaining = round($remaining - $appliedPrincipal, 2);
-
-            if ($remaining > 0.009) {
-                throw new \RuntimeException('Payment exceeds current outstanding balance.');
+            if ($emiInput - (float) $account->outstanding_principal > 0.009) {
+                throw new \RuntimeException('Outstanding balance input exceeds current principal due.');
             }
+
+            $availableInterest = round((float) $account->overdue_interest_balance + (float) $account->accrued_interest_balance, 2);
+            if ($interestInput - $availableInterest > 0.009) {
+                throw new \RuntimeException('Interest input exceeds current interest due.');
+            }
+
+            $appliedPrincipal = $emiInput;
+            $appliedOverdue = min($interestInput, (float) $account->overdue_interest_balance);
+            $appliedInterest = round($interestInput - $appliedOverdue, 2);
 
             $account->update([
                 'overdue_interest_balance' => round((float) $account->overdue_interest_balance - $appliedOverdue, 2),
@@ -272,9 +230,7 @@ class MemberLoanService
                 'updated_by' => Auth::id(),
             ]);
 
-            $this->allocateSchedulePayments($account->fresh('schedules'), $appliedOverdue, $appliedInterest, $appliedPrincipal, $paymentDate);
-
-            $account = $account->fresh(['product', 'schedules']);
+            $account = $account->fresh(['product']);
             $account->update([
                 'total_outstanding' => $this->calculateOutstandingTotal($account),
                 'status' => $this->computeAccountStatus($account, $paymentDate),
@@ -316,7 +272,7 @@ class MemberLoanService
                 'interest_balance_after' => $account->accrued_interest_balance,
                 'overdue_balance_after' => $account->overdue_interest_balance,
                 'total_outstanding_after' => $account->total_outstanding,
-                'remarks' => $data['remarks'] ?? ($transactionType === 'closure' ? 'Loan closure payment' : 'Loan repayment'),
+                'remarks' => $data['remarks'] ?? ($transactionType === 'closure' ? 'Loan closure payment' : 'Member loan repayment'),
                 'created_by' => Auth::id(),
             ]);
 
@@ -331,10 +287,20 @@ class MemberLoanService
         $account = $this->accrueUntil($account, $data['closing_date']);
         $account = $account->fresh();
 
+        $settlementAmount = round((float) ($data['settlement_amount'] ?? $account->total_outstanding), 2);
+        $requiredAmount = round((float) $account->total_outstanding, 2);
+
+        if (abs($settlementAmount - $requiredAmount) > 0.009) {
+            throw new \RuntimeException('Closing amount must match the full outstanding balance.');
+        }
+
+        $interestAmount = round((float) $account->accrued_interest_balance + (float) $account->overdue_interest_balance, 2);
+
         return $this->processRepayment($account, [
             'payment_date' => $data['closing_date'],
             'emi_amount' => (float) $account->outstanding_principal,
-            'interest_amount' => round((float) $account->accrued_interest_balance + (float) $account->overdue_interest_balance, 2),
+            'interest_amount' => $interestAmount,
+            'payment_amount' => $settlementAmount,
             'remarks' => $data['remarks'] ?? 'Loan closure settlement',
         ], 'closure');
     }
@@ -363,7 +329,7 @@ class MemberLoanService
             'account_no' => $account->account_no,
             'opening_balance' => $previousTx ? (float) $previousTx->total_outstanding_after : 0,
             'interest_charged' => (float) $monthTransactions->sum('accrued_interest_amount'),
-            'overdue_interest_charged' => (float) $monthTransactions->sum('overdue_interest_amount'),
+            'overdue_interest_charged' => 0,
             'payments_received' => (float) $monthTransactions
                 ->whereIn('transaction_type', ['repayment', 'closure'])
                 ->sum('input_total_amount'),
@@ -385,38 +351,35 @@ class MemberLoanService
         ];
     }
 
-    private function generateSchedules(MemberLoanAccount $account, int $tenureMonths): void
+    public function previewBalance(MemberLoanAccount $account, ?string $asOfDate = null): array
     {
-        $openingPrincipal = (float) $account->original_principal;
-        $rate = (float) $account->monthly_interest_rate / 100;
-        $emi = (float) $account->scheduled_emi;
-        $dueDate = Carbon::parse($this->nextAccrualDate($account->disbursed_date))->startOfDay();
+        $principal = round((float) $account->outstanding_principal, 2);
+        $accruedInterest = round((float) $account->accrued_interest_balance, 2);
+        $overdueInterest = round((float) $account->overdue_interest_balance, 2);
+        $nextAccrualDate = $account->next_accrual_date ? Carbon::parse($account->next_accrual_date)->startOfDay() : null;
 
-        for ($i = 1; $i <= $tenureMonths; $i++) {
-            $interest = round($openingPrincipal * $rate, 2);
-            $principal = round($emi - $interest, 2);
+        if ($asOfDate) {
+            $asOf = Carbon::parse($asOfDate)->startOfDay();
 
-            if ($principal > $openingPrincipal || $i === $tenureMonths) {
-                $principal = round($openingPrincipal, 2);
+            while ($nextAccrualDate && $nextAccrualDate->lessThanOrEqualTo($asOf) && $principal > 0.009) {
+                $interestAmount = round($principal * ((float) $account->monthly_interest_rate / 100), 2);
+                $accruedInterest = round($accruedInterest + $interestAmount, 2);
+                $nextAccrualDate = $nextAccrualDate->copy()->addDays(30);
             }
-
-            $scheduleEmi = round($principal + $interest, 2);
-            $closingPrincipal = round($openingPrincipal - $principal, 2);
-
-            MemberLoanSchedule::create([
-                'member_loan_account_id' => $account->id,
-                'schedule_no' => $i,
-                'due_date' => $dueDate->toDateString(),
-                'opening_principal' => $openingPrincipal,
-                'scheduled_emi' => $scheduleEmi,
-                'scheduled_interest' => $interest,
-                'scheduled_principal' => $principal,
-                'closing_principal' => max($closingPrincipal, 0),
-            ]);
-
-            $openingPrincipal = max($closingPrincipal, 0);
-            $dueDate = $dueDate->copy()->addMonth()->startOfMonth();
         }
+
+        $totalOutstanding = round($principal + $accruedInterest + $overdueInterest, 2);
+
+        return [
+            'account_no' => $account->account_no,
+            'outstanding_principal' => $principal,
+            'accrued_interest_balance' => $accruedInterest,
+            'overdue_interest_balance' => $overdueInterest,
+            'total_outstanding' => $totalOutstanding,
+            'next_accrual_date' => $nextAccrualDate?->toDateString(),
+            'status' => $this->computePreviewStatus($totalOutstanding, $nextAccrualDate, $asOfDate),
+            'preview_only' => true,
+        ];
     }
 
     private function calculateOutstandingTotal(MemberLoanAccount $account): float
@@ -429,99 +392,26 @@ class MemberLoanService
         );
     }
 
-    private function calculateOverdueBase(MemberLoanAccount $account, string $asOfDate): float
-    {
-        $schedules = $account->schedules()->whereDate('due_date', '<', $asOfDate)->get();
-        $base = 0;
-
-        foreach ($schedules as $schedule) {
-            $base += max((float) $schedule->scheduled_principal - (float) $schedule->paid_principal, 0);
-            $base += max((float) $schedule->accrued_interest - (float) $schedule->paid_interest, 0);
-            $base += max((float) $schedule->overdue_interest - (float) $schedule->paid_overdue_interest, 0);
-        }
-
-        return round($base, 2);
-    }
-
-    private function computeScheduleStatus(MemberLoanSchedule $schedule, string $asOfDate, bool $duringAccrual = false): string
-    {
-        $remainingPrincipal = max((float) $schedule->scheduled_principal - (float) $schedule->paid_principal, 0);
-        $remainingInterest = max((float) $schedule->accrued_interest - (float) $schedule->paid_interest, 0);
-        $remainingOverdue = max((float) $schedule->overdue_interest - (float) $schedule->paid_overdue_interest, 0);
-
-        if (($remainingPrincipal + $remainingInterest + $remainingOverdue) <= 0.009) {
-            return 'paid';
-        }
-
-        if ((float) $schedule->paid_principal > 0 || (float) $schedule->paid_interest > 0 || (float) $schedule->paid_overdue_interest > 0) {
-            return 'partial';
-        }
-
-        if (Carbon::parse($schedule->due_date)->lt(Carbon::parse($asOfDate)) || $duringAccrual) {
-            return 'overdue';
-        }
-
-        return 'pending';
-    }
-
     private function computeAccountStatus(MemberLoanAccount $account, string $asOfDate): string
     {
         if ((float) $account->total_outstanding <= 0.009) {
             return 'closed';
         }
-
-        $hasOverdue = $account->schedules()
-            ->whereDate('due_date', '<', $asOfDate)
-            ->where(function ($query) {
-                $query->whereColumn('paid_principal', '<', 'scheduled_principal')
-                    ->orWhereColumn('paid_interest', '<', 'accrued_interest')
-                    ->orWhereColumn('paid_overdue_interest', '<', 'overdue_interest');
-            })
-            ->exists();
-
-        return $hasOverdue || (float) $account->overdue_interest_balance > 0 ? 'overdue' : 'active';
+        
+        return Carbon::parse($account->next_accrual_date)->lte(Carbon::parse($asOfDate)) ? 'overdue' : 'active';
     }
 
-    private function allocateSchedulePayments(MemberLoanAccount $account, float $overdue, float $interest, float $principal, string $paymentDate): void
+    private function computePreviewStatus(float $totalOutstanding, ?Carbon $nextAccrualDate, ?string $asOfDate): string
     {
-        $schedules = $account->schedules()->orderBy('due_date')->orderBy('schedule_no')->get();
-
-        foreach ($schedules as $schedule) {
-            if ($overdue > 0) {
-                $due = max((float) $schedule->overdue_interest - (float) $schedule->paid_overdue_interest, 0);
-                if ($due > 0) {
-                    $pay = min($overdue, $due);
-                    $schedule->paid_overdue_interest = round((float) $schedule->paid_overdue_interest + $pay, 2);
-                    $overdue = round($overdue - $pay, 2);
-                }
-            }
-
-            if ($interest > 0) {
-                $due = max((float) $schedule->accrued_interest - (float) $schedule->paid_interest, 0);
-                if ($due > 0) {
-                    $pay = min($interest, $due);
-                    $schedule->paid_interest = round((float) $schedule->paid_interest + $pay, 2);
-                    $interest = round($interest - $pay, 2);
-                }
-            }
-
-            if ($principal > 0) {
-                $due = max((float) $schedule->scheduled_principal - (float) $schedule->paid_principal, 0);
-                if ($due > 0) {
-                    $pay = min($principal, $due);
-                    $schedule->paid_principal = round((float) $schedule->paid_principal + $pay, 2);
-                    $principal = round($principal - $pay, 2);
-                }
-            }
-
-            $schedule->last_payment_date = $paymentDate;
-            $schedule->status = $this->computeScheduleStatus($schedule, $paymentDate);
-            $schedule->save();
-
-            if ($overdue <= 0 && $interest <= 0 && $principal <= 0) {
-                break;
-            }
+        if ($totalOutstanding <= 0.009) {
+            return 'closed';
         }
+
+        if (!$nextAccrualDate || !$asOfDate) {
+            return 'active';
+        }
+
+        return $nextAccrualDate->lte(Carbon::parse($asOfDate)) ? 'overdue' : 'active';
     }
 
     private function postDisbursementAccounting(MemberLoanAccount $account, Product $product, float $amount, string $tranDate, string $batchNum, ?string $remarks): void
@@ -530,7 +420,7 @@ class MemberLoanService
 
         Transaction::create(array_merge($common, [
             'tran_num' => $this->generateTranNum(),
-            'glac_id' => $product->gl_loan_outstanding_id,
+            'glac_id' => $product->mem_loan_portfolio_dr_gl_id,
             'dr_amt' => $amount,
             'cr_amt' => 0,
             'naration' => ($remarks ?: 'Member loan disbursement') . ' (Loan Outstanding)',
@@ -538,7 +428,7 @@ class MemberLoanService
 
         Transaction::create(array_merge($common, [
             'tran_num' => $this->generateTranNum(),
-            'glac_id' => $product->gl_loan_disbursement_id,
+            'glac_id' => $product->mem_loan_cash_bank_cr_gl_id,
             'dr_amt' => 0,
             'cr_amt' => $amount,
             'naration' => ($remarks ?: 'Member loan disbursement') . ' (Cash/Bank Source)',
@@ -556,7 +446,7 @@ class MemberLoanService
         if ($interest > 0) {
             Transaction::create(array_merge($common, [
                 'tran_num' => $this->generateTranNum(),
-                'glac_id' => $product->gl_loan_outstanding_id,
+                'glac_id' => $product->mem_loan_portfolio_dr_gl_id,
                 'dr_amt' => $interest,
                 'cr_amt' => 0,
                 'naration' => 'Member loan interest receivable accrued',
@@ -564,7 +454,7 @@ class MemberLoanService
 
             Transaction::create(array_merge($common, [
                 'tran_num' => $this->generateTranNum(),
-                'glac_id' => $product->gl_profit_id,
+                'glac_id' => $product->mem_loan_interest_income_cr_gl_id,
                 'dr_amt' => 0,
                 'cr_amt' => $interest,
                 'naration' => 'Member loan interest income accrued',
@@ -574,7 +464,7 @@ class MemberLoanService
         if ($overdue > 0) {
             Transaction::create(array_merge($common, [
                 'tran_num' => $this->generateTranNum(),
-                'glac_id' => $product->gl_loan_outstanding_id,
+                'glac_id' => $product->mem_loan_portfolio_dr_gl_id,
                 'dr_amt' => $overdue,
                 'cr_amt' => 0,
                 'naration' => 'Member loan overdue interest receivable accrued',
@@ -582,7 +472,7 @@ class MemberLoanService
 
             Transaction::create(array_merge($common, [
                 'tran_num' => $this->generateTranNum(),
-                'glac_id' => $product->gl_penalty_id,
+                'glac_id' => $product->mem_loan_penalty_income_cr_gl_id,
                 'dr_amt' => 0,
                 'cr_amt' => $overdue,
                 'naration' => 'Member loan overdue interest income accrued',
@@ -600,7 +490,7 @@ class MemberLoanService
 
         Transaction::create(array_merge($common, [
             'tran_num' => $this->generateTranNum(),
-            'glac_id' => $product->gl_loan_disbursement_id,
+            'glac_id' => $product->mem_loan_cash_bank_cr_gl_id,
             'dr_amt' => $amount,
             'cr_amt' => 0,
             'naration' => ($remarks ?: 'Member loan repayment') . ' (Cash/Bank Collection)',
@@ -608,7 +498,7 @@ class MemberLoanService
 
         Transaction::create(array_merge($common, [
             'tran_num' => $this->generateTranNum(),
-            'glac_id' => $product->gl_loan_outstanding_id,
+            'glac_id' => $product->mem_loan_portfolio_dr_gl_id,
             'dr_amt' => 0,
             'cr_amt' => $amount,
             'naration' => ($remarks ?: 'Member loan repayment') . ' (Loan Outstanding Reduction)',
@@ -638,12 +528,21 @@ class MemberLoanService
     private function assertProductGlSetup(Product $product): void
     {
         if (
-            !$product->gl_loan_outstanding_id ||
-            !$product->gl_loan_disbursement_id ||
-            !$product->gl_profit_id ||
-            !$product->gl_penalty_id
+            !$product->mem_loan_portfolio_dr_gl_id ||
+            !$product->mem_loan_cash_bank_cr_gl_id ||
+            !$product->mem_loan_interest_income_cr_gl_id ||
+            !$product->mem_loan_penalty_income_cr_gl_id
         ) {
             throw new \RuntimeException('Member loan product GL configuration is incomplete.');
+        }
+    }
+
+    private function assertCashAvailability(int $samityId, Product $product, float $amount): void
+    {
+        $available = BalanceHelper::getBalance($product->mem_loan_cash_bank_cr_gl_id, $samityId);
+
+        if ($available < $amount) {
+            throw new \RuntimeException('Insufficient cash/bank balance for member loan disbursement. Available balance: ' . round($available, 2));
         }
     }
 

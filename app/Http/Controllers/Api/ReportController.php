@@ -9,6 +9,8 @@ use App\Models\Transaction;
 use App\Models\SavingsAccount;
 use App\Models\LoanAccount;
 use App\Models\MemberInfo;
+use App\Models\DepositRequest;
+use App\Models\WithdrawRequest;
 use Illuminate\Support\Facades\DB;
 
 class ReportController extends Controller
@@ -40,25 +42,15 @@ class ReportController extends Controller
                 return response()->json(['message' => 'Account not found'], 404);
             }
             $accountInfo = $account;
+            $statementRows = $this->buildSavingsStatementRows($accountId);
 
-            // For Savings: customer_id is the Account ID
-            // Balance is Liability (Cr - Dr)
-            // Opening Balance
-            $opStats = Transaction::where('customer_id', $accountId)
-                ->where('tran_date', '<', $from)
-                ->where('status', 'posted')
-                ->select(DB::raw('SUM(dr_amt) as dr'), DB::raw('SUM(cr_amt) as cr'))
-                ->first();
-            
-            $openingBalance = ($opStats->cr ?? 0) - ($opStats->dr ?? 0);
+            $openingBalance = collect($statementRows)
+                ->filter(fn ($row) => $row['tran_date'] < $from)
+                ->sum(fn ($row) => $row['deposit_amount'] - $row['withdraw_amount']);
 
-            // Transactions
-            $transactions = Transaction::where('customer_id', $accountId)
-                ->whereBetween('tran_date', [$from, $to])
-                ->where('status', 'posted')
-                ->orderBy('tran_date')
-                ->orderBy('id')
-                ->get();
+            $transactions = collect($statementRows)
+                ->filter(fn ($row) => $row['tran_date'] >= $from && $row['tran_date'] <= $to)
+                ->values();
 
         } else {
             $account = LoanAccount::with(['member', 'loanApplication.product'])->find($accountId);
@@ -101,6 +93,60 @@ class ReportController extends Controller
             'opening_balance' => $openingBalance,
             'transactions' => $transactions
         ]);
+    }
+
+    private function buildSavingsStatementRows(int $accountId): array
+    {
+        $depositRows = DepositRequest::with('transaction')
+            ->where('savings_account_id', $accountId)
+            ->where('status', 'approved')
+            ->get()
+            ->map(function ($deposit) {
+                $tranDate = $deposit->transaction?->tran_date
+                    ?? optional($deposit->updated_at)->toDateString()
+                    ?? optional($deposit->created_at)->toDateString();
+
+                return [
+                    'tran_date' => $tranDate,
+                    'reference' => $deposit->transaction?->batch_num ?: ($deposit->transaction?->tran_num ?: 'DEP-' . $deposit->id),
+                    'particulars' => $deposit->description ?: ($deposit->transaction?->naration ?: 'Deposit'),
+                    'deposit_amount' => (float) $deposit->amount,
+                    'withdraw_amount' => 0,
+                    'sort_order' => $deposit->transaction?->id ?? $deposit->id,
+                ];
+            });
+
+        $withdrawRows = WithdrawRequest::with('transaction')
+            ->where('savings_account_id', $accountId)
+            ->where('status', 'approved')
+            ->get()
+            ->map(function ($withdraw) {
+                $tranDate = $withdraw->transaction?->tran_date
+                    ?? optional($withdraw->updated_at)->toDateString()
+                    ?? optional($withdraw->created_at)->toDateString();
+
+                return [
+                    'tran_date' => $tranDate,
+                    'reference' => $withdraw->transaction?->batch_num ?: ($withdraw->transaction?->tran_num ?: 'WIT-' . $withdraw->id),
+                    'particulars' => $withdraw->description ?: ($withdraw->transaction?->naration ?: 'Withdraw'),
+                    'deposit_amount' => 0,
+                    'withdraw_amount' => (float) $withdraw->amount,
+                    'sort_order' => $withdraw->transaction?->id ?? $withdraw->id,
+                ];
+            });
+
+        return $depositRows
+            ->concat($withdrawRows)
+            ->sortBy([
+                ['tran_date', 'asc'],
+                ['sort_order', 'asc'],
+            ])
+            ->values()
+            ->map(function ($row) {
+                unset($row['sort_order']);
+                return $row;
+            })
+            ->all();
     }
 
     /**

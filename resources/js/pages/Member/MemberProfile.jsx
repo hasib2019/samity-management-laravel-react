@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import { Plus, Edit, Trash2, User, Phone, Mail, MapPin, Calendar, CreditCard, Save, X, Search, Eye, Loader2 } from 'lucide-react';
@@ -13,6 +13,7 @@ const MemberProfile = () => {
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     const [viewMember, setViewMember] = useState(null);
     const [editingId, setEditingId] = useState(null);
+    const [shareBaseline, setShareBaseline] = useState(0);
     const [samityList, setSamityList] = useState([]);
     const [savingProducts, setSavingProducts] = useState([]);
     const [codeMasters, setCodeMasters] = useState({
@@ -48,10 +49,8 @@ const MemberProfile = () => {
         committee_organizer: 'N',
         committee_contact_person: 'N',
         committee_signatory_person: 'N',
-        ref_samity_id: '',
         member_admission_date: '',
         brn: '',
-        doptor_id: '',
         is_active: true,
         is_samity_member: true,
         account_details: false,
@@ -59,7 +58,6 @@ const MemberProfile = () => {
         principal_amount: '',
         tenure_month: '',
         religion_id: '',
-        share_price: '',
         no_of_share: '',
         member_photo: null,
         member_sign: null,
@@ -80,6 +78,22 @@ const MemberProfile = () => {
     });
 
     const { hasPermission } = useAuth();
+    const selectedSamity = useMemo(
+        () => samityList.find(samity => String(samity.id) === String(formData.samity_id)),
+        [samityList, formData.samity_id]
+    );
+    const soldShare = Number(selectedSamity?.sold_share || 0);
+    const allocatedShares = useMemo(
+        () => members
+            .filter(member => String(member.samity_id) === String(formData.samity_id))
+            .reduce((total, member) => total + Number(member.no_of_share || 0), 0),
+        [members, formData.samity_id]
+    );
+    const allocatedExcludingCurrentMember = Math.max(allocatedShares - shareBaseline, 0);
+    const remainingSamityShares = Math.max(soldShare - allocatedExcludingCurrentMember, 0);
+    const maxSharePerMember = Math.floor(soldShare * 0.2);
+    const computedShareCap = Math.min(remainingSamityShares, maxSharePerMember || 0);
+    const shareInputMax = Math.max(shareBaseline, computedShareCap);
 
     useEffect(() => {
         fetchMembers();
@@ -165,10 +179,8 @@ const MemberProfile = () => {
                 committee_organizer: member.committee_organizer || 'N',
                 committee_contact_person: member.committee_contact_person || 'N',
                 committee_signatory_person: member.committee_signatory_person || 'N',
-                ref_samity_id: member.ref_samity_id || '',
                 member_admission_date: member.member_admission_date || '',
                 brn: member.brn || '',
-                doptor_id: member.doptor_id || '',
                 is_active: member.is_active !== undefined ? member.is_active : true,
                 is_samity_member: member.is_samity_member !== undefined ? member.is_samity_member : true,
                 account_details: false, 
@@ -177,13 +189,13 @@ const MemberProfile = () => {
                 tenure_month: '',
                 description: '',
                 religion_id: member.religion_id || '',
-                share_price: member.share_price || '',
                 no_of_share: member.no_of_share || '',
                 member_photo: null, // Don't pre-fill file inputs
                 member_sign: null,
                 nid_photo: null,
                 others: member.others || '',
             });
+            setShareBaseline(Number(member.no_of_share || 0));
             setImagePreviews({
                 member_photo: member.member_photo ? `${STORAGE_URL}${member.member_photo}` : null,
                 member_sign: member.member_sign ? `${STORAGE_URL}${member.member_sign}` : null,
@@ -191,6 +203,7 @@ const MemberProfile = () => {
             });
         } else {
             setEditingId(null);
+            setShareBaseline(0);
             setFormData(initialFormState);
             setImagePreviews({
                 member_photo: null,
@@ -211,9 +224,30 @@ const MemberProfile = () => {
 
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target;
+        const nextValue = (() => {
+            if (type === 'checkbox') {
+                return checked;
+            }
+
+            if (name === 'no_of_share') {
+                if (value === '') {
+                    return '';
+                }
+
+                const parsedValue = Math.max(0, Number(value));
+                if (selectedSamity) {
+                    return Math.min(parsedValue, shareInputMax);
+                }
+
+                return parsedValue;
+            }
+
+            return value;
+        })();
+
         setFormData(prev => ({
             ...prev,
-            [name]: type === 'checkbox' ? checked : value
+            [name]: nextValue
         }));
     };
 
@@ -437,6 +471,7 @@ const MemberProfile = () => {
                 onClose={() => setIsViewModalOpen(false)}
                 member={viewMember}
                 STORAGE_URL={STORAGE_URL}
+                codeMasters={codeMasters}
             />
 
             {/* Account Modal */}
@@ -720,23 +755,34 @@ const MemberProfile = () => {
                                         </div>
                                         
                                         <div className="col-span-1">
-                                            <label className="block text-sm font-medium text-gray-700">Doptor ID</label>
-                                            <input type="number" name="doptor_id" value={formData.doptor_id} onChange={handleInputChange} className="block px-3 py-2 mt-1 w-full rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                                            <label className="block text-sm font-medium text-gray-700">Number of Shares</label>
+                                            <input type="number" name="no_of_share" min="0" max={shareInputMax} value={formData.no_of_share} onChange={handleInputChange} className="block px-3 py-2 mt-1 w-full rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
                                         </div>
 
-                                        <div className="col-span-1">
-                                            <label className="block text-sm font-medium text-gray-700">Reference Samity ID</label>
-                                            <input type="number" name="ref_samity_id" value={formData.ref_samity_id} onChange={handleInputChange} className="block px-3 py-2 mt-1 w-full rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
-                                        </div>
-                                        
-                                        <div className="col-span-1">
-                                            <label className="block text-sm font-medium text-gray-700">Number of Shares</label>
-                                            <input type="number" name="no_of_share" value={formData.no_of_share} onChange={handleInputChange} className="block px-3 py-2 mt-1 w-full rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
-                                        </div>
-                                        
-                                        <div className="col-span-1">
-                                            <label className="block text-sm font-medium text-gray-700">Share Price</label>
-                                            <input type="number" name="share_price" value={formData.share_price} onChange={handleInputChange} className="block px-3 py-2 mt-1 w-full rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                                        <div className="col-span-2 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3">
+                                            <div className="grid grid-cols-1 gap-2 text-sm text-blue-900 md:grid-cols-2">
+                                                <div>
+                                                    <span className="font-semibold">Samity Share Price:</span> {selectedSamity?.share_price || '0'}
+                                                </div>
+                                                <div>
+                                                    <span className="font-semibold">Configured Sold Share:</span> {selectedSamity?.sold_share || '0'}
+                                                </div>
+                                                <div>
+                                                    <span className="font-semibold">Allocated Share:</span> {allocatedExcludingCurrentMember}
+                                                </div>
+                                                <div>
+                                                    <span className="font-semibold">Remaining Share:</span> {remainingSamityShares > 0 ? remainingSamityShares : '0'}
+                                                </div>
+                                                <div>
+                                                    <span className="font-semibold">Max Per Member:</span> {maxSharePerMember > 0 ? maxSharePerMember : '0'}
+                                                </div>
+                                                <div>
+                                                    <span className="font-semibold">Allowed Input:</span> {shareInputMax > 0 ? shareInputMax : '0'}
+                                                </div>
+                                            </div>
+                                            <p className="mt-2 text-xs text-blue-800">
+                                                Share price comes from samity. Increasing shares posts purchase accounting from Share Management using the active share product. To reduce shares, use Share Sale.
+                                            </p>
                                         </div>
 
                                         <div className="col-span-3">

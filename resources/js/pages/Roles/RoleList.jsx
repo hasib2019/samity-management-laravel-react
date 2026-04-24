@@ -3,11 +3,13 @@ import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 import { showSuccessToast, showErrorToast, confirmDelete } from '../../utils/sweetAlert';
+import LoadingButton from '../../components/LoadingButton';
 
 const RoleList = () => {
     const [roles, setRoles] = useState([]);
     const [permissions, setPermissions] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingRole, setEditingRole] = useState(null);
     const [formData, setFormData] = useState({
@@ -61,6 +63,7 @@ const RoleList = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setSubmitting(true);
         try {
             if (editingRole) {
                 await api.put(`/roles/${editingRole.id}`, formData);
@@ -73,6 +76,8 @@ const RoleList = () => {
             fetchRoles();
         } catch (error) {
             showErrorToast(error.response?.data?.message || 'Something went wrong');
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -191,12 +196,14 @@ const RoleList = () => {
                                 >
                                     Cancel
                                 </button>
-                                <button
+                                <LoadingButton
                                     type="submit"
+                                    isLoading={submitting}
+                                    loadingText={editingRole ? 'Updating...' : 'Creating...'}
                                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                                 >
                                     {editingRole ? 'Update' : 'Create'}
-                                </button>
+                                </LoadingButton>
                             </div>
                         </form>
                     </div>

@@ -3,12 +3,14 @@ import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import { Plus, Edit, Trash2, Search, X, Folder, Shield, ChevronDown, ChevronRight, Lock } from 'lucide-react';
 import { showSuccessToast, showErrorToast, confirmDelete } from '../../utils/sweetAlert';
+import LoadingButton from '../../components/LoadingButton';
 
 const PermissionList = () => {
     const [permissions, setPermissions] = useState([]);
     const [menus, setMenus] = useState([]);
     const [menuTree, setMenuTree] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingPermission, setEditingPermission] = useState(null);
     const [formData, setFormData] = useState({
@@ -82,6 +84,7 @@ const PermissionList = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setSubmitting(true);
         try {
             if (editingPermission) {
                 await api.put(`/permissions/${editingPermission.id}`, formData);
@@ -94,6 +97,8 @@ const PermissionList = () => {
             fetchPermissions();
         } catch (error) {
             showErrorToast(error.response?.data?.message || 'Something went wrong');
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -422,12 +427,14 @@ const PermissionList = () => {
                                     </div>
                                 </div>
                                 <div className="px-4 py-3 bg-gray-50 sm:px-6 sm:flex sm:flex-row-reverse">
-                                    <button
+                                    <LoadingButton
                                         type="submit"
-                                        className="inline-flex justify-center px-4 py-2 w-full text-base font-medium text-white bg-blue-600 rounded-md border border-transparent shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
+                                        isLoading={submitting}
+                                        loadingText={editingPermission ? 'Updating...' : 'Creating...'}
+                                        className="px-4 py-2 w-full text-base font-medium text-white bg-blue-600 rounded-md border border-transparent shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
                                     >
                                         {editingPermission ? 'Update' : 'Create'}
-                                    </button>
+                                    </LoadingButton>
                                     <button
                                         type="button"
                                         onClick={() => setIsModalOpen(false)}

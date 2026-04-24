@@ -35,7 +35,6 @@ class MemberLoanAccountController extends Controller
             'samity',
             'product',
             'application',
-            'schedules',
             'transactions',
         ])->find($id);
 
@@ -53,7 +52,12 @@ class MemberLoanAccountController extends Controller
             return response()->json(['message' => 'Member loan account not found'], 404);
         }
 
-        return response()->json($this->memberLoanService->balance($account));
+        $asOfDate = request()->input('as_of_date');
+        return response()->json(
+            $asOfDate
+                ? $this->memberLoanService->previewBalance($account, $asOfDate)
+                : $this->memberLoanService->balance($account)
+        );
     }
 
     public function history($id)

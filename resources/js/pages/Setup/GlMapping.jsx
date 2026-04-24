@@ -3,6 +3,7 @@ import api from '../../api/axios';
 import Swal from 'sweetalert2';
 import { useAuth } from '../../context/AuthContext';
 import { Combobox } from '@headlessui/react';
+import LoadingButton from '../../components/LoadingButton';
 
 const toBool = (val) => {
   if (typeof val === 'boolean') return val;
@@ -28,6 +29,7 @@ const GlMapping = () => {
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
   const [glQuery, setGlQuery] = useState('');
   const [form, setForm] = useState({
     gl_code_type: '',
@@ -127,6 +129,7 @@ const GlMapping = () => {
 
   const submit = async (e) => {
     e.preventDefault();
+    setSubmitting(true);
     try {
       const payload = {
         gl_code_type: form.gl_code_type,
@@ -149,6 +152,8 @@ const GlMapping = () => {
       } else {
         Swal.fire({ position: 'top-end', icon: 'error', title: err.response?.data?.message || 'Operation failed', showConfirmButton: false, timer: 2000, toast: true });
       }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -309,7 +314,14 @@ const GlMapping = () => {
                 </div>
               </div>
               <div className="flex justify-end px-6 py-3 bg-gray-50">
-                <button type="submit" className="px-4 py-2 text-white bg-blue-600 rounded-md">{editing ? 'Update' : 'Create'}</button>
+                <LoadingButton
+                  type="submit"
+                  isLoading={submitting}
+                  loadingText={editing ? 'Updating...' : 'Creating...'}
+                  className="px-4 py-2 text-white bg-blue-600 rounded-md"
+                >
+                  {editing ? 'Update' : 'Create'}
+                </LoadingButton>
               </div>
             </form>
           </div>

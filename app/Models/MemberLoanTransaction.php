@@ -13,7 +13,6 @@ class MemberLoanTransaction extends Model
     protected $fillable = [
         'member_loan_account_id',
         'member_loan_application_id',
-        'member_loan_schedule_id',
         'samity_id',
         'member_id',
         'product_id',
@@ -61,10 +60,5 @@ class MemberLoanTransaction extends Model
     public function application()
     {
         return $this->belongsTo(MemberLoanApplication::class, 'member_loan_application_id');
-    }
-
-    public function schedule()
-    {
-        return $this->belongsTo(MemberLoanSchedule::class, 'member_loan_schedule_id');
     }
 }

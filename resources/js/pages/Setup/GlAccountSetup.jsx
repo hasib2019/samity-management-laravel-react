@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { showSuccessToast, showErrorToast } from '../../utils/sweetAlert';
 import Swal from 'sweetalert2';
+import LoadingButton from '../../components/LoadingButton';
 
 const GlAccountSetup = () => {
     const { hasPermission } = useAuth();
@@ -17,6 +18,7 @@ const GlAccountSetup = () => {
     
     // Modal & Form State
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
     const [editingAccount, setEditingAccount] = useState(null);
     const [formData, setFormData] = useState({
         glac_code: '',
@@ -149,6 +151,7 @@ const GlAccountSetup = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setSubmitting(true);
         try {
             if (editingAccount) {
                 await api.put(`/gl-accounts/${editingAccount.id}`, formData);
@@ -166,6 +169,8 @@ const GlAccountSetup = () => {
             } else {
                 showErrorToast(error.response?.data?.message || 'Operation failed');
             }
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -421,13 +426,15 @@ const GlAccountSetup = () => {
                                     </div>
                                 </div>
                                 <div className="px-4 py-3 bg-gray-50 sm:px-6 sm:flex sm:flex-row-reverse">
-                                    <button
+                                    <LoadingButton
                                         type="submit"
-                                        className="inline-flex justify-center px-4 py-2 w-full text-base font-medium text-white bg-blue-600 rounded-md border border-transparent shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
+                                        isLoading={submitting}
+                                        loadingText={editingAccount ? 'Saving...' : 'Creating...'}
+                                        className="px-4 py-2 w-full text-base font-medium text-white bg-blue-600 rounded-md border border-transparent shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
                                     >
                                         <Save className="mr-2 w-4 h-4" />
                                         Save
-                                    </button>
+                                    </LoadingButton>
                                     <button
                                         type="button"
                                         onClick={() => setIsModalOpen(false)}

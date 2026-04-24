@@ -1,7 +1,7 @@
 import React from 'react';
 import { X, User, Phone, Mail, MapPin, Calendar, CreditCard, Activity, DollarSign, FileText } from 'lucide-react';
 
-const MemberViewModal = ({ isOpen, onClose, member, STORAGE_URL }) => {
+const MemberViewModal = ({ isOpen, onClose, member, STORAGE_URL, codeMasters = {} }) => {
     if (!isOpen || !member) return null;
 
     const formatDate = (dateString) => {
@@ -12,6 +12,15 @@ const MemberViewModal = ({ isOpen, onClose, member, STORAGE_URL }) => {
     const getImageUrl = (path) => {
         if (!path) return null;
         return `${STORAGE_URL}${path}`;
+    };
+
+    const getCodeMasterValue = (type, id) => {
+        if (!id) return 'N/A';
+
+        const items = codeMasters[type] || [];
+        const matchedItem = items.find(item => String(item.id) === String(id));
+
+        return matchedItem?.display_value || id;
     };
 
     return (
@@ -108,23 +117,23 @@ const MemberViewModal = ({ isOpen, onClose, member, STORAGE_URL }) => {
                                     </div>
                                     <div>
                                         <dt className="text-gray-500">Gender</dt>
-                                        <dd className="font-medium text-gray-900">{member.gender_id || 'N/A'}</dd>
+                                        <dd className="font-medium text-gray-900">{getCodeMasterValue('GEN', member.gender_id)}</dd>
                                     </div>
                                     <div>
                                         <dt className="text-gray-500">Marital Status</dt>
-                                        <dd className="font-medium text-gray-900">{member.marital_status_id || 'N/A'}</dd>
+                                        <dd className="font-medium text-gray-900">{getCodeMasterValue('MST', member.marital_status_id)}</dd>
                                     </div>
                                     <div>
                                         <dt className="text-gray-500">Religion</dt>
-                                        <dd className="font-medium text-gray-900">{member.religion_id || 'N/A'}</dd>
+                                        <dd className="font-medium text-gray-900">{getCodeMasterValue('REL', member.religion_id)}</dd>
                                     </div>
                                     <div>
                                         <dt className="text-gray-500">Education</dt>
-                                        <dd className="font-medium text-gray-900">{member.education_level_id || 'N/A'}</dd>
+                                        <dd className="font-medium text-gray-900">{getCodeMasterValue('EDT', member.education_level_id)}</dd>
                                     </div>
                                     <div>
                                         <dt className="text-gray-500">Occupation</dt>
-                                        <dd className="font-medium text-gray-900">{member.occupation_id || 'N/A'}</dd>
+                                        <dd className="font-medium text-gray-900">{getCodeMasterValue('OCC', member.occupation_id)}</dd>
                                     </div>
                                 </dl>
                             </div>
@@ -151,10 +160,6 @@ const MemberViewModal = ({ isOpen, onClose, member, STORAGE_URL }) => {
                                         <dt className="text-gray-500">Signatory Person</dt>
                                         <dd className="font-medium text-gray-900">{member.committee_signatory_person === 'Y' ? 'Yes' : 'No'}</dd>
                                     </div>
-                                    <div>
-                                        <dt className="text-gray-500">Reference Samity</dt>
-                                        <dd className="font-medium text-gray-900">{member.ref_samity_id || 'N/A'}</dd>
-                                    </div>
                                 </dl>
                             </div>
 
@@ -165,8 +170,12 @@ const MemberViewModal = ({ isOpen, onClose, member, STORAGE_URL }) => {
                                 </h4>
                                 <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4 text-sm">
                                     <div>
-                                        <dt className="text-gray-500">Share Amount</dt>
-                                        <dd className="font-medium text-gray-900">{member.share_price || '0'}</dd>
+                                        <dt className="text-gray-500">Share Price</dt>
+                                        <dd className="font-medium text-gray-900">{member.samity?.share_price || member.share_price || '0'}</dd>
+                                    </div>
+                                    <div>
+                                        <dt className="text-gray-500">Samity Sold Share</dt>
+                                        <dd className="font-medium text-gray-900">{member.samity?.sold_share || '0'}</dd>
                                     </div>
                                     <div>
                                         <dt className="text-gray-500">No of Share</dt>

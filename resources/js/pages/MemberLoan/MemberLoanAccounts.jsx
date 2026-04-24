@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import Swal from 'sweetalert2';
+import LoadingButton from '../../components/LoadingButton';
 
 const MemberLoanAccounts = () => {
     const { hasPermission } = useAuth();
@@ -11,6 +12,8 @@ const MemberLoanAccounts = () => {
     const [statement, setStatement] = useState(null);
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [statementLoading, setStatementLoading] = useState(false);
+    const [accrualLoading, setAccrualLoading] = useState(false);
 
     useEffect(() => {
         fetchAccounts();
@@ -40,12 +43,18 @@ const MemberLoanAccounts = () => {
 
     const refreshStatement = async (account = selectedAccount) => {
         if (!account) return;
-        const response = await api.get(`/member-loan-accounts/${account.id}/statement`, { params: { month: statementMonth } });
-        setStatement(response.data);
+        setStatementLoading(true);
+        try {
+            const response = await api.get(`/member-loan-accounts/${account.id}/statement`, { params: { month: statementMonth } });
+            setStatement(response.data);
+        } finally {
+            setStatementLoading(false);
+        }
     };
 
     const runAccrual = async () => {
         if (!selectedAccount) return;
+        setAccrualLoading(true);
         try {
             await api.post(`/member-loan-accounts/${selectedAccount.id}/accrue`, {
                 as_of_date: new Date().toISOString().split('T')[0],
@@ -56,6 +65,8 @@ const MemberLoanAccounts = () => {
             loadAccount(selectedAccount);
         } catch (error) {
             Swal.fire('Error', error.response?.data?.message || 'Accrual failed', 'error');
+        } finally {
+            setAccrualLoading(false);
         }
     };
 
@@ -68,12 +79,12 @@ const MemberLoanAccounts = () => {
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-800">Member Loan Accounts</h1>
-                    <p className="text-sm text-gray-500">View balances, transaction history and monthly statements.</p>
+                    <p className="text-sm text-gray-500">View outstanding principal, 30 day interest accrual and repayment history.</p>
                 </div>
                 {selectedAccount && hasPermission('member.loan.accrual.run') && (
-                    <button onClick={runAccrual} className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700">
-                        Run Accrual
-                    </button>
+                    <LoadingButton onClick={runAccrual} isLoading={accrualLoading} loadingText="Running..." className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700">
+                        Run 30 Day Accrual
+                    </LoadingButton>
                 )}
             </div>
 
@@ -109,19 +120,20 @@ const MemberLoanAccounts = () => {
                 <div className="space-y-6">
                     <div className="p-6 bg-white rounded-lg shadow">
                         <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-lg font-semibold text-gray-800">Monthly Statement</h2>
+                            <h2 className="text-lg font-semibold text-gray-800">Monthly Loan Summary</h2>
                             <div className="flex gap-2">
                                 <input type="month" value={statementMonth} onChange={(e) => setStatementMonth(e.target.value)} className="px-3 py-2 border rounded-lg" />
-                                <button onClick={() => refreshStatement()} className="px-3 py-2 border rounded-lg">Load</button>
+                                <LoadingButton onClick={() => refreshStatement()} isLoading={statementLoading} loadingText="Loading..." className="px-3 py-2 border rounded-lg">
+                                    Load
+                                </LoadingButton>
                             </div>
                         </div>
                         {statement ? (
                             <div className="grid grid-cols-2 gap-4 text-sm">
-                                <div><span className="font-medium">Opening:</span> {statement.opening_balance}</div>
-                                <div><span className="font-medium">Interest:</span> {statement.interest_charged}</div>
-                                <div><span className="font-medium">Overdue Interest:</span> {statement.overdue_interest_charged}</div>
+                                <div><span className="font-medium">Opening Due:</span> {statement.opening_balance}</div>
+                                <div><span className="font-medium">30 Day Interest:</span> {statement.interest_charged}</div>
                                 <div><span className="font-medium">Payments:</span> {statement.payments_received}</div>
-                                <div className="col-span-2"><span className="font-medium">Closing:</span> {statement.closing_balance}</div>
+                                <div className="col-span-2"><span className="font-medium">Closing Due:</span> {statement.closing_balance}</div>
                             </div>
                         ) : (
                             <div className="text-sm text-gray-500">Select an account to view statement.</div>

@@ -39,7 +39,7 @@ class MemberLoanApplicationController extends Controller
             'product_id' => 'required|exists:product_mst,id',
             'application_date' => 'required|date',
             'requested_amount' => 'required|numeric|min:1',
-            'tenure_months' => 'required|integer|min:1',
+            'tenure_months' => 'nullable|integer|min:1',
             'monthly_interest_rate' => 'nullable|numeric|min:0',
             'purpose' => 'nullable|string',
             'remarks' => 'nullable|string',
@@ -55,7 +55,7 @@ class MemberLoanApplicationController extends Controller
         }
 
         $monthlyRate = (float) ($request->monthly_interest_rate ?? $product->profit_rate ?? 1);
-        $scheduledEmi = $this->memberLoanService->calculateEmi((float) $request->requested_amount, $monthlyRate, (int) $request->tenure_months);
+        $tenureMonths = (int) ($request->tenure_months ?: 1);
 
         $application = MemberLoanApplication::create([
             'samity_id' => $request->samity_id,
@@ -64,10 +64,8 @@ class MemberLoanApplicationController extends Controller
             'application_no' => 'MLA-' . now()->format('YmdHis') . random_int(10, 99),
             'application_date' => $request->application_date,
             'requested_amount' => $request->requested_amount,
-            'tenure_months' => $request->tenure_months,
+            'tenure_months' => $tenureMonths,
             'monthly_interest_rate' => $monthlyRate,
-            'scheduled_emi' => $scheduledEmi,
-            'installment_day' => 1,
             'purpose' => $request->purpose,
             'remarks' => $request->remarks,
             'status' => 'pending',

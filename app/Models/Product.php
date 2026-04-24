@@ -34,15 +34,33 @@ class Product extends Model
         'grace_period_month',
         'penalty_applicable',
         'penalty_rate',
-        'gl_principal_id',
-        'gl_loan_outstanding_id',
-        'gl_loan_disbursement_id',
-        'gl_profit_id',
-        'gl_penalty_id',
-        'gl_income_id',
-        'gl_expense_id',
-        'gl_waiver_id',
-        'loan_loss_provision_gl_id',
+        'sav_dep_lib_cr_gl_id',
+        'sav_penalty_income_cr_gl_id',
+        'sav_cash_bank_dr_gl_id',
+        'sav_interest_exp_dr_gl_id',
+        'dps_dep_lib_cr_gl_id',
+        'dps_penalty_income_cr_gl_id',
+        'dps_cash_bank_dr_gl_id',
+        'dps_interest_exp_dr_gl_id',
+        'fdr_dep_lib_cr_gl_id',
+        'fdr_penalty_income_cr_gl_id',
+        'fdr_cash_bank_dr_gl_id',
+        'fdr_interest_exp_dr_gl_id',
+        'shr_capital_cr_gl_id',
+        'shr_cash_bank_dr_gl_id',
+        'shr_fee_income_cr_gl_id',
+        'loan_portfolio_dr_gl_id',
+        'loan_cash_bank_cr_gl_id',
+        'loan_interest_income_cr_gl_id',
+        'loan_penalty_income_cr_gl_id',
+        'loan_waiver_exp_dr_gl_id',
+        'loan_loss_provision_exp_dr_gl_id',
+        'mem_loan_portfolio_dr_gl_id',
+        'mem_loan_cash_bank_cr_gl_id',
+        'mem_loan_interest_income_cr_gl_id',
+        'mem_loan_penalty_income_cr_gl_id',
+        'mem_loan_waiver_exp_dr_gl_id',
+        'mem_loan_loss_provision_exp_dr_gl_id',
         'status',
         'created_by',
         'updated_by',
@@ -61,13 +79,31 @@ class Product extends Model
     ];
 
     // Relationships
-    public function glPrincipal() { return $this->belongsTo(GlAccount::class, 'gl_principal_id'); }
-    public function glLoanOutstanding() { return $this->belongsTo(GlAccount::class, 'gl_loan_outstanding_id'); }
-    public function glLoanDisbursement() { return $this->belongsTo(GlAccount::class, 'gl_loan_disbursement_id'); }
-    public function glProfit() { return $this->belongsTo(GlAccount::class, 'gl_profit_id'); }
-    public function glPenalty() { return $this->belongsTo(GlAccount::class, 'gl_penalty_id'); }
-    public function glIncome() { return $this->belongsTo(GlAccount::class, 'gl_income_id'); }
-    public function glExpense() { return $this->belongsTo(GlAccount::class, 'gl_expense_id'); }
-    public function glWaiver() { return $this->belongsTo(GlAccount::class, 'gl_waiver_id'); }
-    public function glLoanLossProvision() { return $this->belongsTo(GlAccount::class, 'loan_loss_provision_gl_id'); }
+    public function savDepLibCrGl() { return $this->belongsTo(GlAccount::class, 'sav_dep_lib_cr_gl_id'); }
+    public function savPenaltyIncomeCrGl() { return $this->belongsTo(GlAccount::class, 'sav_penalty_income_cr_gl_id'); }
+    public function savCashBankDrGl() { return $this->belongsTo(GlAccount::class, 'sav_cash_bank_dr_gl_id'); }
+    public function savInterestExpDrGl() { return $this->belongsTo(GlAccount::class, 'sav_interest_exp_dr_gl_id'); }
+    public function dpsDepLibCrGl() { return $this->belongsTo(GlAccount::class, 'dps_dep_lib_cr_gl_id'); }
+    public function dpsPenaltyIncomeCrGl() { return $this->belongsTo(GlAccount::class, 'dps_penalty_income_cr_gl_id'); }
+    public function dpsCashBankDrGl() { return $this->belongsTo(GlAccount::class, 'dps_cash_bank_dr_gl_id'); }
+    public function dpsInterestExpDrGl() { return $this->belongsTo(GlAccount::class, 'dps_interest_exp_dr_gl_id'); }
+    public function fdrDepLibCrGl() { return $this->belongsTo(GlAccount::class, 'fdr_dep_lib_cr_gl_id'); }
+    public function fdrPenaltyIncomeCrGl() { return $this->belongsTo(GlAccount::class, 'fdr_penalty_income_cr_gl_id'); }
+    public function fdrCashBankDrGl() { return $this->belongsTo(GlAccount::class, 'fdr_cash_bank_dr_gl_id'); }
+    public function fdrInterestExpDrGl() { return $this->belongsTo(GlAccount::class, 'fdr_interest_exp_dr_gl_id'); }
+    public function shrCapitalCrGl() { return $this->belongsTo(GlAccount::class, 'shr_capital_cr_gl_id'); }
+    public function shrCashBankDrGl() { return $this->belongsTo(GlAccount::class, 'shr_cash_bank_dr_gl_id'); }
+    public function shrFeeIncomeCrGl() { return $this->belongsTo(GlAccount::class, 'shr_fee_income_cr_gl_id'); }
+    public function loanPortfolioDrGl() { return $this->belongsTo(GlAccount::class, 'loan_portfolio_dr_gl_id'); }
+    public function loanCashBankCrGl() { return $this->belongsTo(GlAccount::class, 'loan_cash_bank_cr_gl_id'); }
+    public function loanInterestIncomeCrGl() { return $this->belongsTo(GlAccount::class, 'loan_interest_income_cr_gl_id'); }
+    public function loanPenaltyIncomeCrGl() { return $this->belongsTo(GlAccount::class, 'loan_penalty_income_cr_gl_id'); }
+    public function loanWaiverExpDrGl() { return $this->belongsTo(GlAccount::class, 'loan_waiver_exp_dr_gl_id'); }
+    public function loanLossProvisionExpDrGl() { return $this->belongsTo(GlAccount::class, 'loan_loss_provision_exp_dr_gl_id'); }
+    public function memLoanPortfolioDrGl() { return $this->belongsTo(GlAccount::class, 'mem_loan_portfolio_dr_gl_id'); }
+    public function memLoanCashBankCrGl() { return $this->belongsTo(GlAccount::class, 'mem_loan_cash_bank_cr_gl_id'); }
+    public function memLoanInterestIncomeCrGl() { return $this->belongsTo(GlAccount::class, 'mem_loan_interest_income_cr_gl_id'); }
+    public function memLoanPenaltyIncomeCrGl() { return $this->belongsTo(GlAccount::class, 'mem_loan_penalty_income_cr_gl_id'); }
+    public function memLoanWaiverExpDrGl() { return $this->belongsTo(GlAccount::class, 'mem_loan_waiver_exp_dr_gl_id'); }
+    public function memLoanLossProvisionExpDrGl() { return $this->belongsTo(GlAccount::class, 'mem_loan_loss_provision_exp_dr_gl_id'); }
 }

@@ -258,9 +258,13 @@ class LoanRepaymentController extends Controller
 
             // GL Entries
             // 1. Debit Cash (Receive Money)
-            $cashMap = GlMstMapping::where('gl_code_type', 'CASH')->where('status', true)->first();
-            if (!$cashMap) {
-                throw new \Exception("Cash GL Mapping not found");
+            $cashGlId = $loan->product->loan_cash_bank_cr_gl_id;
+            if (!$cashGlId) {
+                $cashMap = GlMstMapping::where('gl_code_type', 'CASH')->where('status', true)->first();
+                $cashGlId = $cashMap ? $cashMap->gl_mst_id : null;
+            }
+            if (!$cashGlId) {
+                throw new \Exception("Loan Cash/Bank Cr GL not defined");
             }
             
             // Generate Batch
@@ -287,7 +291,7 @@ class LoanRepaymentController extends Controller
             // Debit Transaction (Cash)
             Transaction::create(array_merge($commonData, [
                 'tran_num' => date('YmdHis') . rand(10, 99),
-                'glac_id' => $cashMap->gl_mst_id,
+                'glac_id' => $cashGlId,
                 'dr_amt' => $amount,
                 'cr_amt' => 0,
             ]));
@@ -295,12 +299,12 @@ class LoanRepaymentController extends Controller
             // Credit Transaction (Principal -> Asset)
             // User requested: "Loan Outstanding GL (Dr GL) this gl is Cr and this is principal amount"
             if ($principalPaid > 0) {
-                if (!$loan->product->gl_loan_outstanding_id) { // Use loan outstanding GL
-                     throw new \Exception("Product Loan Outstanding GL not defined");
+                if (!$loan->product->loan_portfolio_dr_gl_id) {
+                     throw new \Exception("Loan Portfolio Dr GL not defined");
                 }
                 Transaction::create(array_merge($commonData, [
                     'tran_num' => date('YmdHis') . rand(10, 99),
-                    'glac_id' => $loan->product->gl_loan_outstanding_id,
+                    'glac_id' => $loan->product->loan_portfolio_dr_gl_id,
                     'dr_amt' => 0,
                     'cr_amt' => $principalPaid,
                     'naration' => ($request->naration ?? 'Loan Repayment') . ' (Principal)',
@@ -310,12 +314,12 @@ class LoanRepaymentController extends Controller
             // Credit Transaction (Interest -> Income)
             // User requested: "Profit/Interest GL have gl CR is service charge"
             if ($interestPaid > 0) {
-                if (!$loan->product->gl_income_id) { // Use income GL
-                     throw new \Exception("Product Income GL not defined");
+                if (!$loan->product->loan_interest_income_cr_gl_id) {
+                     throw new \Exception("Loan Interest Income Cr GL not defined");
                 }
                 Transaction::create(array_merge($commonData, [
                     'tran_num' => date('YmdHis') . rand(10, 99),
-                    'glac_id' => $loan->product->gl_income_id, // Interest Income GL
+                    'glac_id' => $loan->product->loan_interest_income_cr_gl_id,
                     'dr_amt' => 0,
                     'cr_amt' => $interestPaid,
                     'naration' => ($request->naration ?? 'Loan Repayment') . ' (Interest)',
@@ -325,12 +329,12 @@ class LoanRepaymentController extends Controller
             // Credit Transaction (Penalty -> Income)
             // User requested: "Penalty GL overdue gl CR"
             if ($finePaid > 0) {
-                if (!$loan->product->gl_penalty_id) { 
-                     throw new \Exception("Product Penalty GL not defined");
+                if (!$loan->product->loan_penalty_income_cr_gl_id) { 
+                     throw new \Exception("Loan Penalty Income Cr GL not defined");
                 }
                 Transaction::create(array_merge($commonData, [
                     'tran_num' => date('YmdHis') . rand(10, 99),
-                    'glac_id' => $loan->product->gl_penalty_id,
+                    'glac_id' => $loan->product->loan_penalty_income_cr_gl_id,
                     'dr_amt' => 0,
                     'cr_amt' => $finePaid,
                     'naration' => ($request->naration ?? 'Loan Repayment') . ' (Penalty)',

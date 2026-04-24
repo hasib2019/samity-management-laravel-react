@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { Loader2, Search, Printer, FileText } from 'lucide-react';
 
@@ -147,27 +147,43 @@ const AccountStatement = () => {
         return new Date(dateString).toLocaleDateString();
     };
 
-    // Calculate running balance
-    const calculateRunningBalance = (transactions, openingBalance) => {
-        let balance = openingBalance;
-        return transactions.map(t => {
-            // For Savings (Liability): Cr increases, Dr decreases
-            // For Loans (Asset): Dr increases, Cr decreases
-            // The backend logic for Opening Balance was:
-            // Savings: Cr - Dr
-            // Loans: Dr - Cr
-            
-            // So for running balance:
-            if (filters.account_type === 'savings') {
-                balance = balance + (Number(t.cr_amt) || 0) - (Number(t.dr_amt) || 0);
-            } else {
-                balance = balance + (Number(t.dr_amt) || 0) - (Number(t.cr_amt) || 0);
-            }
-            return { ...t, balance };
-        });
-    };
+    const statementRows = useMemo(() => {
+        if (!data) return [];
 
-    const processedTransactions = data ? calculateRunningBalance(data.transactions, data.opening_balance) : [];
+        if (filters.account_type === 'savings') {
+            let balance = Number(data.opening_balance || 0);
+
+            return (data.transactions || []).map((row) => {
+                const moneyIn = Number(row.deposit_amount || 0);
+                const moneyOut = Number(row.withdraw_amount || 0);
+                balance += moneyIn - moneyOut;
+
+                return {
+                    ...row,
+                    money_in: moneyIn,
+                    money_out: moneyOut,
+                    balance,
+                };
+            });
+        }
+
+        let balance = Number(data.opening_balance || 0);
+
+        return (data.transactions || []).map((row) => {
+            const moneyIn = Number(row.dr_amt || 0);
+            const moneyOut = Number(row.cr_amt || 0);
+            balance += moneyIn - moneyOut;
+
+            return {
+                ...row,
+                reference: row.batch_num || row.tran_num,
+                particulars: row.naration || 'Transaction',
+                money_in: moneyIn,
+                money_out: moneyOut,
+                balance,
+            };
+        });
+    }, [data, filters.account_type]);
 
     return (
         <div className="bg-white p-6 rounded-lg shadow-md min-h-screen">
@@ -273,7 +289,7 @@ const AccountStatement = () => {
                 {data && (
                     <div className="mt-4 text-left border p-4 rounded">
                         <p><strong>Member:</strong> {members.find(m => m.id == filters.member_id)?.member_name} ({members.find(m => m.id == filters.member_id)?.member_code})</p>
-                        <p><strong>Account:</strong> {data.account?.product?.product_name || data.account?.loan_application?.product?.product_name} - {data.account?.account_no}</p>
+                        <p><strong>Account:</strong> {data.account?.product?.product_name || data.account?.loan_application?.product?.product_name} - {data.account?.account_number || data.account?.account_no}</p>
                     </div>
                 )}
             </div>
@@ -294,12 +310,12 @@ const AccountStatement = () => {
                                 <p className="text-lg font-bold text-gray-900">
                                     {data.account?.product?.product_name || data.account?.loan_application?.product?.product_name}
                                 </p>
-                                <p className="text-gray-600">Account No: {data.account?.account_no}</p>
+                                <p className="text-gray-600">Account No: {data.account?.account_number || data.account?.account_no}</p>
                             </div>
                             <div className="text-right">
                                 <h3 className="text-sm font-semibold text-blue-800 uppercase tracking-wider">Current Balance</h3>
                                 <p className="text-2xl font-bold text-blue-900">
-                                    {formatCurrency(processedTransactions.length > 0 ? processedTransactions[processedTransactions.length - 1].balance : data.opening_balance)}
+                                    {formatCurrency(statementRows.length > 0 ? statementRows[statementRows.length - 1].balance : data.opening_balance)}
                                 </p>
                             </div>
                         </div>
@@ -310,10 +326,10 @@ const AccountStatement = () => {
                             <thead className="bg-gray-50">
                                 <tr>
                                     <th className="border border-gray-200 px-4 py-2 text-left">Date</th>
-                                    <th className="border border-gray-200 px-4 py-2 text-left">Voucher</th>
+                                    <th className="border border-gray-200 px-4 py-2 text-left">Reference</th>
                                     <th className="border border-gray-200 px-4 py-2 text-left">Particulars</th>
-                                    <th className="border border-gray-200 px-4 py-2 text-right">Debit</th>
-                                    <th className="border border-gray-200 px-4 py-2 text-right">Credit</th>
+                                    <th className="border border-gray-200 px-4 py-2 text-right">Money In</th>
+                                    <th className="border border-gray-200 px-4 py-2 text-right">Money Out</th>
                                     <th className="border border-gray-200 px-4 py-2 text-right">Balance</th>
                                 </tr>
                             </thead>
@@ -325,23 +341,23 @@ const AccountStatement = () => {
                                 </tr>
 
                                 {/* Transactions */}
-                                {processedTransactions.length === 0 ? (
+                                {statementRows.length === 0 ? (
                                     <tr>
                                         <td colSpan="6" className="border border-gray-200 px-4 py-8 text-center text-gray-500">
                                             No transactions found in this period.
                                         </td>
                                     </tr>
                                 ) : (
-                                    processedTransactions.map((t, index) => (
+                                    statementRows.map((t, index) => (
                                         <tr key={index} className="hover:bg-gray-50">
                                             <td className="border border-gray-200 px-4 py-2 whitespace-nowrap">{formatDate(t.tran_date)}</td>
-                                            <td className="border border-gray-200 px-4 py-2">{t.batch_num || t.tran_num}</td>
-                                            <td className="border border-gray-200 px-4 py-2">{t.naration || 'Transaction'}</td>
-                                            <td className="border border-gray-200 px-4 py-2 text-right text-red-600">
-                                                {Number(t.dr_amt) > 0 ? formatCurrency(t.dr_amt) : '-'}
-                                            </td>
+                                            <td className="border border-gray-200 px-4 py-2">{t.reference || '-'}</td>
+                                            <td className="border border-gray-200 px-4 py-2">{t.particulars || 'Transaction'}</td>
                                             <td className="border border-gray-200 px-4 py-2 text-right text-green-600">
-                                                {Number(t.cr_amt) > 0 ? formatCurrency(t.cr_amt) : '-'}
+                                                {Number(t.money_in) > 0 ? formatCurrency(t.money_in) : '-'}
+                                            </td>
+                                            <td className="border border-gray-200 px-4 py-2 text-right text-red-600">
+                                                {Number(t.money_out) > 0 ? formatCurrency(t.money_out) : '-'}
                                             </td>
                                             <td className="border border-gray-200 px-4 py-2 text-right font-medium">
                                                 {formatCurrency(t.balance)}

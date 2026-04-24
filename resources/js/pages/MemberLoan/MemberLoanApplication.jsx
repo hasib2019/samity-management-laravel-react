@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import Swal from 'sweetalert2';
+import LoadingButton from '../../components/LoadingButton';
 
 const initialForm = {
     samity_id: '',
@@ -9,7 +10,7 @@ const initialForm = {
     product_id: '',
     application_date: new Date().toISOString().split('T')[0],
     requested_amount: '',
-    tenure_months: '',
+    tenure_months: '1',
     monthly_interest_rate: '1',
     purpose: '',
     remarks: '',
@@ -22,6 +23,8 @@ const MemberLoanApplication = () => {
     const [members, setMembers] = useState([]);
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
+    const [actionLoading, setActionLoading] = useState({});
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [formData, setFormData] = useState(initialForm);
 
@@ -75,6 +78,7 @@ const MemberLoanApplication = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setSubmitting(true);
         try {
             await api.post('/member-loan-applications', formData);
             Swal.fire('Success', 'Member loan application created successfully', 'success');
@@ -84,25 +88,30 @@ const MemberLoanApplication = () => {
         } catch (error) {
             const errors = error.response?.data?.errors;
             Swal.fire('Error', errors ? Object.values(errors).flat().join('\n') : (error.response?.data?.message || 'Failed to create application'), 'error');
+        } finally {
+            setSubmitting(false);
         }
     };
 
     const handleApprove = async (application) => {
+        setActionLoading((prev) => ({ ...prev, [`approve-${application.id}`]: true }));
         try {
             await api.post(`/member-loan-applications/${application.id}/approve`, {
                 approved_date: new Date().toISOString().split('T')[0],
                 approved_amount: application.requested_amount,
                 monthly_interest_rate: application.monthly_interest_rate,
-                tenure_months: application.tenure_months,
             });
             Swal.fire('Success', 'Application approved successfully', 'success');
             fetchApplications();
         } catch (error) {
             Swal.fire('Error', error.response?.data?.message || 'Approval failed', 'error');
+        } finally {
+            setActionLoading((prev) => ({ ...prev, [`approve-${application.id}`]: false }));
         }
     };
 
     const handleReject = async (application) => {
+        setActionLoading((prev) => ({ ...prev, [`reject-${application.id}`]: true }));
         try {
             await api.post(`/member-loan-applications/${application.id}/reject`, {
                 remarks: 'Rejected by authorized user',
@@ -111,6 +120,8 @@ const MemberLoanApplication = () => {
             fetchApplications();
         } catch (error) {
             Swal.fire('Error', error.response?.data?.message || 'Rejection failed', 'error');
+        } finally {
+            setActionLoading((prev) => ({ ...prev, [`reject-${application.id}`]: false }));
         }
     };
 
@@ -123,7 +134,7 @@ const MemberLoanApplication = () => {
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-800">Member Loan Application</h1>
-                    <p className="text-sm text-gray-500">Create and approve isolated member loan applications.</p>
+                    <p className="text-sm text-gray-500">Create member loan applications without EMI schedule. Interest applies after every 30 days on outstanding principal.</p>
                 </div>
                 {hasPermission('member.loan.application.create') && (
                     <button onClick={() => setIsModalOpen(true)} className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700">
@@ -140,7 +151,7 @@ const MemberLoanApplication = () => {
                             <th className="px-4 py-3 text-xs font-medium text-left text-gray-500 uppercase">Samity</th>
                             <th className="px-4 py-3 text-xs font-medium text-left text-gray-500 uppercase">Member</th>
                             <th className="px-4 py-3 text-xs font-medium text-right text-gray-500 uppercase">Amount</th>
-                            <th className="px-4 py-3 text-xs font-medium text-right text-gray-500 uppercase">Tenure</th>
+                            <th className="px-4 py-3 text-xs font-medium text-right text-gray-500 uppercase">Rate</th>
                             <th className="px-4 py-3 text-xs font-medium text-left text-gray-500 uppercase">Status</th>
                             <th className="px-4 py-3 text-xs font-medium text-right text-gray-500 uppercase">Action</th>
                         </tr>
@@ -159,14 +170,18 @@ const MemberLoanApplication = () => {
                                 <td className="px-4 py-3 text-sm text-gray-600">{application.samity?.samity_name}</td>
                                 <td className="px-4 py-3 text-sm text-gray-600">{application.member?.member_name}</td>
                                 <td className="px-4 py-3 text-sm text-right text-gray-600">{application.requested_amount}</td>
-                                <td className="px-4 py-3 text-sm text-right text-gray-600">{application.tenure_months}</td>
+                                <td className="px-4 py-3 text-sm text-right text-gray-600">{application.monthly_interest_rate}%</td>
                                 <td className="px-4 py-3 text-sm text-gray-600">{application.status}</td>
                                 <td className="px-4 py-3 text-sm text-right">
                                     {application.status === 'pending' && hasPermission('member.loan.application.approve') && (
-                                        <button onClick={() => handleApprove(application)} className="mr-2 text-green-600 hover:text-green-800">Approve</button>
+                                        <LoadingButton onClick={() => handleApprove(application)} isLoading={!!actionLoading[`approve-${application.id}`]} loadingText="Approving..." className="mr-2 text-green-600 hover:text-green-800">
+                                            Approve
+                                        </LoadingButton>
                                     )}
                                     {application.status === 'pending' && hasPermission('member.loan.application.reject') && (
-                                        <button onClick={() => handleReject(application)} className="text-red-600 hover:text-red-800">Reject</button>
+                                        <LoadingButton onClick={() => handleReject(application)} isLoading={!!actionLoading[`reject-${application.id}`]} loadingText="Rejecting..." className="text-red-600 hover:text-red-800">
+                                            Reject
+                                        </LoadingButton>
                                     )}
                                 </td>
                             </tr>
@@ -211,12 +226,11 @@ const MemberLoanApplication = () => {
                                     <input type="number" step="0.01" name="requested_amount" value={formData.requested_amount} onChange={handleChange} className="w-full px-3 py-2 border rounded-lg" required />
                                 </div>
                                 <div>
-                                    <label className="block mb-1 text-sm font-medium">Tenure (Months)</label>
-                                    <input type="number" name="tenure_months" value={formData.tenure_months} onChange={handleChange} className="w-full px-3 py-2 border rounded-lg" required />
-                                </div>
-                                <div>
                                     <label className="block mb-1 text-sm font-medium">Monthly Interest Rate (%)</label>
                                     <input type="number" step="0.0001" name="monthly_interest_rate" value={formData.monthly_interest_rate} onChange={handleChange} className="w-full px-3 py-2 border rounded-lg" required />
+                                </div>
+                                <div className="p-3 text-sm text-blue-800 border border-blue-200 rounded-lg bg-blue-50">
+                                    EMI schedule create hobe na. Approval/disbursement date theke prottek 30 din pore outstanding principal-er upor 1% interest add hobe.
                                 </div>
                                 <div className="md:col-span-2">
                                     <label className="block mb-1 text-sm font-medium">Purpose</label>
@@ -225,7 +239,9 @@ const MemberLoanApplication = () => {
                             </div>
                             <div className="flex justify-end gap-3 pt-4">
                                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 border rounded-lg">Cancel</button>
-                                <button type="submit" className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700">Save</button>
+                                <LoadingButton type="submit" isLoading={submitting} loadingText="Saving..." className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700">
+                                    Save
+                                </LoadingButton>
                             </div>
                         </form>
                     </div>

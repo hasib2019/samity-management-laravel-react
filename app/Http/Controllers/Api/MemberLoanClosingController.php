@@ -32,6 +32,7 @@ class MemberLoanClosingController extends Controller
         $validator = Validator::make($request->all(), [
             'account_id' => 'required|exists:member_loan_accounts,id',
             'closing_date' => 'required|date',
+            'settlement_amount' => 'required|numeric|min:0',
             'remarks' => 'nullable|string',
         ]);
 
