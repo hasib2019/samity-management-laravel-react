@@ -11,6 +11,13 @@ use App\Models\LoanAccount;
 use App\Models\MemberInfo;
 use App\Models\DepositRequest;
 use App\Models\WithdrawRequest;
+use App\Models\ShareAccount;
+use App\Models\DpsApplication;
+use App\Models\FdrApplication;
+use App\Models\MemberLoanAccount;
+use App\Models\LoanRepaymentSchedule;
+use App\Models\Product;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class ReportController extends Controller
@@ -452,128 +459,271 @@ class ReportController extends Controller
     public function accountBalance(Request $request)
     {
         $request->validate([
-            'date' => 'required|date',
             'samity_id' => 'nullable|exists:samity_profiles,id',
+            'account_type' => 'nullable|in:all,savings,share,dps,fdr,loan,member_loan',
         ]);
 
-        $date = $request->date;
         $samityId = $request->samity_id;
+        $accountType = $request->input('account_type', 'all');
+        $reportData = collect();
 
-        // Fetch Members
-        $membersQuery = MemberInfo::with(['samity']);
-        if ($samityId) {
-            $membersQuery->where('samity_id', $samityId);
-        }
-        $members = $membersQuery->get();
-
-        $reportData = [];
-
-        foreach ($members as $member) {
-            // Savings Accounts
-            $savings = SavingsAccount::where('member_id', $member->id)->with('product')->get();
-            foreach ($savings as $acc) {
-                // Calculate balance as of date
-                // Balance = Sum(Cr) - Sum(Dr)
-                $tx = Transaction::where('customer_id', $acc->id) // Savings Account ID
-                    ->where('tran_date', '<=', $date)
-                    ->where('status', 'posted')
-                    ->select(DB::raw('SUM(dr_amt) as dr'), DB::raw('SUM(cr_amt) as cr'))
-                    ->first();
-                
-                $balance = ($tx->cr ?? 0) - ($tx->dr ?? 0);
-
-                if ($balance != 0) {
-                    $reportData[] = [
-                        'samity_name' => $member->samity->samity_name,
-                        'member_code' => $member->member_code,
-                        'member_name' => $member->member_name,
-                        'account_no' => $acc->account_number,
-                        'product_name' => $acc->product->product_name,
-                        'type' => 'Savings',
-                        'balance' => $balance
-                    ];
-                }
+        $matchesType = fn (string $type) => $accountType === 'all' || $accountType === $type;
+        $memberScope = function ($query) use ($samityId) {
+            if ($samityId) {
+                $query->where('samity_id', $samityId);
             }
+        };
 
-            // Loan Accounts
-            $loans = LoanAccount::where('member_id', $member->id)->with(['loanApplication.product'])->get();
-            foreach ($loans as $acc) {
-                // For Loans, customer_id in transaction is MemberID, need to filter by ProductID
-                // Balance = Sum(Dr) - Sum(Cr)
-                $productId = $acc->loanApplication->product_id;
-                
-                $tx = Transaction::where('customer_id', $member->id)
-                    ->where('product_id', $productId)
-                    ->where('tran_date', '<=', $date)
-                    ->where('status', 'posted')
-                    ->select(DB::raw('SUM(dr_amt) as dr'), DB::raw('SUM(cr_amt) as cr'))
-                    ->first();
-
-                $balance = ($tx->dr ?? 0) - ($tx->cr ?? 0);
-
-                if ($balance != 0) {
-                     $reportData[] = [
-                        'samity_name' => $member->samity->samity_name,
-                        'member_code' => $member->member_code,
-                        'member_name' => $member->member_name,
-                        'account_no' => $acc->account_no,
-                        'product_name' => $acc->loanApplication->product->product_name,
-                        'type' => 'Loan',
-                        'balance' => $balance
-                    ];
-                }
-            }
+        if ($matchesType('savings')) {
+            $reportData = $reportData->concat(
+                SavingsAccount::with(['member.samity', 'product'])
+                    ->whereHas('member', $memberScope)
+                    ->get()
+                    ->map(function ($account) {
+                        return [
+                            'samity_name' => $account->member?->samity?->samity_name,
+                            'member_code' => $account->member?->member_code,
+                            'member_name' => $account->member?->member_name,
+                            'account_no' => $account->account_number,
+                            'product_name' => $account->product?->product_name,
+                            'type' => 'Savings',
+                            'status' => $account->status,
+                            'balance' => (float) $account->current_balance,
+                        ];
+                    })
+            );
         }
+
+        if ($matchesType('share')) {
+            $reportData = $reportData->concat(
+                ShareAccount::with(['member.samity', 'product'])
+                    ->whereHas('member', $memberScope)
+                    ->get()
+                    ->map(function ($account) {
+                        return [
+                            'samity_name' => $account->member?->samity?->samity_name,
+                            'member_code' => $account->member?->member_code,
+                            'member_name' => $account->member?->member_name,
+                            'account_no' => $account->account_no,
+                            'product_name' => $account->product?->product_name,
+                            'type' => 'Share',
+                            'status' => $account->status,
+                            'balance' => (float) $account->current_balance,
+                        ];
+                    })
+            );
+        }
+
+        if ($matchesType('dps')) {
+            $reportData = $reportData->concat(
+                DpsApplication::with(['member.samity', 'product'])
+                    ->whereHas('member', $memberScope)
+                    ->get()
+                    ->map(function ($account) {
+                        return [
+                            'samity_name' => $account->member?->samity?->samity_name,
+                            'member_code' => $account->member?->member_code,
+                            'member_name' => $account->member?->member_name,
+                            'account_no' => $account->account_no,
+                            'product_name' => $account->product?->product_name,
+                            'type' => 'DPS',
+                            'status' => $account->status,
+                            'balance' => (float) $account->balance,
+                        ];
+                    })
+            );
+        }
+
+        if ($matchesType('fdr')) {
+            $reportData = $reportData->concat(
+                FdrApplication::with(['member.samity', 'product'])
+                    ->whereHas('member', $memberScope)
+                    ->get()
+                    ->map(function ($account) {
+                        return [
+                            'samity_name' => $account->member?->samity?->samity_name,
+                            'member_code' => $account->member?->member_code,
+                            'member_name' => $account->member?->member_name,
+                            'account_no' => $account->account_no,
+                            'product_name' => $account->product?->product_name,
+                            'type' => 'FDR',
+                            'status' => $account->status,
+                            'balance' => (float) ($account->maturity_amount ?? $account->fdr_amount ?? 0),
+                        ];
+                    })
+            );
+        }
+
+        if ($matchesType('loan')) {
+            $reportData = $reportData->concat(
+                LoanAccount::with(['member.samity', 'loanApplication.product'])
+                    ->whereHas('member', $memberScope)
+                    ->get()
+                    ->map(function ($account) {
+                        return [
+                            'samity_name' => $account->member?->samity?->samity_name,
+                            'member_code' => $account->member?->member_code,
+                            'member_name' => $account->member?->member_name,
+                            'account_no' => $account->account_no,
+                            'product_name' => $account->loanApplication?->product?->product_name,
+                            'type' => 'Loan',
+                            'status' => $account->status,
+                            'balance' => (float) $account->current_balance,
+                        ];
+                    })
+            );
+        }
+
+        if ($matchesType('member_loan')) {
+            $reportData = $reportData->concat(
+                MemberLoanAccount::with(['member.samity', 'product'])
+                    ->whereHas('member', $memberScope)
+                    ->get()
+                    ->map(function ($account) {
+                        return [
+                            'samity_name' => $account->member?->samity?->samity_name,
+                            'member_code' => $account->member?->member_code,
+                            'member_name' => $account->member?->member_name,
+                            'account_no' => $account->account_no,
+                            'product_name' => $account->product?->product_name,
+                            'type' => 'Member Loan',
+                            'status' => $account->status,
+                            'balance' => (float) $account->total_outstanding,
+                        ];
+                    })
+            );
+        }
+
+        $reportData = $reportData
+            ->filter(fn ($item) => abs((float) $item['balance']) > 0.009)
+            ->sortBy([
+                ['samity_name', 'asc'],
+                ['member_name', 'asc'],
+                ['type', 'asc'],
+                ['account_no', 'asc'],
+            ])
+            ->values();
 
         return response()->json([
             'data' => $reportData,
-            'date' => $date
+            'total_balance' => round((float) $reportData->sum('balance'), 2),
+            'total_accounts' => $reportData->count(),
+            'account_type' => $accountType,
         ]);
     }
 
     /**
      * Loan Report
      */
+    public function loanProducts(Request $request)
+    {
+        $request->validate([
+            'loan_type' => 'nullable|in:loan,member_loan',
+        ]);
+
+        $loanType = $request->input('loan_type', 'loan');
+
+        return response()->json(
+            Product::query()
+                ->where('product_type', $loanType)
+                ->where('status', 'active')
+                ->orderBy('product_name')
+                ->get(['id', 'product_name', 'product_type'])
+        );
+    }
+
     public function loanReport(Request $request)
     {
         $request->validate([
             'date_from' => 'nullable|date',
             'date_to' => 'nullable|date',
             'samity_id' => 'nullable|exists:samity_profiles,id',
+            'loan_type' => 'nullable|in:loan,member_loan',
+            'product_id' => 'nullable|exists:product_mst,id',
         ]);
 
-        $query = LoanAccount::with(['member.samity', 'loanApplication.product']);
+        $loanType = $request->input('loan_type', 'loan');
 
-        if ($request->samity_id) {
-            $query->whereHas('member', function($q) use ($request) {
-                $q->where('samity_id', $request->samity_id);
-            });
+        if ($loanType === 'member_loan') {
+            $query = MemberLoanAccount::with(['member.samity', 'product']);
+
+            if ($request->samity_id) {
+                $query->where('samity_id', $request->samity_id);
+            }
+
+            if ($request->product_id) {
+                $query->where('product_id', $request->product_id);
+            }
+
+            if ($request->date_from && $request->date_to) {
+                $query->whereBetween('disbursed_date', [$request->date_from, $request->date_to]);
+            }
+
+            $loans = $query->get();
+
+            $reportData = $loans->map(function ($loan) {
+                return [
+                    'samity_name' => $loan->member?->samity?->samity_name,
+                    'member_code' => $loan->member?->member_code,
+                    'member_name' => $loan->member?->member_name,
+                    'account_no' => $loan->account_no,
+                    'product_name' => $loan->product?->product_name,
+                    'loan_type' => 'member_loan',
+                    'disbursed_date' => $loan->disbursed_date,
+                    'principal_amount' => (float) $loan->original_principal,
+                    'interest_amount' => (float) $loan->total_interest_accrued,
+                    'total_payable' => (float) ((float) $loan->original_principal + (float) $loan->total_interest_accrued),
+                    'total_paid' => (float) $loan->total_paid_amount,
+                    'current_balance' => (float) $loan->total_outstanding,
+                    'status' => $loan->status,
+                ];
+            })->values();
+        } else {
+            $query = LoanAccount::with(['member.samity', 'loanApplication.product']);
+
+            if ($request->samity_id) {
+                $query->whereHas('member', function ($q) use ($request) {
+                    $q->where('samity_id', $request->samity_id);
+                });
+            }
+
+            if ($request->product_id) {
+                $query->whereHas('loanApplication', function ($q) use ($request) {
+                    $q->where('product_id', $request->product_id);
+                });
+            }
+
+            if ($request->date_from && $request->date_to) {
+                $query->whereBetween('disbursed_date', [$request->date_from, $request->date_to]);
+            }
+
+            $loans = $query->get();
+
+            $reportData = $loans->map(function ($loan) {
+                return [
+                    'samity_name' => $loan->member?->samity?->samity_name,
+                    'member_code' => $loan->member?->member_code,
+                    'member_name' => $loan->member?->member_name,
+                    'account_no' => $loan->account_no,
+                    'product_name' => $loan->loanApplication?->product?->product_name,
+                    'loan_type' => 'loan',
+                    'disbursed_date' => $loan->disbursed_date,
+                    'principal_amount' => (float) $loan->principal_amount,
+                    'interest_amount' => (float) $loan->interest_amount,
+                    'total_payable' => (float) $loan->total_payable,
+                    'total_paid' => (float) $loan->total_paid,
+                    'current_balance' => (float) $loan->current_balance,
+                    'status' => $loan->status,
+                ];
+            })->values();
         }
 
-        if ($request->date_from && $request->date_to) {
-            $query->whereBetween('disbursed_date', [$request->date_from, $request->date_to]);
-        }
-
-        $loans = $query->get();
-
-        $reportData = $loans->map(function($loan) {
-            return [
-                'samity_name' => $loan->member->samity->samity_name,
-                'member_code' => $loan->member->member_code,
-                'member_name' => $loan->member->member_name,
-                'account_no' => $loan->account_no,
-                'product_name' => $loan->loanApplication->product->product_name,
-                'disbursed_date' => $loan->disbursed_date,
-                'principal_amount' => $loan->principal_amount,
-                'interest_amount' => $loan->interest_amount,
-                'total_payable' => $loan->total_payable,
-                'total_paid' => $loan->total_paid,
-                'current_balance' => $loan->current_balance, // Outstanding
-                'status' => $loan->status
-            ];
-        });
-
-        return response()->json(['data' => $reportData]);
+        return response()->json([
+            'data' => $reportData,
+            'total_disbursed' => round((float) $reportData->sum('principal_amount'), 2),
+            'total_paid' => round((float) $reportData->sum('total_paid'), 2),
+            'total_outstanding' => round((float) $reportData->sum('current_balance'), 2),
+        ]);
     }
 
     /**
@@ -584,70 +734,130 @@ class ReportController extends Controller
         $request->validate([
             'date' => 'required|date',
             'samity_id' => 'nullable|exists:samity_profiles,id',
+            'loan_type' => 'nullable|in:loan,member_loan',
+            'product_id' => 'nullable|exists:product_mst,id',
         ]);
 
         $date = $request->date;
-        
-        // Find schedules that are due/overdue
-        // We need to join with LoanAccount and Member
-        $schedules = DB::table('loan_repayment_schedules as s')
-            ->join('loan_accounts as l', 's.loan_account_id', '=', 'l.id')
-            ->join('member_infos as m', 'l.member_id', '=', 'm.id')
-            ->join('samity_profiles as samity', 'm.samity_id', '=', 'samity.id')
-            ->join('products as p', function($join) {
-                // Need to link product via loan application. 
-                // Since we don't have direct link in query easily without more joins, 
-                // let's fetch product name via Eloquent or just additional join
-                // LoanAccount -> LoanApplication -> Product
-                // But LoanAccount has loan_application_id
-            })
-            ->join('loan_applications as la', 'l.loan_application_id', '=', 'la.id')
-            ->join('products as prod', 'la.product_id', '=', 'prod.id')
-            ->where('s.due_date', '<=', $date)
-            ->where('s.status', '!=', 'paid') // Not fully paid
-            ->where('l.status', 'active') // Only active loans
-            ->select(
-                'samity.samity_name',
-                'm.member_code',
-                'm.member_name as member_name',
-                'l.account_no',
-                'prod.product_name',
-                's.due_date',
-                's.installment_no',
-                's.principal_amount',
-                's.interest_amount',
-                's.paid_principal',
-                's.paid_interest'
-            );
+        $loanType = $request->input('loan_type', 'loan');
 
-        if ($request->samity_id) {
-            $schedules->where('m.samity_id', $request->samity_id);
+        if ($loanType === 'member_loan') {
+            $query = MemberLoanAccount::with(['member.samity', 'product'])
+                ->where('status', '!=', 'closed');
+
+            if ($request->samity_id) {
+                $query->where('samity_id', $request->samity_id);
+            }
+
+            if ($request->product_id) {
+                $query->where('product_id', $request->product_id);
+            }
+
+            $reportData = $query->get()
+                ->map(function ($account) use ($date) {
+                    $preview = $this->previewMemberLoanDue($account, $date);
+
+                    if (($preview['due_amount'] ?? 0) <= 0.009) {
+                        return null;
+                    }
+
+                    if (!$preview['is_due']) {
+                        return null;
+                    }
+
+                    return [
+                        'samity_name' => $account->member?->samity?->samity_name,
+                        'member_code' => $account->member?->member_code,
+                        'member_name' => $account->member?->member_name,
+                        'account_no' => $account->account_no,
+                        'product_name' => $account->product?->product_name,
+                        'loan_type' => 'member_loan',
+                        'due_date' => $preview['due_date'],
+                        'installment_no' => '-',
+                        'due_amount' => $preview['due_amount'],
+                    ];
+                })
+                ->filter()
+                ->values();
+        } else {
+            $accountNos = LoanAccount::query()
+                ->pluck('account_no', 'loan_application_id');
+
+            $query = LoanRepaymentSchedule::with(['loanApplication.member.samity', 'loanApplication.product'])
+                ->whereDate('due_date', '<=', $date)
+                ->where('status', '!=', 'paid');
+
+            if ($request->samity_id) {
+                $query->whereHas('loanApplication.member', function ($q) use ($request) {
+                    $q->where('samity_id', $request->samity_id);
+                });
+            }
+
+            if ($request->product_id) {
+                $query->whereHas('loanApplication', function ($q) use ($request) {
+                    $q->where('product_id', $request->product_id);
+                });
+            }
+
+            $reportData = $query->get()
+                ->map(function ($schedule) use ($accountNos) {
+                    $dueAmount = round(
+                        ((float) $schedule->principal_amount + (float) $schedule->interest_amount + (float) $schedule->fine_amount)
+                        - ((float) $schedule->paid_principal + (float) $schedule->paid_interest + (float) $schedule->paid_fine),
+                        2
+                    );
+
+                    if ($dueAmount <= 0.009) {
+                        return null;
+                    }
+
+                    return [
+                        'samity_name' => $schedule->loanApplication?->member?->samity?->samity_name,
+                        'member_code' => $schedule->loanApplication?->member?->member_code,
+                        'member_name' => $schedule->loanApplication?->member?->member_name,
+                        'account_no' => $accountNos[$schedule->loan_application_id] ?? '-',
+                        'product_name' => $schedule->loanApplication?->product?->product_name,
+                        'loan_type' => 'loan',
+                        'due_date' => $schedule->due_date,
+                        'installment_no' => $schedule->installment_no,
+                        'due_amount' => $dueAmount,
+                    ];
+                })
+                ->filter()
+                ->values();
         }
 
-        $results = $schedules->get();
+        return response()->json([
+            'data' => $reportData,
+            'total_due' => round((float) $reportData->sum('due_amount'), 2),
+            'loan_type' => $loanType,
+        ]);
+    }
 
-        // Process to calculate due amount
-        $reportData = $results->map(function($s) {
-            $totalAmount = $s->principal_amount + $s->interest_amount;
-            $paidAmount = $s->paid_principal + $s->paid_interest;
-            $dueAmount = $totalAmount - $paidAmount;
+    private function previewMemberLoanDue(MemberLoanAccount $account, string $asOfDate): array
+    {
+        $principal = round((float) $account->outstanding_principal, 2);
+        $accruedInterest = round((float) $account->accrued_interest_balance, 2);
+        $overdueInterest = round((float) $account->overdue_interest_balance, 2);
+        $nextAccrualDate = $account->next_accrual_date ? Carbon::parse($account->next_accrual_date)->startOfDay() : null;
+        $asOf = Carbon::parse($asOfDate)->startOfDay();
 
-            if ($dueAmount > 0) {
-                return [
-                    'samity_name' => $s->samity_name,
-                    'member_code' => $s->member_code,
-                    'member_name' => $s->member_name,
-                    'account_no' => $s->account_no,
-                    'product_name' => $s->product_name,
-                    'due_date' => $s->due_date,
-                    'installment_no' => $s->installment_no,
-                    'due_amount' => $dueAmount
-                ];
-            }
-            return null;
-        })->filter()->values();
+        while ($nextAccrualDate && $nextAccrualDate->lessThanOrEqualTo($asOf) && $principal > 0.009) {
+            $interestAmount = round($principal * ((float) $account->monthly_interest_rate / 100), 2);
+            $accruedInterest = round($accruedInterest + $interestAmount, 2);
+            $nextAccrualDate = $nextAccrualDate->copy()->addDays(30);
+        }
 
-        return response()->json(['data' => $reportData]);
+        $dueDate = $account->next_accrual_date ?: $account->disbursed_date;
+        $isDue = $account->next_accrual_date
+            ? Carbon::parse($account->next_accrual_date)->startOfDay()->lessThanOrEqualTo($asOf)
+            : true;
+
+        return [
+            'due_amount' => round($principal + $accruedInterest + $overdueInterest, 2),
+            'due_date' => $dueDate,
+            'is_due' => $isDue,
+        ];
     }
 
     /**

@@ -1,35 +1,64 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { format } from 'date-fns';
 import { Printer, Search } from 'lucide-react';
+import api from '../../api/axios';
 
 const LoanDueReport = () => {
     const [loading, setLoading] = useState(false);
     const [reportData, setReportData] = useState([]);
     const [samities, setSamities] = useState([]);
+    const [products, setProducts] = useState([]);
+    const [totalDue, setTotalDue] = useState(0);
     const [filters, setFilters] = useState({
-        date: format(new Date(), 'yyyy-MM-dd'),
-        samity_id: ''
+        date: new Date().toISOString().split('T')[0],
+        samity_id: '',
+        loan_type: 'loan',
+        product_id: '',
     });
 
     useEffect(() => {
         fetchSamities();
     }, []);
 
+    useEffect(() => {
+        fetchProducts(filters.loan_type);
+    }, [filters.loan_type]);
+
+    useEffect(() => {
+        generateReport();
+    }, []);
+
     const fetchSamities = async () => {
         try {
-            const response = await axios.get('/api/global/samities');
+            const response = await api.get('/global/samities');
             setSamities(response.data);
         } catch (error) {
             console.error('Error fetching samities:', error);
         }
     };
 
+    const fetchProducts = async (loanType) => {
+        try {
+            const response = await api.get('/reports/loan-products', {
+                params: { loan_type: loanType },
+            });
+            setProducts(response.data || []);
+        } catch (error) {
+            console.error('Error fetching loan products:', error);
+            setProducts([]);
+        }
+    };
+
     const generateReport = async () => {
         setLoading(true);
         try {
-            const response = await axios.get('/api/reports/loan-due-report', { params: filters });
+            const response = await api.get('/reports/loan-due-report', {
+                params: {
+                    ...filters,
+                    product_id: filters.product_id || undefined,
+                },
+            });
             setReportData(response.data.data);
+            setTotalDue(Number(response.data.total_due || 0));
         } catch (error) {
             console.error('Error generating report:', error);
         } finally {
@@ -41,6 +70,15 @@ const LoanDueReport = () => {
         window.print();
     };
 
+    const formatDate = (value) => {
+        if (!value) return '-';
+
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return '-';
+
+        return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
+    };
+
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('en-BD', {
             style: 'currency',
@@ -50,7 +88,7 @@ const LoanDueReport = () => {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="p-6 space-y-6">
             <div className="flex justify-between items-center print:hidden">
                 <h1 className="text-2xl font-bold text-gray-800">Loan Due Report</h1>
                 <button
@@ -62,9 +100,19 @@ const LoanDueReport = () => {
                 </button>
             </div>
 
-            {/* Filters */}
             <div className="bg-white p-4 rounded-lg shadow border border-gray-200 print:hidden">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Loan Type</label>
+                        <select
+                            value={filters.loan_type}
+                            onChange={(e) => setFilters({ ...filters, loan_type: e.target.value, product_id: '' })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            <option value="loan">Normal Loan</option>
+                            <option value="member_loan">Member Loan</option>
+                        </select>
+                    </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">As of Date</label>
                         <input
@@ -74,6 +122,24 @@ const LoanDueReport = () => {
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                     </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Product</label>
+                        <select
+                            value={filters.product_id}
+                            onChange={(e) => setFilters({ ...filters, product_id: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            <option value="">All Products</option>
+                            {products.map((product) => (
+                                <option key={product.id} value={product.id}>
+                                    {product.product_name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 mt-4 md:grid-cols-2 gap-4 items-end">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Samity</label>
                         <select
@@ -106,13 +172,19 @@ const LoanDueReport = () => {
                 </div>
             </div>
 
-            {/* Report Content */}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-1 print:hidden">
+                <div className="p-4 bg-white rounded-lg shadow border border-gray-200">
+                    <div className="text-sm text-gray-500">Total Due</div>
+                    <div className="text-2xl font-bold text-red-700">{formatCurrency(totalDue)}</div>
+                </div>
+            </div>
+
             <div className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden print:shadow-none print:border-none">
                 <div className="p-6 border-b border-gray-200 print:border-none">
                     <div className="text-center">
                         <h2 className="text-2xl font-bold text-gray-800">Loan Due Report</h2>
                         <p className="text-gray-600 mt-1">
-                            Overdue as of {format(new Date(filters.date), 'dd MMMM yyyy')}
+                            Due as of {formatDate(filters.date)}
                         </p>
                     </div>
                 </div>
@@ -133,16 +205,19 @@ const LoanDueReport = () => {
                                 reportData.map((item, index) => (
                                     <tr key={index} className="hover:bg-gray-50">
                                         <td className="px-4 py-2">
-                                            <div className="font-medium">{item.member_name}</div>
-                                            <div className="text-xs text-gray-500">{item.member_code}</div>
-                                            <div className="text-xs text-gray-400">{item.samity_name}</div>
+                                            <div className="font-medium">{item.member_name || '-'}</div>
+                                            <div className="text-xs text-gray-500">{item.member_code || '-'}</div>
+                                            <div className="text-xs text-gray-400">{item.samity_name || '-'}</div>
                                         </td>
                                         <td className="px-4 py-2">
-                                            <div className="font-mono">{item.account_no}</div>
-                                            <div className="text-xs text-gray-500">{item.product_name}</div>
+                                            <div className="font-mono">{item.account_no || '-'}</div>
+                                            <div className="text-xs text-gray-500">{item.product_name || '-'}</div>
+                                            <div className="text-xs text-blue-500">
+                                                Type: {item.loan_type === 'member_loan' ? 'Member Loan' : 'Normal Loan'}
+                                            </div>
                                         </td>
                                         <td className="px-4 py-2 text-red-600 font-medium">
-                                            {format(new Date(item.due_date), 'dd/MM/yyyy')}
+                                            {formatDate(item.due_date)}
                                         </td>
                                         <td className="px-4 py-2 text-center">
                                             {item.installment_no}
@@ -165,7 +240,7 @@ const LoanDueReport = () => {
                                 <tr>
                                     <td colSpan="4" className="px-4 py-3 text-right">Total Due:</td>
                                     <td className="px-4 py-3 text-right text-red-600">
-                                        {formatCurrency(reportData.reduce((sum, item) => sum + Number(item.due_amount), 0))}
+                                        {formatCurrency(totalDue)}
                                     </td>
                                 </tr>
                             </tfoot>
