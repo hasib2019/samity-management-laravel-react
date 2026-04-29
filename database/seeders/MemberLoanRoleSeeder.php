@@ -24,6 +24,7 @@ class MemberLoanRoleSeeder extends Seeder
                     'member.loan.balance.view',
                     'member.loan.statement.view',
                     'member.loan.transaction.view',
+                    'member.loan.migration.view',
                 ],
             ],
             'member-loan-manager' => [
@@ -45,6 +46,8 @@ class MemberLoanRoleSeeder extends Seeder
                     'member.loan.statement.view',
                     'member.loan.transaction.view',
                     'member.loan.accrual.run',
+                    'member.loan.migration.view',
+                    'member.loan.migration.create',
                 ],
             ],
             'member-loan-admin' => [
@@ -67,6 +70,8 @@ class MemberLoanRoleSeeder extends Seeder
                     'member.loan.statement.view',
                     'member.loan.transaction.view',
                     'member.loan.accrual.run',
+                    'member.loan.migration.view',
+                    'member.loan.migration.create',
                 ],
             ],
         ];

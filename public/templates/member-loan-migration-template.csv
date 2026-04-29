@@ -1,0 +1,2 @@
+member_id,member_name,disbursed_date,original_principal,outstanding_principal,last_accrual_date,next_accrual_date,last_payment_date,total_interest_accrued,total_paid_amount,total_principal_paid,total_interest_paid
+5,Sample Member,2026-01-15,100000,52000,2026-03-15,2026-04-14,2026-03-24,2200,50200,48000,2200

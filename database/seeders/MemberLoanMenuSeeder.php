@@ -26,6 +26,7 @@ class MemberLoanMenuSeeder extends Seeder
             ['name' => 'Loan Repayment', 'slug' => 'member-loan-repayment', 'icon' => 'CreditCard', 'order' => 3],
             ['name' => 'Loan Closing', 'slug' => 'member-loan-closing', 'icon' => 'FileText', 'order' => 4],
             ['name' => 'Loan Accounts', 'slug' => 'member-loan-accounts', 'icon' => 'Briefcase', 'order' => 5],
+            ['name' => 'Loan Migration', 'slug' => 'member-loan-migration', 'icon' => 'Upload', 'order' => 6],
         ];
 
         foreach ($children as $child) {

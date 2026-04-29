@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\MemberLoanAccountController;
 use App\Http\Controllers\Api\MemberLoanApplicationController;
 use App\Http\Controllers\Api\MemberLoanClosingController;
 use App\Http\Controllers\Api\MemberLoanDisbursementController;
+use App\Http\Controllers\Api\MemberLoanMigrationController;
 use App\Http\Controllers\Api\MemberLoanRepaymentController;
 use App\Http\Controllers\Api\ProjectClosingController;
 use App\Http\Controllers\Api\ProjectDeclarationController;
@@ -69,6 +70,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('member-loan-accounts/{id}/history', [MemberLoanAccountController::class, 'history'])->middleware('permission:member.loan.transaction.view');
     Route::get('member-loan-accounts/{id}/statement', [MemberLoanAccountController::class, 'statement'])->middleware('permission:member.loan.statement.view');
     Route::post('member-loan-accounts/{id}/accrue', [MemberLoanAccountController::class, 'accrue'])->middleware('permission:member.loan.accrual.run');
+    Route::get('member-loan-migrations/template', [MemberLoanMigrationController::class, 'template'])->middleware('permission:member.loan.migration.view');
+    Route::get('member-loan-migrations/meta', [MemberLoanMigrationController::class, 'meta'])->middleware('permission:member.loan.migration.view');
+    Route::post('member-loan-migrations', [MemberLoanMigrationController::class, 'store'])->middleware('permission:member.loan.migration.create');
 
     // Global Routes (No specific permission required, just valid token)
     Route::get('/dashboard/user', [GlobalController::class, 'userDashboard']);

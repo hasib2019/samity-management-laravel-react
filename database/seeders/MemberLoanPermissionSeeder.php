@@ -38,6 +38,10 @@ class MemberLoanPermissionSeeder extends Seeder
                 'member.loan.transaction.view',
                 'member.loan.accrual.run',
             ],
+            'member-loan-migration' => [
+                'member.loan.migration.view',
+                'member.loan.migration.create',
+            ],
         ];
 
         foreach ($permissionMap as $menuSlug => $permissions) {

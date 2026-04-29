@@ -53,6 +53,7 @@ import MemberLoanDisbursement from './pages/MemberLoan/MemberLoanDisbursement';
 import MemberLoanRepayment from './pages/MemberLoan/MemberLoanRepayment';
 import MemberLoanClosing from './pages/MemberLoan/MemberLoanClosing';
 import MemberLoanAccounts from './pages/MemberLoan/MemberLoanAccounts';
+import MemberLoanMigration from './pages/MemberLoan/MemberLoanMigration';
 import CommitteeType from './pages/Committee/CommitteeType';
 import CommitteeList from './pages/Committee/CommitteeList';
 import CommitteeReport from './pages/Committee/CommitteeReport';
@@ -467,6 +468,14 @@ const App = () => {
                         element={
                             <ProtectedRoute>
                                 <MemberLoanAccounts />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/member-loan-migration" 
+                        element={
+                            <ProtectedRoute>
+                                <MemberLoanMigration />
                             </ProtectedRoute>
                         } 
                     />
