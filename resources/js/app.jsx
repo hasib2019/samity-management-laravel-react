@@ -3,7 +3,7 @@ import '../css/app.css';
 
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 // Pages
@@ -73,13 +73,97 @@ import TrialBalance from './pages/Reports/TrialBalance';
 // Layouts
 import DashboardLayout from './layouts/DashboardLayout';
 
+const routePermissions = {
+    '/dashboard': 'dashboard.view',
+    '/user-management-system': 'user.view',
+    '/users': 'user.view',
+    '/roles': 'role.view',
+    '/permissions': 'permission.view',
+    '/menu-management': 'menu.management.view',
+    '/samity-profile': 'samity.profile.view',
+    '/member-profile': 'member.view',
+    '/deposit-money': 'deposit.money.view',
+    '/withdraw-money': 'withdraw.money.view',
+    '/deposit-request': 'deposit.request.view',
+    '/withdraw-request': 'withdraw.request.view',
+    '/gl-setup': 'gl.setup.view',
+    '/product-setup': 'product.setup.view',
+    '/gl-mapping-type': 'gl.mapping.type.view',
+    '/gl-mapping': 'gl.mapping.view',
+    '/code-master': 'code.master.view',
+    '/loan-application': 'loan.application.view',
+    '/loan-disbursement': 'loan.disbursement.view',
+    '/loan-repayment': 'loan.repayment.view',
+    '/loan-closing': 'loan.closing.view',
+    '/payment-voucher': 'voucher.payment.create',
+    '/received-voucher': 'voucher.received.create',
+    '/contra-voucher': 'voucher.contra.create',
+    '/journal-voucher': 'voucher.journal.create',
+    '/dps-account': 'dps.account.view',
+    '/dps-collection': 'dps.collection.view',
+    '/dps-closing': 'dps.closing.view',
+    '/dps-list': 'dps.list.view',
+    '/fdr-account': ['fdr.account.view', 'fdr.application.view'],
+    '/fdr-collection': 'fdr.collection.view',
+    '/fdr-closing': 'fdr.closing.view',
+    '/fdr-list': 'fdr.list.view',
+    '/share-purchase': 'share.purchase.create',
+    '/share-sale': 'share.sale.create',
+    '/share-transfer': 'share.transfer.create',
+    '/share-list': 'share.list.view',
+    '/project-declarations': 'project.declaration.view',
+    '/project-share-sales': 'project.share.sale.view',
+    '/project-closings': 'project.closing.view',
+    '/project-investors': 'project.investor.view',
+    '/member-loan-application': 'member.loan.application.view',
+    '/member-loan-disbursement': 'member.loan.disbursement.view',
+    '/member-loan-repayment': 'member.loan.repayment.view',
+    '/member-loan-closing': 'member.loan.closing.view',
+    '/member-loan-accounts': 'member.loan.account.view',
+    '/member-loan-migration': 'member.loan.migration.view',
+    '/committee-types': 'committee.type.view',
+    '/committees-list': 'committee.view',
+    '/committee-reports': 'committee.view',
+    '/account-statement': 'account-statement.view',
+    '/account-balance': 'account-balance.view',
+    '/loan-report': 'loan-report.view',
+    '/loan-due-report': 'loan-due-report.view',
+    '/transaction-report': 'transaction-report.view',
+    '/expense-report': 'expense-report.view',
+    '/revenue-report': 'revenue-report.view',
+    '/balance-sheet': 'balance-sheet.view',
+    '/cash-flow': 'cash-flow.view',
+    '/trial-balance': 'trial-balance.view',
+};
+
+const AccessDenied = () => (
+    <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="max-w-md rounded-xl border border-red-200 bg-white p-8 text-center shadow-sm">
+            <h2 className="text-2xl font-bold text-red-600">Access Denied</h2>
+            <p className="mt-3 text-sm text-gray-600">
+                You do not have permission to access this module.
+            </p>
+        </div>
+    </div>
+);
+
 const ProtectedRoute = ({ children }) => {
-    const { user, loading } = useAuth();
+    const { user, loading, hasAnyPermission } = useAuth();
+    const location = useLocation();
+    const requiredPermission = routePermissions[location.pathname];
 
     if (loading) return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
     
     if (!user) {
         return <Navigate to="/login" />;
+    }
+
+    if (requiredPermission && !hasAnyPermission(requiredPermission)) {
+        return (
+            <DashboardLayout>
+                <AccessDenied />
+            </DashboardLayout>
+        );
     }
 
     return <DashboardLayout>{children}</DashboardLayout>;

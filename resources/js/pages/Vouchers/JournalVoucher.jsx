@@ -6,7 +6,7 @@ import { Combobox } from '@headlessui/react';
 
 const JournalVoucher = () => {
   const { hasPermission } = useAuth();
-  const canCreate = hasPermission('voucher.journal.create') || true;
+  const canCreate = hasPermission('voucher.journal.create');
 
   const [glAccounts, setGlAccounts] = useState([]);
   

@@ -6,7 +6,7 @@ import { Combobox } from '@headlessui/react';
 
 const PaymentVoucher = () => {
   const { hasPermission } = useAuth();
-  const canCreate = hasPermission('voucher.payment.create') || true;
+  const canCreate = hasPermission('voucher.payment.create');
 
   const [glAccounts, setGlAccounts] = useState([]);
   const [glQuery, setGlQuery] = useState('');

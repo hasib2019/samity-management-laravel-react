@@ -31,9 +31,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // Loan Application
-    Route::apiResource('loan-applications', LoanApplicationController::class);
-    Route::post('loan-applications/{id}/approve', [LoanApplicationController::class, 'approve']);
-    Route::get('loan-applications/{id}/preview-schedule', [LoanApplicationController::class, 'previewSchedule']);
+    Route::get('loan-applications', [LoanApplicationController::class, 'index'])->middleware('permission:loan.application.view');
+    Route::post('loan-applications', [LoanApplicationController::class, 'store'])->middleware('permission:loan.application.create');
+    Route::get('loan-applications/{id}', [LoanApplicationController::class, 'show'])->middleware('permission:loan.application.view');
+    Route::put('loan-applications/{id}', [LoanApplicationController::class, 'update'])->middleware('permission:loan.application.edit');
+    Route::delete('loan-applications/{id}', [LoanApplicationController::class, 'destroy'])->middleware('permission:loan.application.delete');
+    Route::post('loan-applications/{id}/approve', [LoanApplicationController::class, 'approve'])->middleware('permission:loan.application.approve');
+    Route::get('loan-applications/{id}/preview-schedule', [LoanApplicationController::class, 'previewSchedule'])->middleware('permission:loan.application.view');
 
     // Loan Disbursement
     Route::get('loan-disbursements', [App\Http\Controllers\Api\LoanDisbursementController::class, 'index'])->middleware('permission:loan.disbursement.view');
@@ -139,62 +143,64 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/products/{id}', [App\Http\Controllers\Api\ProductController::class, 'destroy'])->middleware('permission:product.setup.delete');
 
     // Deposit Requests
-    Route::get('/deposit-requests', [DepositRequestController::class, 'index']);
-    Route::post('/deposit-requests', [DepositRequestController::class, 'store']);
-    Route::get('/deposit-requests/{id}', [DepositRequestController::class, 'show']);
-    Route::put('/deposit-requests/{id}', [DepositRequestController::class, 'update']);
-    Route::delete('/deposit-requests/{id}', [DepositRequestController::class, 'destroy']);
+    Route::get('/deposit-requests', [DepositRequestController::class, 'index'])->middleware('permission:deposit.request.view');
+    Route::post('/deposit-requests', [DepositRequestController::class, 'store'])->middleware('permission:deposit.request.create');
+    Route::get('/deposit-requests/{id}', [DepositRequestController::class, 'show'])->middleware('permission:deposit.request.view');
+    Route::put('/deposit-requests/{id}', [DepositRequestController::class, 'update'])->middleware('permission:deposit.request.edit');
+    Route::delete('/deposit-requests/{id}', [DepositRequestController::class, 'destroy'])->middleware('permission:deposit.request.delete');
     // Withdraw Requests
-    Route::get('/withdraw-requests', [WithdrawRequestController::class, 'index']);
-    Route::post('/withdraw-requests', [WithdrawRequestController::class, 'store']);
-    Route::get('/withdraw-requests/{id}', [WithdrawRequestController::class, 'show']);
-    Route::put('/withdraw-requests/{id}', [WithdrawRequestController::class, 'update']);
-    Route::delete('/withdraw-requests/{id}', [WithdrawRequestController::class, 'destroy']);
+    Route::get('/withdraw-requests', [WithdrawRequestController::class, 'index'])->middleware('permission:withdraw.request.view');
+    Route::post('/withdraw-requests', [WithdrawRequestController::class, 'store'])->middleware('permission:withdraw.request.create');
+    Route::get('/withdraw-requests/{id}', [WithdrawRequestController::class, 'show'])->middleware('permission:withdraw.request.view');
+    Route::put('/withdraw-requests/{id}', [WithdrawRequestController::class, 'update'])->middleware('permission:withdraw.request.edit');
+    Route::delete('/withdraw-requests/{id}', [WithdrawRequestController::class, 'destroy'])->middleware('permission:withdraw.request.delete');
     
-    Route::get('/gl-mapping-types', [GlMappingTypeController::class, 'index']);
-    Route::post('/gl-mapping-types', [GlMappingTypeController::class, 'store']);
-    Route::get('/gl-mapping-types/{id}', [GlMappingTypeController::class, 'show']);
-    Route::put('/gl-mapping-types/{id}', [GlMappingTypeController::class, 'update']);
-    Route::delete('/gl-mapping-types/{id}', [GlMappingTypeController::class, 'destroy']);
+    Route::get('/gl-mapping-types', [GlMappingTypeController::class, 'index'])->middleware('permission:gl.mapping.type.view');
+    Route::post('/gl-mapping-types', [GlMappingTypeController::class, 'store'])->middleware('permission:gl.mapping.type.create');
+    Route::get('/gl-mapping-types/{id}', [GlMappingTypeController::class, 'show'])->middleware('permission:gl.mapping.type.view');
+    Route::put('/gl-mapping-types/{id}', [GlMappingTypeController::class, 'update'])->middleware('permission:gl.mapping.type.edit');
+    Route::delete('/gl-mapping-types/{id}', [GlMappingTypeController::class, 'destroy'])->middleware('permission:gl.mapping.type.delete');
 
-    Route::get('/gl-mappings', [App\Http\Controllers\Api\GlMappingController::class, 'index']);
-    Route::post('/gl-mappings', [App\Http\Controllers\Api\GlMappingController::class, 'store']);
-    Route::get('/gl-mappings/{id}', [App\Http\Controllers\Api\GlMappingController::class, 'show']);
-    Route::put('/gl-mappings/{id}', [App\Http\Controllers\Api\GlMappingController::class, 'update']);
-    Route::delete('/gl-mappings/{id}', [App\Http\Controllers\Api\GlMappingController::class, 'destroy']);
+    Route::get('/gl-mappings', [App\Http\Controllers\Api\GlMappingController::class, 'index'])->middleware('permission:gl.mapping.view');
+    Route::post('/gl-mappings', [App\Http\Controllers\Api\GlMappingController::class, 'store'])->middleware('permission:gl.mapping.create');
+    Route::get('/gl-mappings/{id}', [App\Http\Controllers\Api\GlMappingController::class, 'show'])->middleware('permission:gl.mapping.view');
+    Route::put('/gl-mappings/{id}', [App\Http\Controllers\Api\GlMappingController::class, 'update'])->middleware('permission:gl.mapping.edit');
+    Route::delete('/gl-mappings/{id}', [App\Http\Controllers\Api\GlMappingController::class, 'destroy'])->middleware('permission:gl.mapping.delete');
 
     // Code Master Routes
     Route::post('/code-masters/sync', [App\Http\Controllers\Api\CodeMasterController::class, 'sync'])->middleware('permission:code.master.sync');
-    Route::get('/code-masters', [App\Http\Controllers\Api\CodeMasterController::class, 'index']);
+    Route::get('/code-masters', [App\Http\Controllers\Api\CodeMasterController::class, 'index'])->middleware('permission:code.master.view');
     Route::post('/code-masters', [App\Http\Controllers\Api\CodeMasterController::class, 'store'])->middleware('permission:code.master.create');
     Route::get('/code-masters/{codeMaster}', [App\Http\Controllers\Api\CodeMasterController::class, 'show'])->middleware('permission:code.master.view');
     Route::put('/code-masters/{codeMaster}', [App\Http\Controllers\Api\CodeMasterController::class, 'update'])->middleware('permission:code.master.edit');
     Route::delete('/code-masters/{codeMaster}', [App\Http\Controllers\Api\CodeMasterController::class, 'destroy'])->middleware('permission:code.master.delete');
 
-    Route::get('/payment-voucher', [App\Http\Controllers\Api\PaymentVoucherController::class, 'index']);
-    Route::post('/payment-voucher', [App\Http\Controllers\Api\PaymentVoucherController::class, 'store']);
-    Route::get('/received-voucher', [App\Http\Controllers\Api\ReceivedVoucherController::class, 'index']);
-    Route::post('/received-voucher', [App\Http\Controllers\Api\ReceivedVoucherController::class, 'store']);
-    Route::get('/contra-voucher', [App\Http\Controllers\Api\ContraVoucherController::class, 'index']);
-    Route::post('/contra-voucher', [App\Http\Controllers\Api\ContraVoucherController::class, 'store']);
-    Route::get('/journal-voucher', [App\Http\Controllers\Api\JournalVoucherController::class, 'index']);
-    Route::post('/journal-voucher', [App\Http\Controllers\Api\JournalVoucherController::class, 'store']);
+    Route::get('/payment-voucher', [App\Http\Controllers\Api\PaymentVoucherController::class, 'index'])->middleware('permission:voucher.payment.view');
+    Route::post('/payment-voucher', [App\Http\Controllers\Api\PaymentVoucherController::class, 'store'])->middleware('permission:voucher.payment.create');
+    Route::get('/received-voucher', [App\Http\Controllers\Api\ReceivedVoucherController::class, 'index'])->middleware('permission:voucher.received.view');
+    Route::post('/received-voucher', [App\Http\Controllers\Api\ReceivedVoucherController::class, 'store'])->middleware('permission:voucher.received.create');
+    Route::get('/contra-voucher', [App\Http\Controllers\Api\ContraVoucherController::class, 'index'])->middleware('permission:voucher.contra.view');
+    Route::post('/contra-voucher', [App\Http\Controllers\Api\ContraVoucherController::class, 'store'])->middleware('permission:voucher.contra.create');
+    Route::get('/journal-voucher', [App\Http\Controllers\Api\JournalVoucherController::class, 'index'])->middleware('permission:voucher.journal.view');
+    Route::post('/journal-voucher', [App\Http\Controllers\Api\JournalVoucherController::class, 'store'])->middleware('permission:voucher.journal.create');
     
-    // Reports
-    Route::get('/reports/trial-balance', [App\Http\Controllers\Api\ReportController::class, 'trialBalance']);
-    Route::get('/reports/balance-sheet', [App\Http\Controllers\Api\ReportController::class, 'balanceSheet']);
-    Route::get('/reports/cash-flow', [App\Http\Controllers\Api\ReportController::class, 'cashFlow']);
-    Route::get('/reports/account-statement', [App\Http\Controllers\Api\ReportController::class, 'accountStatement']);
-    Route::get('/reports/account-balance', [App\Http\Controllers\Api\ReportController::class, 'accountBalance']);
-    Route::get('/reports/loan-products', [App\Http\Controllers\Api\ReportController::class, 'loanProducts']);
-    Route::get('/reports/loan-report', [App\Http\Controllers\Api\ReportController::class, 'loanReport']);
-    Route::get('/reports/loan-due-report', [App\Http\Controllers\Api\ReportController::class, 'loanDueReport']);
-    Route::get('/reports/transaction-report', [App\Http\Controllers\Api\ReportController::class, 'transactionReport']);
-    Route::get('/reports/expense-report', [App\Http\Controllers\Api\ReportController::class, 'expenseReport']);
+    Route::get('/reports/trial-balance', [App\Http\Controllers\Api\ReportController::class, 'trialBalance'])->middleware('permission:trial-balance.view');
+    Route::get('/reports/balance-sheet', [App\Http\Controllers\Api\ReportController::class, 'balanceSheet'])->middleware('permission:balance-sheet.view');
+    Route::get('/reports/cash-flow', [App\Http\Controllers\Api\ReportController::class, 'cashFlow'])->middleware('permission:cash-flow.view');
+    Route::get('/reports/account-statement', [App\Http\Controllers\Api\ReportController::class, 'accountStatement'])->middleware('permission:account-statement.view');
+    Route::get('/reports/account-balance', [App\Http\Controllers\Api\ReportController::class, 'accountBalance'])->middleware('permission:account-balance.view');
+    Route::get('/reports/loan-products', [App\Http\Controllers\Api\ReportController::class, 'loanProducts'])->middleware('permission:loan-report.view|loan-due-report.view');
+    Route::get('/reports/loan-report', [App\Http\Controllers\Api\ReportController::class, 'loanReport'])->middleware('permission:loan-report.view');
+    Route::get('/reports/loan-due-report', [App\Http\Controllers\Api\ReportController::class, 'loanDueReport'])->middleware('permission:loan-due-report.view');
+    Route::get('/reports/transaction-report', [App\Http\Controllers\Api\ReportController::class, 'transactionReport'])->middleware('permission:transaction-report.view');
+    Route::get('/reports/expense-report', [App\Http\Controllers\Api\ReportController::class, 'expenseReport'])->middleware('permission:expense-report.view');
+    Route::get('/reports/revenue-report', [App\Http\Controllers\Api\ReportController::class, 'revenueReport'])->middleware('permission:revenue-report.view');
     Route::get('/reports/revenue-report', [App\Http\Controllers\Api\ReportController::class, 'revenueReport']);
-
-    // DPS Management
-    Route::apiResource('dps-applications', App\Http\Controllers\Api\DpsApplicationController::class);
+    Route::get('dps-applications', [App\Http\Controllers\Api\DpsApplicationController::class, 'index'])->middleware('permission:dps.account.view');
+    Route::post('dps-applications', [App\Http\Controllers\Api\DpsApplicationController::class, 'store'])->middleware('permission:dps.account.create');
+    Route::get('dps-applications/{dps_application}', [App\Http\Controllers\Api\DpsApplicationController::class, 'show'])->middleware('permission:dps.account.view');
+    Route::put('dps-applications/{dps_application}', [App\Http\Controllers\Api\DpsApplicationController::class, 'update'])->middleware('permission:dps.account.edit');
+    Route::delete('dps-applications/{dps_application}', [App\Http\Controllers\Api\DpsApplicationController::class, 'destroy'])->middleware('permission:dps.account.delete');
     Route::get('dps-collections/search', [App\Http\Controllers\Api\DpsCollectionController::class, 'search'])->middleware('permission:dps.collection.view');
     Route::post('dps-collections', [App\Http\Controllers\Api\DpsCollectionController::class, 'store'])->middleware('permission:dps.collection.create');
     
@@ -203,7 +209,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('dps-closings', [App\Http\Controllers\Api\DpsClosingController::class, 'store'])->middleware('permission:dps.closing.create');
 
     // FDR Management
-    Route::apiResource('fdr-applications', App\Http\Controllers\Api\FdrApplicationController::class);
+    Route::get('fdr-applications', [App\Http\Controllers\Api\FdrApplicationController::class, 'index'])->middleware('permission:fdr.account.view|fdr.application.view');
+    Route::post('fdr-applications', [App\Http\Controllers\Api\FdrApplicationController::class, 'store'])->middleware('permission:fdr.account.create|fdr.application.create');
+    Route::get('fdr-applications/{fdr_application}', [App\Http\Controllers\Api\FdrApplicationController::class, 'show'])->middleware('permission:fdr.account.view|fdr.application.view');
+    Route::put('fdr-applications/{fdr_application}', [App\Http\Controllers\Api\FdrApplicationController::class, 'update'])->middleware('permission:fdr.account.edit|fdr.application.edit');
+    Route::delete('fdr-applications/{fdr_application}', [App\Http\Controllers\Api\FdrApplicationController::class, 'destroy'])->middleware('permission:fdr.account.delete|fdr.application.delete');
     
     // FDR Collections
     Route::get('fdr-collections/search', [App\Http\Controllers\Api\FdrCollectionController::class, 'search'])->middleware('permission:fdr.collection.view');
@@ -243,11 +253,19 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('project-closings', [ProjectClosingController::class, 'store'])->middleware('permission:project.closing.create');
 
     // Committee Management
-    Route::apiResource('committee-types', App\Http\Controllers\Api\CommitteeTypeController::class);
-    Route::get('committee-types-active', [App\Http\Controllers\Api\CommitteeTypeController::class, 'getActive'])->middleware('permission:committee.view');
-    
-    Route::apiResource('committees', App\Http\Controllers\Api\CommitteeController::class);
-    Route::post('committees/{id}/submit', [App\Http\Controllers\Api\CommitteeController::class, 'submit'])->middleware('permission:committee.create');
+    Route::get('committee-types', [App\Http\Controllers\Api\CommitteeTypeController::class, 'index'])->middleware('permission:committee.type.view');
+    Route::post('committee-types', [App\Http\Controllers\Api\CommitteeTypeController::class, 'store'])->middleware('permission:committee.type.create');
+    Route::get('committee-types/{committee_type}', [App\Http\Controllers\Api\CommitteeTypeController::class, 'show'])->middleware('permission:committee.type.view');
+    Route::put('committee-types/{committee_type}', [App\Http\Controllers\Api\CommitteeTypeController::class, 'update'])->middleware('permission:committee.type.edit');
+    Route::delete('committee-types/{committee_type}', [App\Http\Controllers\Api\CommitteeTypeController::class, 'destroy'])->middleware('permission:committee.type.delete');
+    Route::get('committee-types-active', [App\Http\Controllers\Api\CommitteeTypeController::class, 'getActive'])->middleware('permission:committee.type.view');
+
+    Route::get('committees', [App\Http\Controllers\Api\CommitteeController::class, 'index'])->middleware('permission:committee.view');
+    Route::post('committees', [App\Http\Controllers\Api\CommitteeController::class, 'store'])->middleware('permission:committee.create');
+    Route::get('committees/{committee}', [App\Http\Controllers\Api\CommitteeController::class, 'show'])->middleware('permission:committee.view');
+    Route::put('committees/{committee}', [App\Http\Controllers\Api\CommitteeController::class, 'update'])->middleware('permission:committee.edit');
+    Route::delete('committees/{committee}', [App\Http\Controllers\Api\CommitteeController::class, 'destroy'])->middleware('permission:committee.delete');
+    Route::post('committees/{id}/submit', [App\Http\Controllers\Api\CommitteeController::class, 'submit'])->middleware('permission:committee.submit');
     Route::post('committees/{id}/approve', [App\Http\Controllers\Api\CommitteeController::class, 'approve'])->middleware('permission:committee.approve');
     Route::post('committees/{id}/reject', [App\Http\Controllers\Api\CommitteeController::class, 'reject'])->middleware('permission:committee.approve');
     Route::get('committees-available-members', [App\Http\Controllers\Api\CommitteeController::class, 'getAvailableMembers'])->middleware('permission:committee.view');

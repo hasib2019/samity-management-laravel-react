@@ -45,9 +45,33 @@ class User extends Authenticatable
             return true;
         }
 
-        return $this->roles()->whereHas('permissions', function ($query) use ($permission) {
-            $query->where('slug', $permission);
-        })->exists();
+        $requestedPermission = $this->canonicalizePermissionSlug($permission);
+        if (!$requestedPermission) {
+            return false;
+        }
+
+        $this->loadMissing('roles.permissions');
+
+        return $this->roles
+            ->flatMap(function ($role) {
+                return $role->permissions;
+            })
+            ->contains(function ($permissionModel) use ($requestedPermission) {
+                return $this->canonicalizePermissionSlug($permissionModel->slug) === $requestedPermission;
+            });
+    }
+
+    public function hasAnyPermission($permissions)
+    {
+        $permissionList = is_array($permissions) ? $permissions : [$permissions];
+
+        foreach ($permissionList as $permission) {
+            if ($this->hasPermission($permission)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function getAuthorizedMenus()
@@ -92,6 +116,24 @@ class User extends Authenticatable
         }
 
         return null;
+    }
+
+    protected function canonicalizePermissionSlug($permission): string
+    {
+        $slug = strtolower(trim((string) $permission));
+        if ($slug === '') {
+            return '';
+        }
+
+        $segments = preg_split('/[.\-_]+/', $slug, -1, PREG_SPLIT_NO_EMPTY);
+        if (!$segments) {
+            return '';
+        }
+
+        $action = array_pop($segments);
+        $resource = implode('', $segments);
+
+        return $resource . ':' . $action;
     }
 
     /**

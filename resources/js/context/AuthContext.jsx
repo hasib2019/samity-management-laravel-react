@@ -3,6 +3,21 @@ import api from '../api/axios';
 
 const AuthContext = createContext();
 
+const canonicalizePermission = (permission) => {
+    const slug = String(permission || '').trim().toLowerCase();
+    if (!slug) {
+        return '';
+    }
+
+    const parts = slug.split(/[.\-_]+/).filter(Boolean);
+    if (!parts.length) {
+        return '';
+    }
+
+    const action = parts.pop();
+    return `${parts.join('')}:${action}`;
+};
+
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
     const [menus, setMenus] = useState([]);
@@ -61,13 +76,21 @@ export function AuthProvider({ children }) {
         if (!user) return false;
         if (user.roles.some(role => role.slug === 'super-admin')) return true;
         
+        const requestedPermission = canonicalizePermission(permission);
+        if (!requestedPermission) return false;
+
         return user.roles.some(role => 
-            role.permissions.some(p => p.slug === permission)
+            role.permissions.some(p => canonicalizePermission(p.slug) === requestedPermission)
         );
     };
 
+    const hasAnyPermission = (permissions) => {
+        const permissionList = Array.isArray(permissions) ? permissions : [permissions];
+        return permissionList.some(hasPermission);
+    };
+
     return (
-        <AuthContext.Provider value={{ user, menus, loading, login, logout, hasPermission }}>
+        <AuthContext.Provider value={{ user, menus, loading, login, logout, hasPermission, hasAnyPermission }}>
             {children}
         </AuthContext.Provider>
     );

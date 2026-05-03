@@ -6,7 +6,7 @@ import { Combobox } from '@headlessui/react';
 
 const ContraVoucher = () => {
   const { hasPermission } = useAuth();
-  const canCreate = hasPermission('voucher.contra.create') || true;
+  const canCreate = hasPermission('voucher.contra.create');
 
   const [glAccounts, setGlAccounts] = useState([]);
   const [glQuery, setGlQuery] = useState('');
