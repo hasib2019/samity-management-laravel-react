@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 use App\Models\Transaction;
 use App\Models\GlMstMapping;
 use App\Models\GlAccount;
@@ -38,68 +39,72 @@ class ReceivedVoucherController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        // Check Balance for Asset/Liability/Expense
-        $glAccount = GlAccount::find($request->gl_mst_id);
-        if ($glAccount && in_array($glAccount->glac_type, ['A', 'L', 'E'])) {
-            $totalDr = Transaction::where('glac_id', $glAccount->id)->where('status', 'posted')->sum('dr_amt');
-            $totalCr = Transaction::where('glac_id', $glAccount->id)->where('status', 'posted')->sum('cr_amt');
-            
-            $currentBalance = 0;
-            // Asset/Expense (Debit Nature) -> Credit reduces balance
-            if ($glAccount->gl_nature == 'D') {
-                $currentBalance = $totalDr - $totalCr;
-                if (($currentBalance - $request->amount) < 0) {
-                    return response()->json(['message' => 'Insufficient Balance: Transaction would result in negative balance.'], 422);
-                }
-            } 
-            // Liability (Credit Nature) -> Credit increases balance (Usually safe, but checking just in case)
-            else {
-                $currentBalance = $totalCr - $totalDr;
-                if (($currentBalance + $request->amount) < 0) {
-                     return response()->json(['message' => 'Insufficient Balance: Transaction would result in negative balance.'], 422);
-                }
-            }
-        }
-
         $cashMap = GlMstMapping::where('gl_code_type', strtoupper('CASH'))->where('status', true)->first();
         if (!$cashMap) {
             return response()->json(['message' => 'Cash mapping not found'], 422);
         }
 
-        $batch = 'rv' . str_pad(mt_rand(1, 99999), 5, '0', STR_PAD_LEFT);
-        $tranNumDr = date('YmdHis') . rand(10, 99);
-        $tranNumCr = date('YmdHis') . rand(10, 99);
+        // Atomic, serialized posting: lock the credited (source) GL row so the
+        // balance check and both ledger writes cannot interleave with a concurrent
+        // voucher and overdraw the account or leave a one-sided entry.
+        return DB::transaction(function () use ($request, $cashMap) {
+            $glAccount = GlAccount::where('id', $request->gl_mst_id)->lockForUpdate()->first();
 
-        $common = [
-            'payment_mode' => 'cash',
-            'tran_code' => 'REC',
-            'batch_num' => $batch,
-            'tran_type' => 'Received',
-            'tran_date' => $request->tran_date,
-            'naration' => $request->naration,
-            'samity_id' => $request->samity_id,
-            'authorize_status' => 'approved',
-            'authorized_by' => Auth::id(),
-            'authorized_at' => date('Y-m-d H:i:s'),
-            'created_by' => Auth::id(),
-            'updated_by' => Auth::id(),
-            'status' => 'posted',
-        ];
+            if ($glAccount && in_array($glAccount->glac_type, ['A', 'L', 'E'])) {
+                $totalDr = Transaction::where('glac_id', $glAccount->id)->where('status', 'posted')->sum('dr_amt');
+                $totalCr = Transaction::where('glac_id', $glAccount->id)->where('status', 'posted')->sum('cr_amt');
 
-        $debit = Transaction::create(array_merge($common, [
-            'tran_num' => $tranNumDr,
-            'glac_id' => $cashMap->gl_mst_id,
-            'dr_amt' => $request->amount,
-            'cr_amt' => 0,
-        ]));
+                // Asset/Expense (Debit Nature) -> Credit reduces balance
+                if ($glAccount->gl_nature == 'D') {
+                    $currentBalance = $totalDr - $totalCr;
+                    if (($currentBalance - $request->amount) < 0) {
+                        return response()->json(['message' => 'Insufficient Balance: Transaction would result in negative balance.'], 422);
+                    }
+                }
+                // Liability (Credit Nature) -> Credit increases balance
+                else {
+                    $currentBalance = $totalCr - $totalDr;
+                    if (($currentBalance + $request->amount) < 0) {
+                        return response()->json(['message' => 'Insufficient Balance: Transaction would result in negative balance.'], 422);
+                    }
+                }
+            }
 
-        Transaction::create(array_merge($common, [
-            'tran_num' => $tranNumCr,
-            'glac_id' => $request->gl_mst_id,
-            'dr_amt' => 0,
-            'cr_amt' => $request->amount,
-        ]));
+            $batch = 'rv' . str_pad(mt_rand(1, 99999), 5, '0', STR_PAD_LEFT);
+            $tranNumDr = date('YmdHis') . rand(10, 99);
+            $tranNumCr = date('YmdHis') . rand(10, 99);
 
-        return response()->json(['message' => 'Received voucher posted', 'data' => $debit], 201);
+            $common = [
+                'payment_mode' => 'cash',
+                'tran_code' => 'REC',
+                'batch_num' => $batch,
+                'tran_type' => 'Received',
+                'tran_date' => $request->tran_date,
+                'naration' => $request->naration,
+                'samity_id' => $request->samity_id,
+                'authorize_status' => 'approved',
+                'authorized_by' => Auth::id(),
+                'authorized_at' => date('Y-m-d H:i:s'),
+                'created_by' => Auth::id(),
+                'updated_by' => Auth::id(),
+                'status' => 'posted',
+            ];
+
+            $debit = Transaction::create(array_merge($common, [
+                'tran_num' => $tranNumDr,
+                'glac_id' => $cashMap->gl_mst_id,
+                'dr_amt' => $request->amount,
+                'cr_amt' => 0,
+            ]));
+
+            Transaction::create(array_merge($common, [
+                'tran_num' => $tranNumCr,
+                'glac_id' => $request->gl_mst_id,
+                'dr_amt' => 0,
+                'cr_amt' => $request->amount,
+            ]));
+
+            return response()->json(['message' => 'Received voucher posted', 'data' => $debit], 201);
+        });
     }
 }

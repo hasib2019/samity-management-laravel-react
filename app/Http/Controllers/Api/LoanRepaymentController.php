@@ -144,10 +144,15 @@ class LoanRepaymentController extends Controller
         try {
             DB::beginTransaction();
 
-            // Get unpaid schedules
+            // Lock the loan account up-front so concurrent repayments serialize
+            // (prevents lost updates to the balance and double-applied schedules).
+            $loanAccount = LoanAccount::where('loan_application_id', $loan->id)->lockForUpdate()->first();
+
+            // Get unpaid schedules (locked for the duration of this repayment)
             $schedules = LoanRepaymentSchedule::where('loan_application_id', $loan->id)
                 ->where('status', '!=', 'paid')
                 ->orderBy('due_date', 'asc')
+                ->lockForUpdate()
                 ->get();
 
             if ($schedules->isEmpty()) {
@@ -233,8 +238,7 @@ class LoanRepaymentController extends Controller
                 $remainingAmount -= $payForThisSchedule;
             }
 
-            // Update LoanAccount Balance
-            $loanAccount = LoanAccount::where('loan_application_id', $loan->id)->first();
+            // Update LoanAccount Balance (locked above for concurrency safety)
             if ($loanAccount) {
                 // Update LoanAccount with Principal + Interest only
                 // Fines are tracked in schedules and do not reduce the core loan balance
@@ -253,8 +257,22 @@ class LoanRepaymentController extends Controller
                 $loanAccount->save();
             }
 
-            // If we have remaining amount, it might be advance payment or error.
-            // For now ignore excess.
+            // Overpayment handling: any amount the schedules did not absorb is posted
+            // to a member-advance/suspense liability so the GL journal stays balanced
+            // (cash debited in full == credits). Requires a configured LOAN_ADVANCE GL.
+            $excess = round($remainingAmount, 2);
+            $advanceGlId = null;
+            if ($excess > 0.01) {
+                $advanceMap = GlMstMapping::where('gl_code_type', 'LOAN_ADVANCE')->where('status', true)->first();
+                $advanceGlId = $advanceMap?->gl_mst_id;
+                if (!$advanceGlId) {
+                    DB::rollBack();
+                    return response()->json([
+                        'message' => 'Payment exceeds the outstanding balance by ' . number_format($excess, 2)
+                            . '. Configure a "LOAN_ADVANCE" GL mapping to accept advances, or enter the exact payoff amount.',
+                    ], 422);
+                }
+            }
 
             // GL Entries
             // 1. Debit Cash (Receive Money)
@@ -341,12 +359,30 @@ class LoanRepaymentController extends Controller
                 ]));
             }
 
+            // Credit Transaction (Overpayment -> Member Advance / Suspense Liability)
+            if ($excess > 0.01 && $advanceGlId) {
+                Transaction::create(array_merge($commonData, [
+                    'tran_num' => date('YmdHis') . rand(10, 99),
+                    'glac_id' => $advanceGlId,
+                    'dr_amt' => 0,
+                    'cr_amt' => $excess,
+                    'naration' => ($request->naration ?? 'Loan Repayment') . ' (Advance)',
+                ]));
+            }
+
+            // Sanity: double-entry must balance (cash debit == sum of credits).
+            $creditsTotal = round($principalPaid + $interestPaid + $finePaid + ($excess > 0.01 ? $excess : 0), 2);
+            if (round($amount, 2) !== $creditsTotal) {
+                DB::rollBack();
+                return response()->json(['message' => 'Repayment aborted: ledger entries do not balance.'], 422);
+            }
+
             // Update Loan Status if fully paid
             // Check if all schedules are paid
             $pendingSchedules = LoanRepaymentSchedule::where('loan_application_id', $loan->id)
                 ->where('status', '!=', 'paid')
                 ->count();
-            
+
             if ($pendingSchedules == 0) {
                 $loan->status = 'closed'; // or 'paid'
                 $loan->save();

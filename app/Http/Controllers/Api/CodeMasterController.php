@@ -7,6 +7,7 @@ use App\Models\CodeMaster;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class CodeMasterController extends Controller
 {
@@ -90,8 +91,8 @@ class CodeMasterController extends Controller
         }
 
         try {
-            $apiKey = env('EXTERNAL_API_KEY');
-            $url = 'https://loan-api.rdcd.gov.bd/external/transaction/table-data';
+            $apiKey = config('services.external.key');
+            $url = config('services.external.url');
 
             $body = [
                 'tableName' => 'master.code_master',
@@ -108,7 +109,8 @@ class CodeMasterController extends Controller
                 $items = $data['data'] ?? $data; 
 
                 if (!is_array($items)) {
-                     return response()->json(['message' => 'Invalid data format from external API', 'response' => $data], 500);
+                     Log::error('Code Master sync: invalid data format from external API', ['response' => $data]);
+                     return response()->json(['message' => 'Invalid data format received from the external service.'], 502);
                 }
 
                 $count = 0;
@@ -135,16 +137,16 @@ class CodeMasterController extends Controller
                     'message' => "Synced $count records successfully",
                 ]);
             } else {
+                Log::error('Code Master sync: external API failed', ['status' => $response->status(), 'body' => $response->body()]);
                 return response()->json([
-                    'message' => 'Failed to fetch data from external API',
-                    'status' => $response->status(),
-                    'body' => $response->body()
-                ], 500);
+                    'message' => 'Failed to fetch data from the external service. Please try again later.',
+                ], 502);
             }
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Code Master sync failed', ['exception' => $e->getMessage()]);
             return response()->json([
-                'message' => 'Sync failed: ' . $e->getMessage()
+                'message' => 'Sync failed. Please contact support if the problem persists.',
             ], 500);
         }
     }

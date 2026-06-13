@@ -55,8 +55,18 @@ class DepositRequestController extends Controller
         try {
             DB::beginTransaction();
 
-            $data = $request->all();
-            
+            // Whitelist fields (never mass-assign status/transaction_id from input).
+            $data = $request->only([
+                'member_id', 'method_id', 'savings_account_id', 'amount',
+                'total_amount', 'charge', 'description', 'requirements', 'attachment',
+            ]);
+
+            // Approval is privileged: a request may only be created already-approved
+            // by a caller who holds the approve permission; otherwise it starts pending.
+            $data['status'] = ($request->status === 'approved' && Auth::user()->can('deposit.request.approve'))
+                ? 'approved'
+                : 'pending';
+
             // Set default total_amount if not provided
             if (!isset($data['total_amount'])) {
                 $data['total_amount'] = $data['amount'];
@@ -64,7 +74,7 @@ class DepositRequestController extends Controller
 
             $depositRequest = DepositRequest::create($data);
 
-            if ($request->status === 'approved') {
+            if ($data['status'] === 'approved') {
                 $this->processApproval($depositRequest);
             }
 
@@ -124,12 +134,21 @@ class DepositRequestController extends Controller
         try {
             DB::beginTransaction();
 
-            // Check if status is changing to approved
-            if ($request->status === 'approved' && $depositRequest->status !== 'approved') {
-                 $this->processApproval($depositRequest);
+            // Approving (the money-moving transition) requires the approve permission.
+            $approving = $request->status === 'approved' && $depositRequest->status !== 'approved';
+            if ($approving && ! Auth::user()->can('deposit.request.approve')) {
+                DB::rollBack();
+                return response()->json(['message' => 'You are not authorized to approve deposit requests.'], 403);
             }
 
-            $depositRequest->update($request->all());
+            if ($approving) {
+                $this->processApproval($depositRequest);
+            }
+
+            $depositRequest->update($request->only([
+                'member_id', 'method_id', 'savings_account_id', 'amount',
+                'converted_amount', 'charge', 'description', 'requirements', 'attachment', 'status',
+            ]));
 
             DB::commit();
 

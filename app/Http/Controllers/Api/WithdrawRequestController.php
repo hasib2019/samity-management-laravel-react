@@ -55,7 +55,18 @@ class WithdrawRequestController extends Controller
         try {
             DB::beginTransaction();
 
-            $data = $request->all();
+            // Whitelist fields (never mass-assign status/transaction_id from input).
+            $data = $request->only([
+                'member_id', 'method_id', 'savings_account_id', 'amount',
+                'total_amount', 'charge', 'description', 'requirements', 'attachment',
+            ]);
+
+            // Approval is privileged: only an approver may create an already-approved
+            // withdrawal; otherwise it starts pending.
+            $data['status'] = ($request->status === 'approved' && Auth::user()->can('withdraw.request.approve'))
+                ? 'approved'
+                : 'pending';
+
             if (!isset($data['total_amount'])) {
                 $data['total_amount'] = $data['amount'];
             }
@@ -81,7 +92,7 @@ class WithdrawRequestController extends Controller
 
             $withdrawRequest = WithdrawRequest::create($data);
 
-            if ($request->status === 'approved') {
+            if ($data['status'] === 'approved') {
                 $this->processApproval($withdrawRequest);
             }
 
@@ -122,11 +133,21 @@ class WithdrawRequestController extends Controller
         try {
             DB::beginTransaction();
 
-            if ($request->status === 'approved' && $withdrawRequest->status !== 'approved') {
+            // Approving (the money-moving transition) requires the approve permission.
+            $approving = $request->status === 'approved' && $withdrawRequest->status !== 'approved';
+            if ($approving && ! Auth::user()->can('withdraw.request.approve')) {
+                DB::rollBack();
+                return response()->json(['message' => 'You are not authorized to approve withdraw requests.'], 403);
+            }
+
+            if ($approving) {
                 $this->processApproval($withdrawRequest);
             }
 
-            $withdrawRequest->update($request->all());
+            $withdrawRequest->update($request->only([
+                'member_id', 'method_id', 'savings_account_id', 'amount',
+                'converted_amount', 'charge', 'description', 'requirements', 'attachment', 'status',
+            ]));
 
             DB::commit();
 

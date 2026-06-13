@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use App\Models\Transaction;
 use App\Models\GlMstMapping;
+use App\Models\GlAccount;
 use App\Helpers\BalanceHelper;
 
 class PaymentVoucherController extends Controller
@@ -44,47 +45,53 @@ class PaymentVoucherController extends Controller
             return response()->json(['message' => 'Cash mapping not found'], 422);
         }
 
-        $available = BalanceHelper::getBalance($cashMap->gl_mst_id, $request->samity_id);
-        
-        if ($available < (float)$request->amount) {
-            return response()->json(['message' => 'Insufficient cash balance', 'available' => $available], 422);
-        }
+        // Atomic, serialized posting: lock the source (cash) GL row so the
+        // balance check and the two ledger writes cannot interleave with a
+        // concurrent voucher and overdraw the account or leave a one-sided entry.
+        return DB::transaction(function () use ($request, $cashMap) {
+            GlAccount::where('id', $cashMap->gl_mst_id)->lockForUpdate()->first();
 
-        $batch = 'pv' . str_pad(mt_rand(1, 99999), 5, '0', STR_PAD_LEFT);
-        $tranNumDr = date('YmdHis') . rand(10, 99);
-        $tranNumCr = date('YmdHis') . rand(10, 99);
+            $available = BalanceHelper::getBalance($cashMap->gl_mst_id, $request->samity_id);
+            if ($available < (float)$request->amount) {
+                return response()->json(['message' => 'Insufficient cash balance', 'available' => $available], 422);
+            }
 
-        $common = [
-            'payment_mode' => 'cash',
-            'tran_code' => 'PAY',
-            'batch_num' => $batch,
-            'tran_type' => 'Payment',
-            'tran_date' => $request->tran_date,
-            'naration' => $request->naration,
-            'samity_id' => $request->samity_id,
-            'authorize_status' => 'approved',
-            'authorized_by' => Auth::id(),
-            'authorized_at' => date('Y-m-d H:i:s'),
-            'created_by' => Auth::id(),
-            'updated_by' => Auth::id(),
-            'status' => 'posted',
-        ];
+            $batch = 'pv' . str_pad(mt_rand(1, 99999), 5, '0', STR_PAD_LEFT);
+            $tranNumDr = date('YmdHis') . rand(10, 99);
+            $tranNumCr = date('YmdHis') . rand(10, 99);
 
-        Transaction::create(array_merge($common, [
-            'tran_num' => $tranNumDr,
-            'glac_id' => $request->gl_mst_id,
-            'dr_amt' => $request->amount,
-            'cr_amt' => 0,
-        ]));
+            $common = [
+                'payment_mode' => 'cash',
+                'tran_code' => 'PAY',
+                'batch_num' => $batch,
+                'tran_type' => 'Payment',
+                'tran_date' => $request->tran_date,
+                'naration' => $request->naration,
+                'samity_id' => $request->samity_id,
+                'authorize_status' => 'approved',
+                'authorized_by' => Auth::id(),
+                'authorized_at' => date('Y-m-d H:i:s'),
+                'created_by' => Auth::id(),
+                'updated_by' => Auth::id(),
+                'status' => 'posted',
+            ];
 
-        $credit = Transaction::create(array_merge($common, [
-            'tran_num' => $tranNumCr,
-            'glac_id' => $cashMap->gl_mst_id,
-            'dr_amt' => 0,
-            'cr_amt' => $request->amount,
-        ]));
+            Transaction::create(array_merge($common, [
+                'tran_num' => $tranNumDr,
+                'glac_id' => $request->gl_mst_id,
+                'dr_amt' => $request->amount,
+                'cr_amt' => 0,
+            ]));
 
-        return response()->json(['message' => 'Payment voucher posted', 'data' => $credit], 201);
+            $credit = Transaction::create(array_merge($common, [
+                'tran_num' => $tranNumCr,
+                'glac_id' => $cashMap->gl_mst_id,
+                'dr_amt' => 0,
+                'cr_amt' => $request->amount,
+            ]));
+
+            return response()->json(['message' => 'Payment voucher posted', 'data' => $credit], 201);
+        });
     }
 }
 

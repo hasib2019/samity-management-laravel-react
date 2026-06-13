@@ -6,7 +6,6 @@ import { useAuth } from '../../context/AuthContext';
 const WithdrawMoney = () => {
     const { user } = useAuth();
     const isUser = user?.roles?.some(role => role.slug === 'user');
-    console.log({isUser})
     const [samities, setSamities] = useState([]);
     const [members, setMembers] = useState([]);
     const [accounts, setAccounts] = useState([]);

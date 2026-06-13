@@ -12,10 +12,55 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Enable Sanctum SPA (cookie/session) auth for same-origin frontend requests.
+        $middleware->statefulApi();
+
         $middleware->alias([
             'permission' => \App\Http\Middleware\CheckPermission::class,
+            'active' => \App\Http\Middleware\EnsureUserIsActive::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Uniform JSON responses for API/JSON requests; never leak internals in production.
+        $exceptions->render(function (\Throwable $e, $request) {
+            if (! $request->is('api/*') && ! $request->expectsJson()) {
+                return null; // default rendering for web routes
+            }
+
+            if ($e instanceof \Illuminate\Validation\ValidationException) {
+                return response()->json([
+                    'message' => 'The given data was invalid.',
+                    'errors' => $e->errors(),
+                ], 422);
+            }
+
+            if ($e instanceof \Illuminate\Auth\AuthenticationException) {
+                return response()->json(['message' => 'Unauthenticated.'], 401);
+            }
+
+            if ($e instanceof \Illuminate\Auth\Access\AuthorizationException) {
+                return response()->json(['message' => 'This action is unauthorized.'], 403);
+            }
+
+            if ($e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException
+                || $e instanceof \Symfony\Component\HttpKernel\Exception\NotFoundHttpException) {
+                return response()->json(['message' => 'Resource not found.'], 404);
+            }
+
+            if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                return response()->json(['message' => $e->getMessage() ?: 'HTTP error.'], $e->getStatusCode());
+            }
+
+            // Genuine server faults: show details only when debugging locally, otherwise stay generic.
+            if (config('app.debug')) {
+                return null;
+            }
+
+            \Illuminate\Support\Facades\Log::error('Unhandled API exception', [
+                'exception' => get_class($e),
+                'message' => $e->getMessage(),
+            ]);
+
+            return response()->json(['message' => 'Server error. Please try again later.'], 500);
+        });
     })->create();

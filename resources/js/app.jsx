@@ -14,6 +14,7 @@ import RoleList from './pages/Roles/RoleList';
 import PermissionList from './pages/Permissions/PermissionList';
 import MenuList from './pages/Menus/MenuList';
 import SamityProfile from './pages/Samity/SamityProfile';
+import GeneralSettings from './pages/Settings/GeneralSettings';
 import MemberProfile from './pages/Member/MemberProfile';
 import DepositMoney from './pages/Accounts/DepositMoney';
 import WithdrawMoney from './pages/Accounts/WithdrawMoney';
@@ -75,6 +76,7 @@ import DashboardLayout from './layouts/DashboardLayout';
 
 const routePermissions = {
     '/dashboard': 'dashboard.view',
+    '/general-settings': 'general.settings.view',
     '/user-management-system': 'user.view',
     '/users': 'user.view',
     '/roles': 'role.view',
@@ -223,13 +225,21 @@ const App = () => {
                             </ProtectedRoute>
                         } 
                     />
-                    <Route 
-                        path="/samity-profile" 
+                    <Route
+                        path="/samity-profile"
                         element={
                             <ProtectedRoute>
                                 <SamityProfile />
                             </ProtectedRoute>
-                        } 
+                        }
+                    />
+                    <Route
+                        path="/general-settings"
+                        element={
+                            <ProtectedRoute>
+                                <GeneralSettings />
+                            </ProtectedRoute>
+                        }
                     />
                     <Route 
                         path="/member-profile" 

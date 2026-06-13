@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    // External RDCD loan/transaction API (config:cache-safe; do not read env() directly in controllers).
+    'external' => [
+        'url' => env('EXTERNAL_API_URL'),
+        'key' => env('EXTERNAL_API_KEY'),
+    ],
+
 ];

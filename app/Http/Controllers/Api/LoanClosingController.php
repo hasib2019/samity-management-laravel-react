@@ -197,16 +197,32 @@ class LoanClosingController extends Controller
             // Wait, if we waive, we are reducing asset but not getting cash.
             // Waiver is an Expense (Loss).
             
-            // Credit Asset (Total Due)
+            // Credit Loan Portfolio Asset by principal+interest outstanding ONLY.
+            // Fines are never debited to the portfolio (they post to penalty income on
+            // collection), so crediting the full total-due here would over-credit the asset.
             if ($loan->product->loan_portfolio_dr_gl_id) {
                 Transaction::create(array_merge($commonData, [
                     'tran_num' => date('YmdHis') . rand(11, 99),
                     'glac_id' => $loan->product->loan_portfolio_dr_gl_id,
                     'dr_amt' => 0,
-                    'cr_amt' => $totalDue, // Reducing the full asset balance
+                    'cr_amt' => $outstandingBalance,
                 ]));
             } else {
                  throw new \Exception("Loan Portfolio Dr GL not defined");
+            }
+
+            // Credit Penalty Income for any fines settled at closing (keeps fines OUT of the asset GL).
+            if ($unpaidFines > 0) {
+                if (!$loan->product->loan_penalty_income_cr_gl_id) {
+                    throw new \Exception("Loan Penalty Income Cr GL not defined");
+                }
+                Transaction::create(array_merge($commonData, [
+                    'tran_num' => date('YmdHis') . rand(13, 99),
+                    'glac_id' => $loan->product->loan_penalty_income_cr_gl_id,
+                    'dr_amt' => 0,
+                    'cr_amt' => $unpaidFines,
+                    'naration' => ($request->naration ?? 'Loan Closing') . ' (Penalty)',
+                ]));
             }
 
             // 3. Debit Waiver Expense (if any)

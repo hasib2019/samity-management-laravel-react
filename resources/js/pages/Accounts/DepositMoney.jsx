@@ -7,7 +7,6 @@ import { useAuth } from '../../context/AuthContext';
 const DepositMoney = () => {
     const { user } = useAuth();
     const isUser = user?.roles?.some(role => role.slug === 'user');
-    console.log({isUser, user});
 
     const [samities, setSamities] = useState([]);
     const [members, setMembers] = useState([]);

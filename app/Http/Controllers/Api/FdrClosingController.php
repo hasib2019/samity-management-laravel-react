@@ -137,6 +137,30 @@ class FdrClosingController extends Controller
                 throw new \Exception("FDR Account is not active");
             }
 
+            // Guard against double interest payout: the payout must not exceed the
+            // interest still owed (full computed interest minus what was already
+            // collected periodically). Without this, a matured FDR whose interest was
+            // disbursed during its term gets paid the full tenure interest a second time.
+            $collectedInterest = FdrCollection::where('fdr_application_id', $fdrApplication->id)
+                ->where('status', 'collected')
+                ->sum('interest_amount');
+
+            $closingDate = Carbon::parse($request->closing_date);
+            $isMatured = $closingDate->gte(Carbon::parse($fdrApplication->maturity_date));
+            $grossInterest = $isMatured
+                ? FdrCalculationHelper::calculateTotalInterest($fdrApplication->fdr_amount, $fdrApplication->interest_rate, $fdrApplication->duration)
+                : FdrCalculationHelper::calculateAccruedInterest($fdrApplication->fdr_amount, $fdrApplication->interest_rate, Carbon::parse($fdrApplication->start_date), $closingDate);
+            $netInterestDue = max(0, round($grossInterest - $collectedInterest, 2));
+
+            if (round((float) $request->total_interest_paid, 2) > $netInterestDue + 0.01) {
+                DB::rollBack();
+                return response()->json([
+                    'message' => 'Interest payout (' . number_format((float) $request->total_interest_paid, 2)
+                        . ') exceeds the net interest still due (' . number_format($netInterestDue, 2) . '). '
+                        . number_format($collectedInterest, 2) . ' was already collected periodically.',
+                ], 422);
+            }
+
             // Create FDR Closing Record
             $totalPaid = $request->principal_amount + $request->total_interest_paid - ($request->penalty_amount ?? 0);
             
@@ -296,9 +320,15 @@ class FdrClosingController extends Controller
         $interest = $request->total_interest_paid;
         $penalty = $request->penalty_amount ?? 0;
 
+        // Stamp the real samity/branch (not a hardcoded branch_id=1) so per-samity
+        // GL balances include FDR cash movements.
+        $member = $fdrApplication->member;
+
         $commonData = [
-            'branch_id' => 1,
+            'samity_id' => $member?->samity_id,
+            'branch_id' => $member?->branch_id,
             'customer_id' => $fdrApplication->member_id,
+            'product_id' => $fdrApplication->product_id,
             'tran_date' => $request->closing_date,
             'tran_type' => 'FDR_CLOSING',
             'naration' => $request->remarks ?? 'FDR Closing for ' . $fdrApplication->account_no,

@@ -19,6 +19,54 @@ use Illuminate\Support\Facades\DB;
 
 class GlobalController extends Controller
 {
+    /**
+     * Permissions whose holders legitimately need to look up members/samities
+     * through these shared "global" picker endpoints.
+     */
+    private const MEMBER_OPERATOR_PERMISSIONS = [
+        'member.view', 'member.create', 'member.edit',
+        'samity.profile.view',
+        'deposit.money.create', 'deposit.money.view', 'deposit.request.create', 'deposit.request.view',
+        'withdraw.money.create', 'withdraw.money.view', 'withdraw.request.create', 'withdraw.request.view',
+        'loan.application.view', 'loan.application.create',
+        'loan.disbursement.view', 'loan.repayment.view', 'loan.closing.view',
+        'dps.account.view', 'dps.account.create', 'dps.collection.view',
+        'fdr.account.view', 'fdr.account.create', 'fdr.collection.view',
+        'share.purchase.create', 'share.sale.create', 'share.list.view',
+        'member.loan.application.view', 'member.loan.application.create',
+    ];
+
+    /** True when the operator holds any permission that needs member/samity lookup (super-admin bypasses via can()). */
+    private function isMemberOperator($user): bool
+    {
+        if (!$user) {
+            return false;
+        }
+
+        foreach (self::MEMBER_OPERATOR_PERMISSIONS as $perm) {
+            if ($user->can($perm)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** A 'user' (member) may only access their own record; operators need an operator permission. */
+    private function canAccessMember($user, $memberId): bool
+    {
+        if (!$user) {
+            return false;
+        }
+
+        if ($user->hasRole('user')) {
+            $ownId = MemberInfo::where('user_id', $user->id)->value('id');
+            return $ownId !== null && (int) $memberId === (int) $ownId;
+        }
+
+        return $this->isMemberOperator($user);
+    }
+
     public function userDashboard()
     {
         $user = Auth::user();
@@ -98,7 +146,6 @@ class GlobalController extends Controller
 
     public function samities()
     {
-        Log::info('GlobalController: Fetching samities');
         $user = Auth::user();
         $query = SamityProfile::query();
 
@@ -107,25 +154,32 @@ class GlobalController extends Controller
             $query->whereHas('members', function($q) use ($user) {
                 $q->where('user_id', $user->id);
             });
+        } elseif (!$this->isMemberOperator($user)) {
+            return response()->json(['message' => 'Unauthorized'], 403);
         }
 
         $samities = $query->get();
-        Log::info('GlobalController: Found ' . $samities->count() . ' samities');
         return response()->json($samities);
     }
 
     public function members(Request $request)
     {
         $user = Auth::user();
-        $query = MemberInfo::query();
 
-        if ($request->has('samity_id')) {
-            $query->where('samity_id', $request->input('samity_id'));
+        // Members (the 'user' role) may only ever see their own record.
+        if ($user && $user->hasRole('user')) {
+            $members = MemberInfo::where('user_id', $user->id)->orderBy('member_name')->get();
+            return response()->json($members);
         }
 
-        if ($user && $user->hasRole('user')) {
-            // If user role, only show their own member record
-            $query->where('user_id', $user->id);
+        // Operators must hold a permission that legitimately needs the member list.
+        if (!$this->isMemberOperator($user)) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $query = MemberInfo::query();
+        if ($request->has('samity_id')) {
+            $query->where('samity_id', $request->input('samity_id'));
         }
 
         $members = $query->orderBy('member_name')->get();
@@ -134,6 +188,10 @@ class GlobalController extends Controller
 
     public function accounts($memberId)
     {
+        if (!$this->canAccessMember(Auth::user(), $memberId)) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         $savings = SavingsAccount::with('product')->where('member_id', $memberId)->get()->map(function($acc) {
             $acc->type = 'savings';
             return $acc;

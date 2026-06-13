@@ -30,11 +30,11 @@ class AuthController extends Controller
             return response()->json(['message' => 'Your account is disabled.'], 403);
         }
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        // Cookie/session based SPA auth (token is never exposed to JavaScript).
+        Auth::login($user);
+        $request->session()->regenerate();
 
         return response()->json([
-            'access_token' => $token,
-            'token_type' => 'Bearer',
             'user' => $user->load('roles.permissions'),
             'menus' => $user->getAuthorizedMenus(),
         ]);
@@ -51,7 +51,15 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
+        // Revoke a bearer token if one was used; otherwise tear down the SPA session.
+        $token = $request->user()?->currentAccessToken();
+        if ($token && method_exists($token, 'delete')) {
+            $token->delete();
+        }
+
+        Auth::guard('web')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
         return response()->json(['message' => 'Logged out successfully']);
     }

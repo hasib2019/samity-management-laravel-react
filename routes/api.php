@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\MenuController;
 use App\Http\Controllers\Api\SamityProfileController;
+use App\Http\Controllers\Api\GeneralSettingController;
 use App\Http\Controllers\Api\MemberInfoController;
 use App\Http\Controllers\Api\GlobalController;
 use App\Http\Controllers\Api\DepositRequestController;
@@ -26,9 +27,13 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login']);
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    // General Settings (site-wide configuration)
+    Route::get('/general-settings', [GeneralSettingController::class, 'index'])->middleware('permission:general.settings.view');
+    Route::post('/general-settings', [GeneralSettingController::class, 'update'])->middleware('permission:general.settings.update'); // POST so multipart file uploads work
 
     // Loan Application
     Route::get('loan-applications', [LoanApplicationController::class, 'index'])->middleware('permission:loan.application.view');

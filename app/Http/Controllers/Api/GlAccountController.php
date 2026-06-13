@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use App\Models\GlAccount;
 
 class GlAccountController extends Controller
@@ -118,10 +119,8 @@ class GlAccountController extends Controller
         }
 
         try {
-            // The user provided URL in the prompt
-            $url = env('EXTERNAL_API_URL');
-            $apiKey = env('EXTERNAL_API_KEY');
-            // dd($url, $apiKey);
+            $url = config('services.external.url');
+            $apiKey = config('services.external.key');
             $response = Http::withHeaders([
                 'api-key' => $apiKey
             ])->withBody(json_encode($request->all()), 'application/json')->get($url);
@@ -170,10 +169,12 @@ class GlAccountController extends Controller
                     return response()->json(['message' => 'No data found in response'], 404);
                 }
             } else {
-                return response()->json(['message' => 'External API failed', 'details' => $response->body()], $response->status());
+                Log::error('GL account sync: external API failed', ['status' => $response->status(), 'body' => $response->body()]);
+                return response()->json(['message' => 'Failed to fetch data from the external service. Please try again later.'], 502);
             }
         } catch (\Exception $e) {
-            return response()->json(['message' => 'Sync failed: ' . $e->getMessage()], 500);
+            Log::error('GL account sync failed', ['exception' => $e->getMessage()]);
+            return response()->json(['message' => 'Sync failed. Please contact support if the problem persists.'], 500);
         }
     }
 

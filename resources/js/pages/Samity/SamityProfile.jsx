@@ -28,7 +28,6 @@ const SamityProfile = () => {
         email: '',
         website: ''
     });
-console.log({profile})
     const { hasPermission } = useAuth();
 
     useEffect(() => {
@@ -38,12 +37,9 @@ console.log({profile})
     const fetchProfile = async () => {
         try {
             const response = await api.get('/samity-profiles');
-            // Backend now returns a single object or empty/null
-            if (response.data && response.data[0].id) {
-                setProfile(response.data[0]);
-            } else {
-                setProfile(null);
-            }
+            // Backend may return an array, a single object, or empty/null — guard all shapes.
+            const first = Array.isArray(response.data) ? response.data[0] : response.data;
+            setProfile(first && first.id ? first : null);
         } catch (error) {
             console.error('Failed to fetch samity profile', error);
         } finally {

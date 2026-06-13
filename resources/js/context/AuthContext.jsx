@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import api from '../api/axios';
+import api, { ensureCsrfCookie } from '../api/axios';
 
 const AuthContext = createContext();
 
@@ -24,18 +24,10 @@ export function AuthProvider({ children }) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const token = localStorage.getItem('token');
-        const storedMenus = localStorage.getItem('menus');
-        
-        if (storedMenus) {
-            setMenus(JSON.parse(storedMenus));
-        }
-
-        if (token) {
-            fetchUser();
-        } else {
-            setLoading(false);
-        }
+        // Restore the session from the HttpOnly cookie (if any). Also prime the
+        // XSRF-TOKEN cookie so subsequent writes after a refresh succeed.
+        ensureCsrfCookie().catch(() => {});
+        fetchUser();
     }, []);
 
     const fetchUser = async () => {
@@ -43,19 +35,17 @@ export function AuthProvider({ children }) {
             const response = await api.get('/me');
             setUser(response.data.user);
             setMenus(response.data.menus);
-            localStorage.setItem('menus', JSON.stringify(response.data.menus));
         } catch (error) {
-            localStorage.removeItem('token');
-            localStorage.removeItem('menus');
+            setUser(null);
+            setMenus([]);
         } finally {
             setLoading(false);
         }
     };
 
     const login = async (email, password) => {
+        await ensureCsrfCookie();
         const response = await api.post('/login', { email, password });
-        localStorage.setItem('token', response.data.access_token);
-        localStorage.setItem('menus', JSON.stringify(response.data.menus));
         setUser(response.data.user);
         setMenus(response.data.menus);
         return response.data;
@@ -65,8 +55,6 @@ export function AuthProvider({ children }) {
         try {
             await api.post('/logout');
         } finally {
-            localStorage.removeItem('token');
-            localStorage.removeItem('menus');
             setUser(null);
             setMenus([]);
         }
