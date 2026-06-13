@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../api/axios';
 import { Loader2, Search, Printer } from 'lucide-react';
 
 const CashFlow = () => {
@@ -31,9 +31,7 @@ const CashFlow = () => {
 
     const fetchSamities = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get('/api/global/samities', {
-                headers: { Authorization: `Bearer ${token}` }
+            const response = await api.get('/global/samities', {
             });
             setSamities(response.data);
         } catch (error) {
@@ -44,10 +42,8 @@ const CashFlow = () => {
     const fetchReport = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get('/api/reports/cash-flow', {
+            const response = await api.get('/reports/cash-flow', {
                 params: filters,
-                headers: { Authorization: `Bearer ${token}` }
             });
             setData(response.data);
         } catch (error) {

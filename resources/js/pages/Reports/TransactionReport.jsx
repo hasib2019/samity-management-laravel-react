@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../api/axios';
 import { format } from 'date-fns';
 import { Printer, Search } from 'lucide-react';
 
@@ -19,7 +19,7 @@ const TransactionReport = () => {
 
     const fetchSamities = async () => {
         try {
-            const response = await axios.get('/api/global/samities');
+            const response = await api.get('/global/samities');
             setSamities(response.data);
         } catch (error) {
             console.error('Error fetching samities:', error);
@@ -29,7 +29,7 @@ const TransactionReport = () => {
     const generateReport = async () => {
         setLoading(true);
         try {
-            const response = await axios.get('/api/reports/transaction-report', { params: filters });
+            const response = await api.get('/reports/transaction-report', { params: filters });
             setReportData(response.data.data);
         } catch (error) {
             console.error('Error generating report:', error);

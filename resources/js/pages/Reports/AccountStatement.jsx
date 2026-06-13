@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import axios from 'axios';
+import api from '../../api/axios';
 import { Loader2, Search, Printer, FileText } from 'lucide-react';
 
 const AccountStatement = () => {
@@ -48,9 +48,7 @@ const AccountStatement = () => {
 
     const fetchSamities = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get('/api/global/samities', {
-                headers: { Authorization: `Bearer ${token}` }
+            const response = await api.get('/global/samities', {
             });
             setSamities(response.data);
         } catch (error) {
@@ -60,9 +58,7 @@ const AccountStatement = () => {
 
     const fetchMembers = async (samityId) => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get(`/api/global/members?samity_id=${samityId}`, {
-                headers: { Authorization: `Bearer ${token}` }
+            const response = await api.get(`/global/members?samity_id=${samityId}`, {
             });
             setMembers(response.data);
         } catch (error) {
@@ -72,9 +68,7 @@ const AccountStatement = () => {
 
     const fetchAccounts = async (memberId) => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get(`/api/global/members/${memberId}/accounts`, {
-                headers: { Authorization: `Bearer ${token}` }
+            const response = await api.get(`/global/members/${memberId}/accounts`, {
             });
             
             // Combine savings and loans into a single list for the dropdown
@@ -116,15 +110,13 @@ const AccountStatement = () => {
 
         setLoading(true);
         try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get('/api/reports/account-statement', {
+            const response = await api.get('/reports/account-statement', {
                 params: {
                     type: filters.account_type,
                     account_id: filters.account_id,
                     date_from: filters.date_from,
                     date_to: filters.date_to
                 },
-                headers: { Authorization: `Bearer ${token}` }
             });
             setData(response.data);
         } catch (error) {

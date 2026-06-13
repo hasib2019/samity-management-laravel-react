@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../../api/axios';
 import { format } from 'date-fns';
 import { Printer, Search } from 'lucide-react';
 
@@ -15,7 +15,7 @@ const RevenueReport = () => {
     const generateReport = async () => {
         setLoading(true);
         try {
-            const response = await axios.get('/api/reports/revenue-report', { params: filters });
+            const response = await api.get('/reports/revenue-report', { params: filters });
             setReportData(response.data.data);
             setTotalAmount(response.data.total);
         } catch (error) {
