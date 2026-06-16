@@ -208,6 +208,8 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::get('/reports/expense-report', [App\Http\Controllers\Api\ReportController::class, 'expenseReport'])->middleware('permission:expense-report.view');
     Route::get('/reports/revenue-report', [App\Http\Controllers\Api\ReportController::class, 'revenueReport'])->middleware('permission:revenue-report.view');
     Route::get('/reports/revenue-report', [App\Http\Controllers\Api\ReportController::class, 'revenueReport']);
+    Route::get('/reports/daily-collection-sheet', [App\Http\Controllers\Api\DailyCollectionSheetController::class, 'index'])->middleware('permission:daily-collection-sheet.view');
+    Route::get('/reports/member-balance', [App\Http\Controllers\Api\MemberBalanceReportController::class, 'index'])->middleware('permission:member-balance-report.view');
     Route::get('dps-applications', [App\Http\Controllers\Api\DpsApplicationController::class, 'index'])->middleware('permission:dps.account.view');
     Route::post('dps-applications', [App\Http\Controllers\Api\DpsApplicationController::class, 'store'])->middleware('permission:dps.account.create');
     Route::get('dps-applications/{dps_application}', [App\Http\Controllers\Api\DpsApplicationController::class, 'show'])->middleware('permission:dps.account.view');

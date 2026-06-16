@@ -71,6 +71,8 @@ import RevenueReport from './pages/Reports/RevenueReport';
 import BalanceSheet from './pages/Reports/BalanceSheet';
 import CashFlow from './pages/Reports/CashFlow';
 import TrialBalance from './pages/Reports/TrialBalance';
+import DailyCollectionSheet from './pages/Reports/DailyCollectionSheet';
+import MemberBalanceReport from './pages/Reports/MemberBalanceReport';
 
 // Layouts
 import DashboardLayout from './layouts/DashboardLayout';
@@ -138,6 +140,8 @@ const routePermissions = {
     '/balance-sheet': 'balance-sheet.view',
     '/cash-flow': 'cash-flow.view',
     '/trial-balance': 'trial-balance.view',
+    '/daily-collection-sheet': 'daily-collection-sheet.view',
+    '/member-balance-report': 'member-balance-report.view',
 };
 
 const AccessDenied = () => (
@@ -622,6 +626,8 @@ const App = () => {
                     <Route path="/balance-sheet" element={<ProtectedRoute><BalanceSheet /></ProtectedRoute>} />
                     <Route path="/cash-flow" element={<ProtectedRoute><CashFlow /></ProtectedRoute>} />
                     <Route path="/trial-balance" element={<ProtectedRoute><TrialBalance /></ProtectedRoute>} />
+                    <Route path="/daily-collection-sheet" element={<ProtectedRoute><DailyCollectionSheet /></ProtectedRoute>} />
+                    <Route path="/member-balance-report" element={<ProtectedRoute><MemberBalanceReport /></ProtectedRoute>} />
 
                     <Route path="/" element={<Navigate to="/dashboard" />} />
                 </Routes>
