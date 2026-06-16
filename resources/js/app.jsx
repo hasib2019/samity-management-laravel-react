@@ -20,6 +20,7 @@ import DepositMoney from './pages/Accounts/DepositMoney';
 import WithdrawMoney from './pages/Accounts/WithdrawMoney';
 import DepositRequest from './pages/Accounts/DepositRequest';
 import WithdrawRequest from './pages/Accounts/WithdrawRequest';
+import MemberDue from './pages/Accounts/MemberDue';
 import GlAccountSetup from './pages/Setup/GlAccountSetup';
 import ProductSetup from './pages/Setup/ProductSetup';
 import GlMappingType from './pages/Setup/GlMappingType';
@@ -88,6 +89,7 @@ const routePermissions = {
     '/withdraw-money': 'withdraw.money.view',
     '/deposit-request': 'deposit.request.view',
     '/withdraw-request': 'withdraw.request.view',
+    '/member-due': 'subscription.due.view',
     '/gl-setup': 'gl.setup.view',
     '/product-setup': 'product.setup.view',
     '/gl-mapping-type': 'gl.mapping.type.view',
@@ -273,13 +275,21 @@ const App = () => {
                             </ProtectedRoute>
                         } 
                     />
-                    <Route 
-                        path="/withdraw-request" 
+                    <Route
+                        path="/withdraw-request"
                         element={
                             <ProtectedRoute>
                                 <WithdrawRequest />
                             </ProtectedRoute>
-                        } 
+                        }
+                    />
+                    <Route
+                        path="/member-due"
+                        element={
+                            <ProtectedRoute>
+                                <MemberDue />
+                            </ProtectedRoute>
+                        }
                     />
                     <Route 
                         path="/gl-setup" 

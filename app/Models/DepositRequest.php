@@ -11,6 +11,10 @@ class DepositRequest extends Model
         'member_id',
         'method_id',
         'savings_account_id',
+        'is_subscription',
+        'period_month',
+        'period_year',
+        'penalty_amount',
         'amount',
         'total_amount',
         'charge',
@@ -19,6 +23,16 @@ class DepositRequest extends Model
         'attachment',
         'status',
         'transaction_id'
+    ];
+
+    protected $casts = [
+        'is_subscription' => 'boolean',
+        'period_month' => 'integer',
+        'period_year' => 'integer',
+        'penalty_amount' => 'decimal:2',
+        'amount' => 'decimal:2',
+        'total_amount' => 'decimal:2',
+        'charge' => 'decimal:2',
     ];
 
     public function member(): BelongsTo

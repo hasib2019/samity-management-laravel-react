@@ -32,6 +32,7 @@ class DatabaseSeeder extends Seeder
             GeneralSettingMenuSeeder::class,
             GeneralSettingPermissionSeeder::class,
             GeneralSettingSeeder::class,
+            MemberDueMenuSeeder::class,
             MemberLoanRoleSeeder::class,
             RoleSeeder::class,
             UserSeeder::class,

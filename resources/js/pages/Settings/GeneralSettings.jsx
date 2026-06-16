@@ -10,6 +10,7 @@ const GROUP_META = {
   localization: { label: 'Localization', order: 2 },
   financial_defaults: { label: 'Financial Defaults', order: 3 },
   notifications: { label: 'Notifications', order: 4 },
+  email: { label: 'Email (SMTP)', order: 5 },
 };
 
 // Optional dropdowns for known enum-like keys (otherwise rendered as inputs).
@@ -22,6 +23,15 @@ const SELECT_OPTIONS = {
     value: String(i + 1),
     label: new Date(2000, i, 1).toLocaleString('en', { month: 'long' }),
   })),
+  mail_mailer: [
+    { value: 'smtp', label: 'SMTP' },
+    { value: 'log', label: 'Log (testing only)' },
+  ],
+  mail_encryption: [
+    { value: 'tls', label: 'TLS' },
+    { value: 'ssl', label: 'SSL' },
+    { value: 'none', label: 'None' },
+  ],
 };
 
 const humanize = (key) =>
@@ -41,6 +51,8 @@ const GeneralSettings = () => {
   const [activeTab, setActiveTab] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [testAddr, setTestAddr] = useState('');
+  const [testing, setTesting] = useState(false);
 
   useEffect(() => {
     if (canView) fetchSettings();
@@ -130,6 +142,23 @@ const GeneralSettings = () => {
     }
   };
 
+  const sendTestEmail = async () => {
+    if (!testAddr) {
+      Swal.fire({ position: 'top-end', icon: 'warning', title: 'Enter an email address to test', showConfirmButton: false, timer: 2000, toast: true });
+      return;
+    }
+    setTesting(true);
+    try {
+      const res = await api.post('/general-settings/test-email', { email: testAddr });
+      Swal.fire({ position: 'top-end', icon: 'success', title: res.data?.message || 'Test email sent', showConfirmButton: false, timer: 2500, toast: true });
+    } catch (err) {
+      const msg = err.response?.data?.errors?.email?.[0] || err.response?.data?.message || 'Failed to send test email';
+      Swal.fire({ position: 'top-end', icon: 'error', title: msg, showConfirmButton: false, timer: 3500, toast: true });
+    } finally {
+      setTesting(false);
+    }
+  };
+
   const renderField = (item) => {
     const { key, type } = item;
     const label = humanize(key);
@@ -185,6 +214,23 @@ const GeneralSettings = () => {
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </select>
+        </div>
+      );
+    }
+
+    if (type === 'password') {
+      return (
+        <div key={key}>
+          <label className="block text-sm font-medium text-gray-700">{label}</label>
+          <input
+            type="password"
+            autoComplete="new-password"
+            placeholder="Leave blank to keep current"
+            value={values[key] ?? ''}
+            disabled={!canUpdate}
+            onChange={handleScalarChange(key, type)}
+            className="px-3 py-2 mt-1 w-full rounded-md border border-gray-300"
+          />
         </div>
       );
     }
@@ -259,6 +305,36 @@ const GeneralSettings = () => {
               </div>
             ))}
           </div>
+
+          {/* Test email panel (email tab only) */}
+          {activeTab === 'email' && canUpdate && (
+            <div className="px-6 pb-6">
+              <div className="p-4 rounded-lg border border-blue-100 bg-blue-50">
+                <h4 className="text-sm font-semibold text-blue-900">Test your configuration</h4>
+                <p className="mt-1 mb-3 text-xs text-blue-700">
+                  Save your SMTP settings first, then send a test email to confirm they work.
+                </p>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <input
+                    type="email"
+                    value={testAddr}
+                    onChange={(e) => setTestAddr(e.target.value)}
+                    placeholder="recipient@example.com"
+                    className="flex-1 px-3 py-2 rounded-md border border-gray-300"
+                  />
+                  <LoadingButton
+                    type="button"
+                    isLoading={testing}
+                    loadingText="Sending..."
+                    onClick={sendTestEmail}
+                    className="px-5 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                  >
+                    Send Test Email
+                  </LoadingButton>
+                </div>
+              </div>
+            </div>
+          )}
 
           {canUpdate && (
             <div className="flex justify-end px-6 py-3 bg-gray-50 border-t">

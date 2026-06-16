@@ -17,6 +17,9 @@ class SamityProfile extends Model
         'old_registration_no',
         'samity_registration_date',
         'member_admission_fee',
+        'monthly_subscription_fee',
+        'penalty_amount',
+        'penalty_late_date',
         'no_of_share',
         'share_price',
         'sold_share',
@@ -32,6 +35,9 @@ class SamityProfile extends Model
         'samity_formation_date' => 'date',
         'samity_registration_date' => 'date',
         'member_admission_fee' => 'decimal:2',
+        'monthly_subscription_fee' => 'decimal:2',
+        'penalty_amount' => 'decimal:2',
+        'penalty_late_date' => 'integer',
         'share_price' => 'decimal:2',
     ];
 

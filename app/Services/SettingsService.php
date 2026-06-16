@@ -102,6 +102,12 @@ class SettingsService
             return $value ? Storage::url($value) : null;
         }
 
+        // Never expose secrets to the client. The UI shows a blank field and
+        // only updates the stored secret when a non-empty value is submitted.
+        if ($type === 'password') {
+            return '';
+        }
+
         return $this->castValue($value, $type);
     }
 }

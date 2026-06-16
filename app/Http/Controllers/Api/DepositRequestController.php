@@ -9,9 +9,16 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Carbon;
 use App\Models\SavingsAccount;
 use App\Models\Transaction;
 use App\Models\MemberInfo;
+use App\Mail\DepositSlipMail;
+use App\Services\SettingsService;
+use App\Services\MailConfigService;
 
 class DepositRequestController extends Controller
 {
@@ -42,14 +49,37 @@ class DepositRequestController extends Controller
             'amount' => 'required|numeric|min:0',
             'total_amount' => 'nullable|numeric|min:0',
             'charge' => 'nullable|numeric|min:0',
+            'penalty_amount' => 'nullable|numeric|min:0',
+            'is_subscription' => 'nullable|boolean',
+            'period_month' => 'required_if:is_subscription,1,true|nullable|integer|between:1,12',
+            'period_year' => 'required_if:is_subscription,1,true|nullable|integer|min:2000|max:2100',
             'description' => 'nullable|string',
             'requirements' => 'nullable|string',
-            'attachment' => 'nullable|string',
+            // A deposit slip is mandatory.
+            'attachment' => 'required|file|mimes:jpeg,jpg,png,pdf,webp|max:4096',
             'status' => 'required|in:pending,approved,rejected,cancelled',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $isSubscription = $request->boolean('is_subscription');
+
+        // Prevent paying the same subscription month twice.
+        if ($isSubscription) {
+            $duplicate = DepositRequest::where('member_id', $request->member_id)
+                ->where('is_subscription', true)
+                ->where('period_year', (int) $request->period_year)
+                ->where('period_month', (int) $request->period_month)
+                ->whereNotIn('status', ['rejected', 'cancelled'])
+                ->exists();
+
+            if ($duplicate) {
+                return response()->json([
+                    'message' => 'A subscription payment for this month already exists for the member.',
+                ], 422);
+            }
         }
 
         try {
@@ -58,8 +88,17 @@ class DepositRequestController extends Controller
             // Whitelist fields (never mass-assign status/transaction_id from input).
             $data = $request->only([
                 'member_id', 'method_id', 'savings_account_id', 'amount',
-                'total_amount', 'charge', 'description', 'requirements', 'attachment',
+                'total_amount', 'charge', 'description', 'requirements',
             ]);
+
+            // Subscription tagging: only flagged deposits count toward the dues.
+            $data['is_subscription'] = $isSubscription;
+            $data['period_month'] = $isSubscription ? (int) $request->period_month : null;
+            $data['period_year'] = $isSubscription ? (int) $request->period_year : null;
+            $data['penalty_amount'] = (float) ($request->penalty_amount ?? 0);
+
+            // Store the mandatory deposit slip and keep its path.
+            $data['attachment'] = $request->file('attachment')->store('deposit-slips', 'public');
 
             // Approval is privileged: a request may only be created already-approved
             // by a caller who holds the approve permission; otherwise it starts pending.
@@ -80,7 +119,24 @@ class DepositRequestController extends Controller
 
             DB::commit();
 
-            return response()->json(['message' => 'Deposit request created successfully', 'data' => $depositRequest], 201);
+            // Email the deposit slip after commit so a mail failure can never roll
+            // back the posted transaction.
+            if ($data['status'] === 'approved') {
+                $this->sendDepositSlip($depositRequest);
+            }
+
+            // Surface the post-deposit savings balance + reference for the slip.
+            $savingsAccount = SavingsAccount::find($depositRequest->savings_account_id);
+            $reference = $depositRequest->transaction_id
+                ? optional(Transaction::find($depositRequest->transaction_id))->batch_num
+                : null;
+
+            return response()->json([
+                'message' => 'Deposit request created successfully',
+                'data' => $depositRequest,
+                'balance' => $savingsAccount?->current_balance,
+                'reference' => $reference,
+            ], 201);
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -152,6 +208,11 @@ class DepositRequestController extends Controller
 
             DB::commit();
 
+            // Email the deposit slip only when this update is what approved it.
+            if ($approving) {
+                $this->sendDepositSlip($depositRequest);
+            }
+
             return response()->json(['message' => 'Deposit request updated successfully', 'data' => $depositRequest]);
 
         } catch (\Exception $e) {
@@ -167,12 +228,21 @@ class DepositRequestController extends Controller
     {
         $savingsAccount = SavingsAccount::with('product')->find($depositRequest->savings_account_id);
         $product = $savingsAccount->product;
-        
+
         // Get Member to fetch samity_id
         $member = MemberInfo::find($depositRequest->member_id);
 
         if (!$product || !$product->sav_dep_lib_cr_gl_id || !$product->sav_cash_bank_dr_gl_id) {
             throw new \Exception('Savings product GL Mapping (Deposit Liability Cr / Cash Bank Dr) is missing.');
+        }
+
+        $penalty       = (float) ($depositRequest->penalty_amount ?? 0);
+        $depositAmount = (float) $depositRequest->amount;      // fee only → goes to savings balance
+        $totalAmount   = $depositAmount + $penalty;            // total cash received from member
+
+        // Validate penalty GL when penalty exists
+        if ($penalty > 0 && !$product->sav_penalty_income_cr_gl_id) {
+            throw new \Exception('Savings Penalty Income CR GL is not configured in the product.');
         }
 
         // Transaction Creation
@@ -198,29 +268,98 @@ class DepositRequestController extends Controller
             'status' => 'posted',
         ];
 
-        // Debit Transaction (Using savings cash/bank dr GL)
-        $tranNumDr = date('YmdHis') . rand(10, 99);
+        // DR: Cash/Bank — total cash received from member (fee + penalty)
         Transaction::create(array_merge($commonData, [
-            'tran_num' => $tranNumDr,
-            'glac_id' => $product->sav_cash_bank_dr_gl_id,
-            'dr_amt' => $depositRequest->amount,
-            'cr_amt' => 0,
+            'tran_num' => date('YmdHis') . rand(10, 99),
+            'glac_id'  => $product->sav_cash_bank_dr_gl_id,
+            'dr_amt'   => $totalAmount,
+            'cr_amt'   => 0,
         ]));
 
-        // Credit Transaction (Using savings deposit liability cr GL)
-        $tranNumCr = date('YmdHis') . rand(10, 99);
+        // CR: Savings Deposit Liability — only the deposit portion (fee)
         $creditTransaction = Transaction::create(array_merge($commonData, [
-            'tran_num' => $tranNumCr,
-            'glac_id' => $product->sav_dep_lib_cr_gl_id,
-            'dr_amt' => 0,
-            'cr_amt' => $depositRequest->amount,
+            'tran_num' => date('YmdHis') . rand(10, 99),
+            'glac_id'  => $product->sav_dep_lib_cr_gl_id,
+            'dr_amt'   => 0,
+            'cr_amt'   => $depositAmount,
         ]));
+
+        // CR: Penalty Income — posted separately as samity income
+        if ($penalty > 0) {
+            Transaction::create(array_merge($commonData, [
+                'tran_num' => date('YmdHis') . rand(10, 99),
+                'glac_id'  => $product->sav_penalty_income_cr_gl_id,
+                'dr_amt'   => 0,
+                'cr_amt'   => $penalty,
+            ]));
+        }
 
         $depositRequest->transaction_id = $creditTransaction->id;
         $depositRequest->save();
 
-        // Update Savings Account Balance
-        $savingsAccount->increment('current_balance', $depositRequest->amount);
+        // Savings balance increases only by the deposit (fee), not the penalty
+        $savingsAccount->increment('current_balance', $depositAmount);
+    }
+
+    /**
+     * Email the member a deposit confirmation slip.
+     *
+     * Best-effort: respects the "email notifications" setting, requires a member
+     * email and configured SMTP, and never throws — a mail failure must not
+     * affect the (already committed) deposit, so failures are only logged.
+     */
+    private function sendDepositSlip(DepositRequest $depositRequest): void
+    {
+        try {
+            $settings = app(SettingsService::class);
+
+            if (! $settings->get('enable_email_notifications')) {
+                return; // Admin has not enabled email notifications.
+            }
+
+            $member = MemberInfo::find($depositRequest->member_id);
+            if (! $member || empty($member->email)) {
+                return; // No recipient to send to.
+            }
+
+            if (! app(MailConfigService::class)->apply()) {
+                return; // SMTP is not configured.
+            }
+
+            $savingsAccount = SavingsAccount::find($depositRequest->savings_account_id);
+            $txn = $depositRequest->transaction_id ? Transaction::find($depositRequest->transaction_id) : null;
+
+            $decimals = (int) $settings->get('number_format_decimals', 2);
+
+            $penalty = (float) $depositRequest->penalty_amount;
+            $fee     = (float) $depositRequest->amount;   // fee only (amount no longer includes penalty)
+
+            $slip = [
+                'site_name' => $settings->get('site_name', 'Samity Management'),
+                'currency' => $settings->get('currency_symbol', '৳'),
+                'member_name' => $member->member_name,
+                'member_code' => $member->member_code,
+                'account_number' => $savingsAccount?->account_number,
+                'amount' => number_format($fee + $penalty, $decimals),  // total paid on slip
+                'balance' => number_format((float) ($savingsAccount?->current_balance ?? 0), $decimals),
+                'reference' => $txn?->batch_num,
+                'date' => $txn && $txn->tran_date
+                    ? Carbon::parse($txn->tran_date)->format('d M Y')
+                    : Carbon::now()->format('d M Y'),
+                'is_subscription' => (bool) $depositRequest->is_subscription,
+                'period' => ($depositRequest->is_subscription && $depositRequest->period_month)
+                    ? Carbon::createFromDate($depositRequest->period_year, $depositRequest->period_month, 1)->format('F Y')
+                    : null,
+                'fee' => number_format($fee, $decimals),
+                'penalty' => number_format($penalty, $decimals),
+            ];
+
+            Mail::to($member->email)->send(new DepositSlipMail($slip));
+        } catch (\Throwable $e) {
+            Log::warning('Deposit slip email failed: ' . $e->getMessage(), [
+                'deposit_request_id' => $depositRequest->id,
+            ]);
+        }
     }
 
     /**

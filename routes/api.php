@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\MenuController;
 use App\Http\Controllers\Api\SamityProfileController;
 use App\Http\Controllers\Api\GeneralSettingController;
+use App\Http\Controllers\Api\MemberSubscriptionDueController;
 use App\Http\Controllers\Api\MemberInfoController;
 use App\Http\Controllers\Api\GlobalController;
 use App\Http\Controllers\Api\DepositRequestController;
@@ -34,6 +35,11 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     // General Settings (site-wide configuration)
     Route::get('/general-settings', [GeneralSettingController::class, 'index'])->middleware('permission:general.settings.view');
     Route::post('/general-settings', [GeneralSettingController::class, 'update'])->middleware('permission:general.settings.update'); // POST so multipart file uploads work
+    Route::post('/general-settings/test-email', [GeneralSettingController::class, 'testEmail'])->middleware('permission:general.settings.update');
+
+    // Member subscription due (month-wise) report
+    Route::get('/member-subscription-due', [MemberSubscriptionDueController::class, 'show'])->middleware('permission:subscription.due.view');
+    Route::get('/member-subscription-due/next', [MemberSubscriptionDueController::class, 'nextDue'])->middleware('permission:deposit.money.create|deposit.request.create|subscription.due.view');
 
     // Loan Application
     Route::get('loan-applications', [LoanApplicationController::class, 'index'])->middleware('permission:loan.application.view');
@@ -85,6 +91,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
 
     // Global Routes (No specific permission required, just valid token)
     Route::get('/dashboard/user', [GlobalController::class, 'userDashboard']);
+    Route::get('/dashboard/summary', [GlobalController::class, 'dashboardSummary']);
     Route::get('/global/samities', [GlobalController::class, 'samities']);
     Route::get('/global/members', [GlobalController::class, 'members']);
     Route::get('/global/members/{id}/accounts', [GlobalController::class, 'accounts']);

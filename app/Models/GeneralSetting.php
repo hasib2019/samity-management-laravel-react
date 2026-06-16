@@ -65,7 +65,26 @@ class GeneralSetting extends Model
             ['key' => 'enable_sms_notifications',   'group' => 'notifications', 'type' => 'boolean', 'default' => '0'],
             ['key' => 'sms_sender_id',              'group' => 'notifications', 'type' => 'string',  'default' => null],
             ['key' => 'notification_from_email',    'group' => 'notifications', 'type' => 'string',  'default' => null],
+
+            // Email (SMTP) Configuration
+            ['key' => 'mail_mailer',       'group' => 'email', 'type' => 'string',   'default' => 'smtp'],
+            ['key' => 'mail_host',         'group' => 'email', 'type' => 'string',   'default' => null],
+            ['key' => 'mail_port',         'group' => 'email', 'type' => 'integer',  'default' => '587'],
+            ['key' => 'mail_username',     'group' => 'email', 'type' => 'string',   'default' => null],
+            ['key' => 'mail_password',     'group' => 'email', 'type' => 'password', 'default' => null],
+            ['key' => 'mail_encryption',   'group' => 'email', 'type' => 'string',   'default' => 'tls'],
+            ['key' => 'mail_from_address', 'group' => 'email', 'type' => 'string',   'default' => null],
+            ['key' => 'mail_from_name',    'group' => 'email', 'type' => 'string',   'default' => 'Samity Management'],
         ];
+    }
+
+    /** Keys holding secrets that must never be exposed back to the client. */
+    public static function secretKeys(): array
+    {
+        return array_values(array_map(
+            fn ($d) => $d['key'],
+            array_filter(self::definitions(), fn ($d) => $d['type'] === 'password')
+        ));
     }
 
     /** Keys that store an uploaded file path. */
