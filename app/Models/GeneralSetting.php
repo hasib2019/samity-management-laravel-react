@@ -43,7 +43,9 @@ class GeneralSetting extends Model
             ['key' => 'contact_email',    'group' => 'site_identity', 'type' => 'string', 'default' => null],
             ['key' => 'contact_phone',    'group' => 'site_identity', 'type' => 'string', 'default' => null],
             ['key' => 'contact_address',  'group' => 'site_identity', 'type' => 'text',   'default' => null],
-            ['key' => 'footer_text',      'group' => 'site_identity', 'type' => 'string', 'default' => null],
+            ['key' => 'footer_text',       'group' => 'site_identity', 'type' => 'string', 'default' => null],
+            ['key' => 'developed_by_text', 'group' => 'site_identity', 'type' => 'string', 'default' => 'Creativeitbari'],
+            ['key' => 'developed_by_url',  'group' => 'site_identity', 'type' => 'string', 'default' => 'https://creativeitbari.com'],
 
             // Localization
             ['key' => 'currency_code',          'group' => 'localization', 'type' => 'string',  'default' => 'BDT'],

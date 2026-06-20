@@ -20,9 +20,20 @@ use App\Models\AuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Services\SettingsService;
 
 class GlobalController extends Controller
 {
+    public function siteInfo(SettingsService $settings)
+    {
+        return response()->json([
+            'site_name'        => $settings->get('site_name', 'Samity Management'),
+            'site_logo'        => $settings->get('site_logo'),
+            'developed_by_text'=> $settings->get('developed_by_text'),
+            'developed_by_url' => $settings->get('developed_by_url'),
+        ]);
+    }
+
     /**
      * Permissions whose holders legitimately need to look up members/samities
      * through these shared "global" picker endpoints.
@@ -323,6 +334,30 @@ class GlobalController extends Controller
 
         $members = $query->orderBy('member_name')->get();
         return response()->json($members);
+    }
+
+    /**
+     * Active products a member can apply for (loan/dps/fdr/savings), for the
+     * member portal's application forms. Read-only, any authenticated member.
+     */
+    public function portalProducts(Request $request)
+    {
+        $user = Auth::user();
+        if (! $user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $query = \App\Models\Product::query();
+        if ($request->filled('type')) {
+            $query->where('product_type', $request->query('type'));
+        }
+
+        $products = $query->orderBy('product_name')->get([
+            'id', 'product_name', 'product_type', 'profit_rate',
+            'min_tenure_month', 'max_tenure_month', 'tenure_required',
+        ]);
+
+        return response()->json($products);
     }
 
     public function accounts($memberId)

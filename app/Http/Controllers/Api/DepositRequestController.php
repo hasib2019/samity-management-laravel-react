@@ -236,9 +236,9 @@ class DepositRequestController extends Controller
             throw new \Exception('Savings product GL Mapping (Deposit Liability Cr / Cash Bank Dr) is missing.');
         }
 
+        $totalAmount   = (float) $depositRequest->amount;             // total cash received (fee + penalty)
         $penalty       = (float) ($depositRequest->penalty_amount ?? 0);
-        $depositAmount = (float) $depositRequest->amount;      // fee only → goes to savings balance
-        $totalAmount   = $depositAmount + $penalty;            // total cash received from member
+        $feeAmount     = $totalAmount - $penalty;                      // savings deposit portion only
 
         // Validate penalty GL when penalty exists
         if ($penalty > 0 && !$product->sav_penalty_income_cr_gl_id) {
@@ -276,12 +276,12 @@ class DepositRequestController extends Controller
             'cr_amt'   => 0,
         ]));
 
-        // CR: Savings Deposit Liability — only the deposit portion (fee)
+        // CR: Savings Deposit Liability — fee portion only (not penalty)
         $creditTransaction = Transaction::create(array_merge($commonData, [
             'tran_num' => date('YmdHis') . rand(10, 99),
             'glac_id'  => $product->sav_dep_lib_cr_gl_id,
             'dr_amt'   => 0,
-            'cr_amt'   => $depositAmount,
+            'cr_amt'   => $feeAmount,
         ]));
 
         // CR: Penalty Income — posted separately as samity income
@@ -297,8 +297,8 @@ class DepositRequestController extends Controller
         $depositRequest->transaction_id = $creditTransaction->id;
         $depositRequest->save();
 
-        // Savings balance increases only by the deposit (fee), not the penalty
-        $savingsAccount->increment('current_balance', $depositAmount);
+        // Member's savings balance increases by fee only — penalty is samity income
+        $savingsAccount->increment('current_balance', $feeAmount);
     }
 
     /**
@@ -331,8 +331,9 @@ class DepositRequestController extends Controller
 
             $decimals = (int) $settings->get('number_format_decimals', 2);
 
-            $penalty = (float) $depositRequest->penalty_amount;
-            $fee     = (float) $depositRequest->amount;   // fee only (amount no longer includes penalty)
+            $total   = (float) $depositRequest->amount;            // total received (fee + penalty)
+            $penalty = (float) ($depositRequest->penalty_amount ?? 0);
+            $fee     = $total - $penalty;                            // subscription fee portion only
 
             $slip = [
                 'site_name' => $settings->get('site_name', 'Samity Management'),
@@ -340,7 +341,7 @@ class DepositRequestController extends Controller
                 'member_name' => $member->member_name,
                 'member_code' => $member->member_code,
                 'account_number' => $savingsAccount?->account_number,
-                'amount' => number_format($fee + $penalty, $decimals),  // total paid on slip
+                'amount' => number_format($total, $decimals),  // total paid on slip
                 'balance' => number_format((float) ($savingsAccount?->current_balance ?? 0), $decimals),
                 'reference' => $txn?->batch_num,
                 'date' => $txn && $txn->tran_date

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\PortalAuthController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\PermissionController;
@@ -27,6 +28,16 @@ use App\Http\Controllers\Api\ShareManagementController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/site-info', [GlobalController::class, 'siteInfo']);
+
+// Member portal (token-based auth, served from a separate front-end app)
+Route::post('/portal/register', [PortalAuthController::class, 'register']);
+Route::post('/portal/login', [PortalAuthController::class, 'login']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/portal/me', [PortalAuthController::class, 'me']);
+    Route::post('/portal/logout', [PortalAuthController::class, 'logout']);
+    Route::get('/portal/products', [GlobalController::class, 'portalProducts']);
+});
 
 Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::get('/me', [AuthController::class, 'me']);

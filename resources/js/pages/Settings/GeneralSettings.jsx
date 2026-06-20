@@ -39,10 +39,13 @@ const humanize = (key) =>
     .replace(/_/g, ' ')
     .replace(/\b\w/g, (c) => c.toUpperCase());
 
+const SUPERADMIN_ONLY_KEYS = ['developed_by_text', 'developed_by_url'];
+
 const GeneralSettings = () => {
-  const { hasPermission } = useAuth();
+  const { hasPermission, user } = useAuth();
   const canView = hasPermission('general.settings.view');
   const canUpdate = hasPermission('general.settings.update');
+  const isSuperAdmin = user?.roles?.some(r => r.slug === 'super-admin');
 
   const [groups, setGroups] = useState({}); // { group: [ {key,value,type,group} ] }
   const [values, setValues] = useState({}); // scalar key -> value
@@ -299,11 +302,13 @@ const GeneralSettings = () => {
 
           {/* Active tab fields */}
           <div className="grid grid-cols-1 gap-5 p-6 md:grid-cols-2">
-            {(groups[activeTab] || []).map((item) => (
-              <div key={item.key} className={item.type === 'text' ? 'md:col-span-2' : ''}>
-                {renderField(item)}
-              </div>
-            ))}
+            {(groups[activeTab] || [])
+              .filter(item => !SUPERADMIN_ONLY_KEYS.includes(item.key) || isSuperAdmin)
+              .map((item) => (
+                <div key={item.key} className={item.type === 'text' ? 'md:col-span-2' : ''}>
+                  {renderField(item)}
+                </div>
+              ))}
           </div>
 
           {/* Test email panel (email tab only) */}

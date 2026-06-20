@@ -77,6 +77,19 @@ const DynamicIcon = ({ name, size = 20 }) => {
 const Sidebar = ({ menus, isOpen }) => {
     const location = useLocation();
     const [openMenus, setOpenMenus] = useState({});
+    const [siteName, setSiteName] = useState('Samity Management');
+    const [devBy, setDevBy] = useState({ text: '', url: '' });
+
+    useEffect(() => {
+        import('../api/axios').then(({ default: api }) => {
+            api.get('/site-info').then(res => {
+                if (res.data?.site_name) setSiteName(res.data.site_name);
+                if (res.data?.developed_by_text) {
+                    setDevBy({ text: res.data.developed_by_text, url: res.data.developed_by_url || '#' });
+                }
+            }).catch(() => {});
+        });
+    }, []);
 
     // Keep parent menus open if a child is active
     useEffect(() => {
@@ -164,12 +177,25 @@ const Sidebar = ({ menus, isOpen }) => {
             fixed md:relative z-30 inset-y-0 left-0
             ${isOpen ? 'translate-x-0 w-64' : '-translate-x-full w-64 md:w-0 md:translate-x-0 md:overflow-hidden'}
         `}>
-            <div className="flex justify-center items-center h-16 text-xl font-bold bg-blue-950 whitespace-nowrap overflow-hidden">
-                RBAC Admin
+            <div className="flex justify-center items-center h-16 px-3 text-lg font-bold bg-blue-950 overflow-hidden">
+                <span className="text-center leading-tight line-clamp-2">{siteName}</span>
             </div>
             <nav className="overflow-y-auto flex-1 px-2 py-4 space-y-1 scrollbar-hide">
                 {menus.map(menu => renderMenuItem(menu))}
             </nav>
+            {devBy.text && (
+                <div className="px-3 py-2 text-center text-[10px] text-blue-300 bg-blue-950 border-t border-blue-800">
+                    Developed By:{' '}
+                    <a
+                        href={devBy.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="font-semibold text-blue-200 hover:text-white hover:underline"
+                    >
+                        {devBy.text}
+                    </a>
+                </div>
+            )}
         </div>
     );
 };
