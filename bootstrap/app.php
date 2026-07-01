@@ -15,6 +15,12 @@ return Application::configure(basePath: dirname(__DIR__))
         // Enable Sanctum SPA (cookie/session) auth for same-origin frontend requests.
         $middleware->statefulApi();
 
+        // Resolve request locale (user preference / Accept-Language / system default)
+        // before controllers run, so __()/validation messages come back translated.
+        $middleware->api(append: [
+            \App\Http\Middleware\SetLocale::class,
+        ]);
+
         $middleware->alias([
             'permission' => \App\Http\Middleware\CheckPermission::class,
             'active' => \App\Http\Middleware\EnsureUserIsActive::class,
@@ -29,22 +35,22 @@ return Application::configure(basePath: dirname(__DIR__))
 
             if ($e instanceof \Illuminate\Validation\ValidationException) {
                 return response()->json([
-                    'message' => 'The given data was invalid.',
+                    'message' => __('messages.http.validation_failed'),
                     'errors' => $e->errors(),
                 ], 422);
             }
 
             if ($e instanceof \Illuminate\Auth\AuthenticationException) {
-                return response()->json(['message' => 'Unauthenticated.'], 401);
+                return response()->json(['message' => __('messages.http.unauthenticated')], 401);
             }
 
             if ($e instanceof \Illuminate\Auth\Access\AuthorizationException) {
-                return response()->json(['message' => 'This action is unauthorized.'], 403);
+                return response()->json(['message' => __('messages.http.unauthorized')], 403);
             }
 
             if ($e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException
                 || $e instanceof \Symfony\Component\HttpKernel\Exception\NotFoundHttpException) {
-                return response()->json(['message' => 'Resource not found.'], 404);
+                return response()->json(['message' => __('messages.http.not_found')], 404);
             }
 
             if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
@@ -61,6 +67,6 @@ return Application::configure(basePath: dirname(__DIR__))
                 'message' => $e->getMessage(),
             ]);
 
-            return response()->json(['message' => 'Server error. Please try again later.'], 500);
+            return response()->json(['message' => __('messages.http.server_error')], 500);
         });
     })->create();

@@ -14,6 +14,7 @@ const MenuList = () => {
     const [editingMenu, setEditingMenu] = useState(null);
     const [formData, setFormData] = useState({
         name: '',
+        name_bn: '',
         slug: '',
         icon: '',
         parent_id: '',
@@ -56,6 +57,7 @@ const MenuList = () => {
             setEditingMenu(menu);
             setFormData({
                 name: menu.name,
+                name_bn: menu.name_bn || '',
                 slug: menu.slug,
                 icon: menu.icon || '',
                 parent_id: menu.parent_id || '',
@@ -66,6 +68,7 @@ const MenuList = () => {
             setEditingMenu(null);
             setFormData({
                 name: '',
+                name_bn: '',
                 slug: '',
                 icon: '',
                 parent_id: '',
@@ -117,6 +120,7 @@ const MenuList = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         <span style={{ marginLeft: `${depth * 20}px` }}>
                             {depth > 0 && '↳ '} {menu.name}
+                            {menu.name_bn && <span className="ml-1 text-xs font-normal text-gray-400">({menu.name_bn})</span>}
                         </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -223,6 +227,16 @@ const MenuList = () => {
                                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
                                     value={formData.name}
                                     onChange={e => setFormData({...formData, name: e.target.value})}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Bangla Name</label>
+                                <input
+                                    type="text"
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                    value={formData.name_bn}
+                                    onChange={e => setFormData({...formData, name_bn: e.target.value})}
+                                    placeholder="e.g. সদস্য ব্যবস্থাপনা (optional — falls back to Menu Name)"
                                 />
                             </div>
                             <div>

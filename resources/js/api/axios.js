@@ -1,4 +1,5 @@
 import axios from 'axios';
+import i18n from '../i18n';
 
 const base = document.querySelector('meta[name="app-base-url"]')?.content || window.location.origin;
 
@@ -11,6 +12,13 @@ const api = axios.create({
     headers: {
         'Accept': 'application/json',
     },
+});
+
+// Tell the backend which language to render __()/validation messages in —
+// kept current with whatever i18next's active language is (see resources/js/i18n).
+api.interceptors.request.use((config) => {
+    config.headers['Accept-Language'] = i18n.language;
+    return config;
 });
 
 api.interceptors.response.use(

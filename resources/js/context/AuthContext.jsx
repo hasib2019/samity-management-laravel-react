@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import api, { ensureCsrfCookie } from '../api/axios';
+import { setAppLanguage } from '../i18n';
 
 const AuthContext = createContext();
 
@@ -35,6 +36,9 @@ export function AuthProvider({ children }) {
             const response = await api.get('/me');
             setUser(response.data.user);
             setMenus(response.data.menus);
+            if (response.data.user?.language) {
+                setAppLanguage(response.data.user.language);
+            }
         } catch (error) {
             setUser(null);
             setMenus([]);
@@ -48,6 +52,9 @@ export function AuthProvider({ children }) {
         const response = await api.post('/login', { email, password });
         setUser(response.data.user);
         setMenus(response.data.menus);
+        if (response.data.user?.language) {
+            setAppLanguage(response.data.user.language);
+        }
         return response.data;
     };
 
@@ -58,6 +65,12 @@ export function AuthProvider({ children }) {
             setUser(null);
             setMenus([]);
         }
+    };
+
+    const updateLanguage = async (lang) => {
+        const response = await api.patch('/me/language', { language: lang });
+        setUser((prev) => (prev ? { ...prev, language: lang } : prev));
+        return response.data;
     };
 
     const hasPermission = (permission) => {
@@ -78,7 +91,7 @@ export function AuthProvider({ children }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, menus, loading, login, logout, hasPermission, hasAnyPermission }}>
+        <AuthContext.Provider value={{ user, menus, loading, login, logout, updateLanguage, hasPermission, hasAnyPermission }}>
             {children}
         </AuthContext.Provider>
     );

@@ -13,6 +13,7 @@ return new class extends Migration
                 $table->id();
                 $table->string('project_code')->unique();
                 $table->string('project_name');
+                $table->unsignedBigInteger('samity_id')->nullable();
                 $table->text('description')->nullable();
                 $table->date('declaration_date');
                 $table->decimal('total_shares', 15, 2);
@@ -39,6 +40,7 @@ return new class extends Migration
                 $table->timestamps();
 
                 $table->index(['status', 'declaration_date'], 'proj_decl_status_dt_idx');
+                $table->index('samity_id');
             });
         }
 

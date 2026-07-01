@@ -20,6 +20,14 @@ return new class extends Migration
             $table->unsignedBigInteger('savings_account_id')->nullable()->index();
             $table->foreign('savings_account_id')->references('id')->on('savings_accounts')->onDelete('cascade');
 
+            // Tags deposits with the subscription month they pay for, so the system can tell
+            // which months a member has paid vs. still owes (only deposits flagged is_subscription
+            // count toward the monthly subscription dues).
+            $table->boolean('is_subscription')->default(false);
+            $table->unsignedTinyInteger('period_month')->nullable(); // 1-12
+            $table->unsignedSmallInteger('period_year')->nullable(); // e.g. 2026
+            $table->decimal('penalty_amount', 15, 2)->default(0); // overdue penalty portion
+
             $table->decimal('amount', 15, 2)->default(0);
             $table->decimal('charge', 15, 2)->default(0);
             $table->decimal('total_amount', 15, 2)->default(0);
@@ -33,8 +41,10 @@ return new class extends Migration
             // transaction_id is a Foreign Key to transactions table
             $table->unsignedBigInteger('transaction_id')->nullable()->index();
             $table->foreign('transaction_id')->references('id')->on('transactions')->onDelete('cascade');
-            
+
             $table->timestamps();
+
+            $table->index(['member_id', 'is_subscription', 'period_year', 'period_month'], 'dep_req_subscription_period_idx');
         });
     }
 

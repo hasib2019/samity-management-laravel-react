@@ -50,7 +50,7 @@ class GeneralSetting extends Model
             // Localization
             ['key' => 'currency_code',          'group' => 'localization', 'type' => 'string',  'default' => 'BDT'],
             ['key' => 'currency_symbol',        'group' => 'localization', 'type' => 'string',  'default' => '৳'],
-            ['key' => 'locale',                 'group' => 'localization', 'type' => 'string',  'default' => 'en'],
+            ['key' => 'locale',                 'group' => 'localization', 'type' => 'string',  'default' => 'bn'],
             ['key' => 'timezone',               'group' => 'localization', 'type' => 'string',  'default' => 'Asia/Dhaka'],
             ['key' => 'date_format',            'group' => 'localization', 'type' => 'string',  'default' => 'd/m/Y'],
             ['key' => 'number_format_decimals', 'group' => 'localization', 'type' => 'integer', 'default' => '2'],

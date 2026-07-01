@@ -38,6 +38,9 @@ return new class extends Migration
             // Indexes for faster searching
             $table->index('account_no');
             $table->index('status');
+
+            // One loan account per application — a second disbursement insert now fails loudly.
+            $table->unique('loan_application_id');
         });
     }
 

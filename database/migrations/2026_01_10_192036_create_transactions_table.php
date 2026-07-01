@@ -61,6 +61,11 @@ return new class extends Migration
             $table->index('tran_date');
             $table->index('tran_type');
             $table->index('status');
+
+            // Used by trial-balance / balance-sheet / cash-flow / expense / revenue reports.
+            $table->index('glac_id');
+            $table->index('batch_num');
+            $table->index(['status', 'tran_date', 'glac_id'], 'transactions_status_date_glac_index');
         });
     }
 

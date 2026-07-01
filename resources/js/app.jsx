@@ -1,9 +1,11 @@
 import './bootstrap';
 import '../css/app.css';
+import './i18n';
 
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 // Pages
@@ -144,23 +146,27 @@ const routePermissions = {
     '/member-balance-report': 'member-balance-report.view',
 };
 
-const AccessDenied = () => (
-    <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="max-w-md rounded-xl border border-red-200 bg-white p-8 text-center shadow-sm">
-            <h2 className="text-2xl font-bold text-red-600">Access Denied</h2>
-            <p className="mt-3 text-sm text-gray-600">
-                You do not have permission to access this module.
-            </p>
+const AccessDenied = () => {
+    const { t } = useTranslation();
+    return (
+        <div className="flex min-h-[60vh] items-center justify-center">
+            <div className="max-w-md rounded-xl border border-red-200 bg-white p-8 text-center shadow-sm">
+                <h2 className="text-2xl font-bold text-red-600">{t('access_denied.title')}</h2>
+                <p className="mt-3 text-sm text-gray-600">
+                    {t('access_denied.message')}
+                </p>
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 const ProtectedRoute = ({ children }) => {
     const { user, loading, hasAnyPermission } = useAuth();
+    const { t } = useTranslation();
     const location = useLocation();
     const requiredPermission = routePermissions[location.pathname];
 
-    if (loading) return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
+    if (loading) return <div className="flex justify-center items-center min-h-screen">{t('common.loading')}</div>;
     
     if (!user) {
         return <Navigate to="/login" />;

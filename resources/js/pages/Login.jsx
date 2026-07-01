@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { setAppLanguage } from '../i18n';
 import {
     Mail,
     Lock,
@@ -15,23 +17,34 @@ import {
     Building2,
 } from 'lucide-react';
 
-const features = [
-    {
-        icon: Users,
-        title: 'Member Management',
-        desc: 'Track members, savings & subscriptions in one place.',
-    },
-    {
-        icon: Wallet,
-        title: 'Accounts & Dues',
-        desc: 'Loans, deposits and due collections, fully streamlined.',
-    },
-    {
-        icon: ShieldCheck,
-        title: 'Role-based Access',
-        desc: 'Granular permissions keep your data safe and audited.',
-    },
+const featureKeys = [
+    { icon: Users, key: 'member_management' },
+    { icon: Wallet, key: 'accounts_dues' },
+    { icon: ShieldCheck, key: 'role_based_access' },
 ];
+
+const GuestLanguageToggle = () => {
+    const { i18n, t } = useTranslation();
+
+    return (
+        <div className="flex overflow-hidden rounded-md border border-slate-200 bg-white/80 backdrop-blur">
+            <button
+                type="button"
+                onClick={() => setAppLanguage('en')}
+                className={`px-2.5 py-1 text-xs font-medium ${i18n.language === 'en' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
+            >
+                EN
+            </button>
+            <button
+                type="button"
+                onClick={() => setAppLanguage('bn')}
+                className={`px-2.5 py-1 text-xs font-medium ${i18n.language === 'bn' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
+            >
+                বাংলা
+            </button>
+        </div>
+    );
+};
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -42,6 +55,7 @@ const Login = () => {
     const [loading, setLoading] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -54,7 +68,7 @@ const Login = () => {
             const message =
                 err.response?.data?.message ||
                 err.response?.data?.errors?.email?.[0] ||
-                'Invalid credentials. Please try again.';
+                t('login.invalid_credentials');
             setError(message);
         } finally {
             setLoading(false);
@@ -62,7 +76,7 @@ const Login = () => {
     };
 
     return (
-        <div className="min-h-screen flex bg-slate-50 text-slate-900">
+        <div className="relative min-h-screen flex bg-slate-50 text-slate-900">
             {/* Local keyframes for the ambient brand panel */}
             <style>{`
                 @keyframes blob {
@@ -77,6 +91,10 @@ const Login = () => {
                 }
                 .animate-rise { animation: rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
             `}</style>
+
+            <div className="absolute top-4 right-4 z-20">
+                <GuestLanguageToggle />
+            </div>
 
             {/* ---------- Left: Brand panel ---------- */}
             <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-linear-to-br from-blue-900 via-blue-800 to-indigo-900">
@@ -101,24 +119,23 @@ const Login = () => {
                         <div className="grid place-items-center w-11 h-11 rounded-xl bg-white/10 ring-1 ring-white/20 backdrop-blur">
                             <Building2 className="w-6 h-6" />
                         </div>
-                        <span className="text-lg font-semibold tracking-tight">Samity Management</span>
+                        <span className="text-lg font-semibold tracking-tight">{t('login.brand')}</span>
                     </div>
 
                     {/* Headline + features */}
                     <div className="max-w-md">
                         <h1 className="text-4xl xl:text-5xl font-bold leading-tight tracking-tight animate-rise">
-                            Run your cooperative,
-                            <span className="block text-blue-300">all in one place.</span>
+                            {t('login.headline_line1')}
+                            <span className="block text-blue-300">{t('login.headline_line2')}</span>
                         </h1>
                         <p className="mt-5 text-blue-100/80 text-base leading-relaxed animate-rise" style={{ animationDelay: '0.05s' }}>
-                            Members, savings, loans and dues — managed with clarity,
-                            security and speed.
+                            {t('login.subheadline')}
                         </p>
 
                         <div className="mt-10 space-y-5">
-                            {features.map((f, i) => (
+                            {featureKeys.map((f, i) => (
                                 <div
-                                    key={f.title}
+                                    key={f.key}
                                     className="flex items-start gap-4 animate-rise"
                                     style={{ animationDelay: `${0.15 + i * 0.08}s` }}
                                 >
@@ -126,8 +143,8 @@ const Login = () => {
                                         <f.icon className="w-5 h-5 text-blue-200" />
                                     </div>
                                     <div>
-                                        <p className="font-medium">{f.title}</p>
-                                        <p className="text-sm text-blue-100/70">{f.desc}</p>
+                                        <p className="font-medium">{t(`login.features.${f.key}.title`)}</p>
+                                        <p className="text-sm text-blue-100/70">{t(`login.features.${f.key}.desc`)}</p>
                                     </div>
                                 </div>
                             ))}
@@ -136,7 +153,7 @@ const Login = () => {
 
                     {/* Footer */}
                     <p className="text-sm text-blue-200/60 animate-rise" style={{ animationDelay: '0.4s' }}>
-                        © {new Date().getFullYear()} Samity Management. All rights reserved.
+                        {t('login.footer_rights', { year: new Date().getFullYear() })}
                     </p>
                 </div>
             </div>
@@ -149,12 +166,12 @@ const Login = () => {
                         <div className="grid place-items-center w-11 h-11 rounded-xl bg-blue-900 text-white">
                             <Building2 className="w-6 h-6" />
                         </div>
-                        <span className="text-lg font-semibold tracking-tight">Samity Management</span>
+                        <span className="text-lg font-semibold tracking-tight">{t('login.brand')}</span>
                     </div>
 
                     <div className="mb-8">
-                        <h2 className="text-3xl font-bold tracking-tight text-slate-900">Welcome back</h2>
-                        <p className="mt-2 text-slate-500">Sign in to continue to your dashboard.</p>
+                        <h2 className="text-3xl font-bold tracking-tight text-slate-900">{t('login.welcome_back')}</h2>
+                        <p className="mt-2 text-slate-500">{t('login.sign_in_subtitle')}</p>
                     </div>
 
                     {error && (
@@ -168,7 +185,7 @@ const Login = () => {
                         {/* Email */}
                         <div>
                             <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1.5">
-                                Email address
+                                {t('login.email_label')}
                             </label>
                             <div className="relative">
                                 <Mail className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -179,7 +196,7 @@ const Login = () => {
                                     autoComplete="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="you@example.com"
+                                    placeholder={t('login.email_placeholder')}
                                     className="w-full rounded-xl border border-slate-300 bg-white pl-11 pr-4 py-3 text-slate-900 placeholder-slate-400 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
                                 />
                             </div>
@@ -189,10 +206,10 @@ const Login = () => {
                         <div>
                             <div className="flex items-center justify-between mb-1.5">
                                 <label htmlFor="password" className="block text-sm font-medium text-slate-700">
-                                    Password
+                                    {t('login.password_label')}
                                 </label>
                                 <a href="#" className="text-sm font-medium text-blue-600 hover:text-blue-700 transition">
-                                    Forgot password?
+                                    {t('login.forgot_password')}
                                 </a>
                             </div>
                             <div className="relative">
@@ -226,7 +243,7 @@ const Login = () => {
                                 onChange={(e) => setRemember(e.target.checked)}
                                 className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/30"
                             />
-                            <span className="text-sm text-slate-600">Keep me signed in</span>
+                            <span className="text-sm text-slate-600">{t('login.remember_me')}</span>
                         </label>
 
                         {/* Submit */}
@@ -238,11 +255,11 @@ const Login = () => {
                             {loading ? (
                                 <>
                                     <Loader2 className="w-5 h-5 animate-spin" />
-                                    Signing in...
+                                    {t('login.signing_in')}
                                 </>
                             ) : (
                                 <>
-                                    Sign in
+                                    {t('login.sign_in')}
                                     <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-0.5" />
                                 </>
                             )}
@@ -250,7 +267,7 @@ const Login = () => {
                     </form>
 
                     <p className="mt-8 text-center text-sm text-slate-500">
-                        Protected area · Authorized users only
+                        {t('login.protected_area')}
                     </p>
                 </div>
             </div>

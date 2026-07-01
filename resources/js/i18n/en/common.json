@@ -1,0 +1,50 @@
+{
+  "login": {
+    "brand": "Samity Management",
+    "headline_line1": "Run your cooperative,",
+    "headline_line2": "all in one place.",
+    "subheadline": "Members, savings, loans and dues — managed with clarity, security and speed.",
+    "features": {
+      "member_management": {
+        "title": "Member Management",
+        "desc": "Track members, savings & subscriptions in one place."
+      },
+      "accounts_dues": {
+        "title": "Accounts & Dues",
+        "desc": "Loans, deposits and due collections, fully streamlined."
+      },
+      "role_based_access": {
+        "title": "Role-based Access",
+        "desc": "Granular permissions keep your data safe and audited."
+      }
+    },
+    "footer_rights": "© {{year}} Samity Management. All rights reserved.",
+    "welcome_back": "Welcome back",
+    "sign_in_subtitle": "Sign in to continue to your dashboard.",
+    "email_label": "Email address",
+    "email_placeholder": "you@example.com",
+    "password_label": "Password",
+    "forgot_password": "Forgot password?",
+    "remember_me": "Keep me signed in",
+    "sign_in": "Sign in",
+    "signing_in": "Signing in...",
+    "protected_area": "Protected area · Authorized users only",
+    "invalid_credentials": "Invalid credentials. Please try again."
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "logout": "Logout"
+  },
+  "common": {
+    "loading": "Loading..."
+  },
+  "access_denied": {
+    "title": "Access Denied",
+    "message": "You do not have permission to access this module."
+  },
+  "language": {
+    "switch": "Language",
+    "english": "English",
+    "bangla": "বাংলা"
+  }
+}

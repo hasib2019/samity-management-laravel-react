@@ -26,6 +26,7 @@ class MenuController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
+            'name_bn' => 'nullable|string|max:255',
             'icon' => 'nullable|string|max:255',
             'parent_id' => 'nullable|exists:menus,id',
             'order' => 'integer',
@@ -34,6 +35,7 @@ class MenuController extends Controller
         return DB::transaction(function () use ($request) {
             $menu = Menu::create([
                 'name' => $request->name,
+                'name_bn' => $request->name_bn,
                 'slug' => Str::slug($request->name),
                 'icon' => $request->icon,
                 'parent_id' => $request->parent_id,
@@ -56,6 +58,7 @@ class MenuController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
+            'name_bn' => 'nullable|string|max:255',
             'icon' => 'nullable|string|max:255',
             'parent_id' => 'nullable|exists:menus,id',
             'order' => 'integer',
@@ -66,6 +69,7 @@ class MenuController extends Controller
 
         $menu->update([
             'name' => $request->name,
+            'name_bn' => $request->name_bn,
             'slug' => Str::slug($request->name),
             'icon' => $request->icon,
             'parent_id' => $request->parent_id,

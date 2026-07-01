@@ -12,7 +12,7 @@ class Menu extends Model
 {
     use HasFactory, Auditable;
 
-    protected $fillable = ['name', 'slug', 'icon', 'parent_id', 'order', 'is_hidden'];
+    protected $fillable = ['name', 'name_bn', 'slug', 'icon', 'parent_id', 'order', 'is_hidden'];
 
     protected $casts = [
         'is_hidden' => 'boolean',

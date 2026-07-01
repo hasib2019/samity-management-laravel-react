@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\SettingsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -11,6 +12,10 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    public function __construct(protected SettingsService $settings)
+    {
+    }
+
     public function login(Request $request)
     {
         $request->validate([
@@ -22,12 +27,12 @@ class AuthController extends Controller
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
+                'email' => [__('messages.auth.invalid_credentials')],
             ]);
         }
 
         if (!$user->status) {
-            return response()->json(['message' => 'Your account is disabled.'], 403);
+            return response()->json(['message' => __('messages.auth.account_disabled')], 403);
         }
 
         // Cookie/session based SPA auth (token is never exposed to JavaScript).
@@ -35,7 +40,7 @@ class AuthController extends Controller
         $request->session()->regenerate();
 
         return response()->json([
-            'user' => $user->load('roles.permissions'),
+            'user' => $this->withResolvedLanguage($user->load('roles.permissions')),
             'menus' => $user->getAuthorizedMenus(),
         ]);
     }
@@ -44,7 +49,7 @@ class AuthController extends Controller
     {
         $user = $request->user();
         return response()->json([
-            'user' => $user->load('roles.permissions'),
+            'user' => $this->withResolvedLanguage($user->load('roles.permissions')),
             'menus' => $user->getAuthorizedMenus(),
         ]);
     }
@@ -61,6 +66,29 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return response()->json(['message' => 'Logged out successfully']);
+        return response()->json(['message' => __('messages.auth.logged_out')]);
+    }
+
+    public function updateLanguage(Request $request)
+    {
+        $request->validate([
+            'language' => 'required|in:en,bn',
+        ]);
+
+        $request->user()->update(['language' => $request->language]);
+
+        return response()->json(['language' => $request->language]);
+    }
+
+    /**
+     * Attach the effective language (user preference, falling back to the
+     * system default) to the user payload so the frontend can sync i18next
+     * to it right after login/me without a second request.
+     */
+    protected function withResolvedLanguage(User $user): User
+    {
+        $user->setAttribute('language', $user->language ?? $this->settings->get('locale', 'bn'));
+
+        return $user;
     }
 }

@@ -30,25 +30,6 @@ return new class extends Migration
             
             $table->timestamps();
         });
-
-        // Drop the columns from loan_applications if they exist
-        if (Schema::hasColumn('loan_applications', 'nominee_type')) {
-            Schema::table('loan_applications', function (Blueprint $table) {
-                $table->dropForeign(['nominee_member_id']);
-                $table->dropColumn([
-                    'nominee_type', 
-                    'nominee_member_id', 
-                    'nominee_name', 
-                    'nominee_relation', 
-                    'nominee_dob', 
-                    'nominee_nid', 
-                    'nominee_image', 
-                    'nominee_sign', 
-                    'nominee_nid_image', 
-                    'other_documents'
-                ]);
-            });
-        }
     }
 
     /**
@@ -57,8 +38,5 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('loan_nominees');
-        
-        // Note: Re-adding columns to loan_applications in down() is complex due to data loss concerns, 
-        // but for development we can just drop the nominees table.
     }
 };

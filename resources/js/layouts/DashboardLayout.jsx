@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { 
-    LayoutDashboard, 
-    Users, 
+import { useTranslation } from 'react-i18next';
+import { setAppLanguage } from '../i18n';
+import {
+    LayoutDashboard,
+    Users,
     User,
     Shield,
     Key,
-    Menu as MenuIcon, 
+    Menu as MenuIcon,
     Building,
     Building2,
     UserCheck,
@@ -30,11 +32,12 @@ import {
     FilePlus,
     HandCoins,
     CreditCard,
-    LogOut, 
-    ChevronDown, 
+    LogOut,
+    ChevronDown,
     ChevronRight,
     UserCircle,
-    ShieldCheck
+    ShieldCheck,
+    Languages,
 } from 'lucide-react';
 
 const iconMap = {
@@ -76,6 +79,7 @@ const DynamicIcon = ({ name, size = 20 }) => {
 
 const Sidebar = ({ menus, isOpen }) => {
     const location = useLocation();
+    const { i18n } = useTranslation();
     const [openMenus, setOpenMenus] = useState({});
     const [siteName, setSiteName] = useState('Samity Management');
     const [devBy, setDevBy] = useState({ text: '', url: '' });
@@ -148,7 +152,9 @@ const Sidebar = ({ menus, isOpen }) => {
                         <span className="mr-3">
                         <DynamicIcon name={menu.icon} size={20} />
                     </span>
-                        <span className="flex-1 whitespace-nowrap">{menu.name} </span>
+                        <span className="flex-1 whitespace-nowrap">
+                            {i18n.language === 'bn' && menu.name_bn ? menu.name_bn : menu.name}{' '}
+                        </span>
                     </Link>
                     
                     {hasChildren && (
@@ -200,8 +206,44 @@ const Sidebar = ({ menus, isOpen }) => {
     );
 };
 
+const LanguageSwitcher = () => {
+    const { i18n, t } = useTranslation();
+    const { user, updateLanguage } = useAuth();
+
+    const handleChange = async (lang) => {
+        if (lang === i18n.language) return;
+        setAppLanguage(lang);
+        if (user) {
+            updateLanguage(lang).catch(() => {});
+        }
+    };
+
+    return (
+        <div className="flex items-center text-sm font-medium text-gray-600" title={t('language.switch')}>
+            <Languages className="mr-2 w-5 h-5 text-gray-400" />
+            <div className="flex overflow-hidden rounded-md border border-gray-200">
+                <button
+                    type="button"
+                    onClick={() => handleChange('en')}
+                    className={`px-2 py-1 ${i18n.language === 'en' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                >
+                    EN
+                </button>
+                <button
+                    type="button"
+                    onClick={() => handleChange('bn')}
+                    className={`px-2 py-1 ${i18n.language === 'bn' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                >
+                    বাংলা
+                </button>
+            </div>
+        </div>
+    );
+};
+
 const TopNavbar = ({ toggleSidebar }) => {
     const { user, logout } = useAuth();
+    const { t } = useTranslation();
     const navigate = useNavigate();
 
     const handleLogout = async () => {
@@ -212,15 +254,16 @@ const TopNavbar = ({ toggleSidebar }) => {
     return (
         <header className="flex justify-between items-center px-6 h-16 bg-white shadow-sm">
             <div className="flex items-center">
-                <button 
-                    onClick={toggleSidebar} 
+                <button
+                    onClick={toggleSidebar}
                     className="mr-4 text-gray-500 hover:text-gray-700 focus:outline-none"
                 >
                     <MenuIcon size={24} />
                 </button>
-                <h1 className="text-xl font-semibold text-gray-800">Dashboard</h1>
+                <h1 className="text-xl font-semibold text-gray-800">{t('nav.dashboard')}</h1>
             </div>
             <div className="flex items-center space-x-4">
+                <LanguageSwitcher />
                 <div className="flex items-center text-sm font-medium text-gray-700">
                     <UserCircle className="mr-2 w-6 h-6 text-gray-400" />
                     {user?.name}
@@ -230,7 +273,7 @@ const TopNavbar = ({ toggleSidebar }) => {
                     className="flex items-center text-sm font-medium text-red-600 hover:text-red-800"
                 >
                     <LogOut className="mr-1 w-5 h-5" />
-                    Logout
+                    {t('nav.logout')}
                 </button>
             </div>
         </header>
